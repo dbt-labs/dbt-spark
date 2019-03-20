@@ -5,9 +5,11 @@ from dbt.adapters.sql import SQLConnectionManager
 from dbt.logger import GLOBAL_LOGGER as logger
 import dbt.exceptions
 
-import jaydebeapi
+from pyhive import hive
+from thrift.transport import THttpClient
+import base64
 
-JDBC_CONN_STRING = 'jdbc:spark://{creds.host}:{creds.port}/{creds.schema};{jdbc_conf}'  # noqa
+SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/0/{cluster}"
 
 SPARK_CREDENTIALS_CONTRACT = {
     'type': 'object',
@@ -21,36 +23,20 @@ SPARK_CREDENTIALS_CONTRACT = {
             'minimum': 0,
             'maximum': 65535,
         },
+        'cluster': {
+            'type': 'string'
+        },
         'database': {
-            'type': ['string'],
+            'type': 'string',
         },
         'schema': {
             'type': 'string',
         },
-        'user': {
-            'type': 'string'
+        'token': {
+            'type': 'string',
         },
-        'password': {
-            'type': 'string'
-        },
-        'jdbc_driver': {
-            'type': 'object',
-            'properties': {
-                'class': {
-                    'type': 'string'
-                },
-                'path': {
-                    'type': 'string'
-                },
-            },
-            'required': ['class', 'path']
-        },
-        'jdbc_config': {
-            'type': 'object'
-        }
     },
-    'required': ['host', 'port', 'user', 'password', 'jdbc_driver',
-                 'jdbc_config', 'database', 'schema'],
+    'required': ['host', 'database', 'schema', 'cluster'],
 }
 
 
@@ -59,7 +45,6 @@ class SparkCredentials(Credentials):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('database', kwargs.get('schema'))
-        kwargs.setdefault('jdbc_config', {})
 
         super(SparkCredentials, self).__init__(*args, **kwargs)
 
@@ -68,8 +53,7 @@ class SparkCredentials(Credentials):
         return 'spark'
 
     def _connection_keys(self):
-        return ('host', 'port', 'schema', 'user', 'jdbc_driver',
-                'jdbc_config')
+        return ('host', 'port', 'cluster', 'schema')
 
 
 class ConnectionWrapper(object):
@@ -92,14 +76,8 @@ class ConnectionWrapper(object):
         # TODO?
         self.handle.close()
 
-    def commit(self, *args, **kwargs):
-        logger.debug("NotImplemented: commit")
-
     def rollback(self, *args, **kwargs):
         logger.debug("NotImplemented: rollback")
-
-    def start_transaction(self, *args, **kwargs):
-        logger.debug("NotImplemented: start_transaction")
 
     def fetchall(self):
         return self._cursor.fetchall()
@@ -143,39 +121,26 @@ class SparkConnectionManager(SQLConnectionManager):
         logger.debug("NotImplemented: rollback")
 
     @classmethod
-    def _build_jdbc_url(cls, creds):
-        jdbc_conf = ";".join(
-            "{}={}".format(key, val)
-            for (key, val) in creds.jdbc_config.items()
-        )
-
-        return JDBC_CONN_STRING.format(creds=creds, jdbc_conf=jdbc_conf)
-
-    @classmethod
     def open(cls, connection):
         if connection.state == 'open':
             logger.debug('Connection is already open, skipping open.')
             return connection
 
-        credentials = connection.credentials
+        conn_url = SPARK_CONNECTION_URL.format(**connection.credentials)
+        transport = THttpClient.THttpClient(conn_url)
 
-        jdbc_url = cls._build_jdbc_url(credentials)
-        auth = {
-            "user": credentials.user,
-            "password": credentials.password
-        }
+        creds = "token:{}".format(connection.credentials['token']).encode()
+        token = base64.standard_b64encode(creds).decode()
+        transport.setCustomHeaders({
+            'Authorization': 'Basic {}'.format(token)
+        })
 
-        conn = jaydebeapi.connect(
-            credentials.jdbc_driver['class'],
-            jdbc_url,
-            auth,
-            credentials.jdbc_driver['path']
-        )
-
-        wrapped = ConnectionWrapper(conn)
+        conn = hive.connect(thrift_transport=transport)
+        #import ipdb; ipdb.set_trace()
+        #wrapped = ConnectionWrapper(conn)
 
         connection.state = 'open'
-        connection.handle = wrapped
+        connection.handle = conn # Should we wrap?
         return connection
 
     @classmethod

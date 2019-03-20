@@ -3,7 +3,7 @@ from setuptools import find_packages
 from distutils.core import setup
 
 package_name = "dbt-spark"
-package_version = "0.13.0"
+package_version = "0.13.0-rc1"
 description = """The dbt_spark adpter plugin for dbt (data build tool)"""
 
 setup(
@@ -23,6 +23,7 @@ setup(
     },
     install_requires=[
         'dbt-core=={}'.format(package_version),
-        'JayDeBeApi==1.1.1'
+        'PyHive>=0.6.0,<0.7.0',
+        'thrift>=0.11.0,<0.12.0'
     ]
 )
