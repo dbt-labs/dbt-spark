@@ -9,6 +9,7 @@ from pyhive import hive
 from thrift.transport import THttpClient
 import base64
 
+
 SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/0/{cluster}"
 
 SPARK_CREDENTIALS_CONTRACT = {
@@ -73,7 +74,6 @@ class ConnectionWrapper(object):
             self._cursor.cancel()
 
     def close(self):
-        # TODO?
         self.handle.close()
 
     def rollback(self, *args, **kwargs):
@@ -100,12 +100,18 @@ class SparkConnectionManager(SQLConnectionManager):
     def exception_handler(self, sql, connection_name='master'):
         try:
             yield
-        # TODO: introspect into `DatabaseError`s and expose `errorName`,
-        # `errorType`, etc instead of stack traces full of garbage!
         except Exception as exc:
             logger.debug("Error while running:\n{}".format(sql))
             logger.debug(exc)
-            raise dbt.exceptions.RuntimeException(exc)
+            if len(exc.args) == 0:
+                raise
+
+            thrift_resp = exc.args[0]
+            if hasattr(thrift_resp, 'status'):
+                msg = thrift_resp.status.errorMessage
+                raise dbt.exceptions.RuntimeException(msg)
+            else:
+                raise dbt.exceptions.RuntimeException(str(exc))
 
     # No transactions on Spark....
     def add_begin_query(self, *args, **kwargs):
@@ -136,16 +142,15 @@ class SparkConnectionManager(SQLConnectionManager):
         })
 
         conn = hive.connect(thrift_transport=transport)
-        #import ipdb; ipdb.set_trace()
-        #wrapped = ConnectionWrapper(conn)
+        wrapped = ConnectionWrapper(conn)
 
         connection.state = 'open'
-        connection.handle = conn # Should we wrap?
+        connection.handle = wrapped
         return connection
 
     @classmethod
     def get_status(cls, cursor):
-        # No status from the cursor...
+        #status = cursor._cursor.poll()
         return 'OK'
 
     def cancel(self, connection):
