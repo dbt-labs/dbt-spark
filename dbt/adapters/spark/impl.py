@@ -53,6 +53,8 @@ class SparkAdapter(SQLAdapter):
             release=True
         )
 
+    # Override that creates macros without a known type - adapter macros that
+    # require a type will dynamically check at query-time
     def list_relations_without_caching(self, information_schema, schema,
                                        model_name=None):
         kwargs = {'information_schema': information_schema, 'schema': schema}
@@ -69,14 +71,13 @@ class SparkAdapter(SQLAdapter):
             'identifier': True
         }
         for _database, name, _ in results:
-            rel = self.Relation.create(
+            relations.append(self.Relation.create(
                 database=_database,
                 schema=_database,
                 identifier=name,
                 quote_policy=quote_policy,
-            )
-            rel.type = self.get_relation_type(rel)
-            relations.append(rel)
+                type=None
+            ))
         return relations
 
     # Override that doesn't check the type of the relation -- we do it 
