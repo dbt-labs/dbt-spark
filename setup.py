@@ -17,8 +17,8 @@ setup(
     packages=find_packages(),
     package_data={
         'dbt': [
-            'include/dbt_spark/dbt_project.yml',
-            'include/dbt_spark/macros/*.sql',
+            'include/spark/dbt_project.yml',
+            'include/spark/macros/*.sql',
         ]
     },
     install_requires=[
