@@ -162,7 +162,7 @@ class SparkConnectionManager(SQLConnectionManager):
                 break
             except Exception as e:
                 exc = e
-                if e.message and 'pending' in (e.message.lower()):
+                if hasattr(e, 'message') and 'pending' in (e.message.lower()):
                     logger.warning("Warning: {}\n\tRetrying in {} seconds "
                                    "({} of {})".format(e.message,
                                                        connect_timeout,
