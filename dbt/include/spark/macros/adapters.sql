@@ -72,23 +72,16 @@
 {% endmacro %}
 
 
-{% macro spark__check_schema_exists(information_schema, schema) -%}
-  {# TODO #}
-  {% call statement('check_schema_exists', fetch_result=True) -%}
-    show databases
-  {%- endcall %}
-  {{ return(load_result('check_schema_exists').table) }}
-{%- endmacro %}
-
 {% macro spark__current_timestamp() -%}
   current_timestamp()
 {%- endmacro %}
 
+
 {% macro spark_get_relation_type(relation) -%}
-  {% call statement('check_schema_exists', fetch_result=True) -%}
+  {% call statement('get_relation_type', fetch_result=True) -%}
     SHOW TBLPROPERTIES {{ relation }} ('view.default.database')
   {%- endcall %}
-  {% set res = load_result('check_schema_exists').table %}
+  {% set res = load_result('get_relation_type').table %}
   {% if 'does not have property' in res[0][0] %}
     {{ return('table') }}
   {% else %}

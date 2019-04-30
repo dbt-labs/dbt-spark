@@ -16,7 +16,8 @@ A dbt profile can be configured to run against Spark using the following configu
 | host    | The hostname to connect to                         | Required                | `yourorg.sparkhost.com`  |
 | port    | The port to connect to the host on                 | Optional (default: 443) | `443`                    |
 | token   | The token to use for authenticating to the cluster | Required                | `abc123`                 |
-| cluster | The name of the cluster to connect to              | Required                | `01234-23423-coffeetime` |
+| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10) | `60` |
+| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up   | Optional (default: 0)  | `5` |
 
 
 **Example profiles.yml entry:**
@@ -31,6 +32,8 @@ your_profile_name:
       port: 443
       token: abc123
       cluster: 01234-23423-coffeetime
+      connect_retries: 5
+      connect_timeout: 60
 ```
 
 ### Usage Notes

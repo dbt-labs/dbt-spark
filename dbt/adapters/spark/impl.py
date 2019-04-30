@@ -3,6 +3,7 @@ from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkConnectionManager
 import dbt.exceptions
 
+from dbt.logger import GLOBAL_LOGGER as logger
 import agate
 
 
@@ -91,3 +92,54 @@ class SparkAdapter(SQLAdapter):
             kwargs={'relation': relation},
             connection_name=model_name
         )
+
+    def get_catalog(self, manifest):
+        connection = self.connections.get('catalog')
+        client = connection.handle
+
+        schemas = manifest.get_used_schemas()
+
+        column_names = (
+            'table_database',
+            'table_schema',
+            'table_name',
+            'table_type',
+            'table_comment',
+            'table_owner',
+            'column_name',
+            'column_index',
+            'column_type',
+            'column_comment',
+        )
+
+        columns = []
+        for (database_name, schema_name) in schemas:
+            relations = self.list_relations(database_name, schema_name)
+            for relation in relations:
+                logger.debug("Getting table schema for relation {}".format(relation))
+                table_columns = self.get_columns_in_relation(relation)
+                rel_type = self.get_relation_type(relation)
+
+                for column_index, column in enumerate(table_columns):
+                    # Fixes for pseudocolumns with no type
+                    if column.name in ('# Partition Information', '# col_name'):
+                        continue
+                    elif column.dtype is None:
+                        continue
+
+                    column_data = (
+                        relation.database,
+                        relation.schema,
+                        relation.name,
+                        rel_type,
+                        None,
+                        None,
+                        column.name,
+                        column_index,
+                        column.data_type,
+                        None,
+                    )
+                    column_dict = dict(zip(column_names, column_data))
+                    columns.append(column_dict)
+
+        return dbt.clients.agate_helper.table_from_data(columns, column_names)
