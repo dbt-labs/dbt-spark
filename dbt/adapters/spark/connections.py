@@ -8,6 +8,7 @@ import dbt.exceptions
 from pyhive import hive
 from thrift.transport import THttpClient
 import base64
+import time
 
 
 SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/0/{cluster}"
@@ -36,6 +37,16 @@ SPARK_CREDENTIALS_CONTRACT = {
         'token': {
             'type': 'string',
         },
+        'connect_timeout': {
+            'type': 'integer',
+            'minimum': 0,
+            'maximum': 60,
+        },
+        'connect_retries': {
+            'type': 'integer',
+            'minimum': 0,
+            'maximum': 60,
+        }
     },
     'required': ['host', 'database', 'schema', 'cluster'],
 }
@@ -141,7 +152,33 @@ class SparkConnectionManager(SQLConnectionManager):
             'Authorization': 'Basic {}'.format(token)
         })
 
-        conn = hive.connect(thrift_transport=transport)
+        connect_retries = connection.credentials.get('connect_retries', 0)
+        connect_timeout = connection.credentials.get('connect_timeout', 10)
+
+        exc = None
+        for i in range(1 + connect_retries):
+            try:
+                conn = hive.connect(thrift_transport=transport)
+                break
+            except Exception as e:
+                exc = e
+                if not hasattr(e, 'message') or if e.message is None:
+                    raise
+
+                message = e.message.lower()
+                is_pending = 'pending' in message
+                is_starting = 'temporarily_unavailable' in message
+
+                warning = "Warning: {}\n\tRetrying in {} seconds ({} of {})"
+                if is_pending or is_starting:
+                    logger.warning(warning.format(e.message, connect_timeout,
+                                                  i + 1, connect_retries))
+                    time.sleep(connect_timeout)
+                else:
+                    raise
+        else:
+            raise exc
+
         wrapped = ConnectionWrapper(conn)
 
         connection.state = 'open'
@@ -150,9 +187,8 @@ class SparkConnectionManager(SQLConnectionManager):
 
     @classmethod
     def get_status(cls, cursor):
-        #status = cursor._cursor.poll()
+        # status = cursor._cursor.poll()
         return 'OK'
 
     def cancel(self, connection):
-        import ipdb; ipdb.set_trace()
         connection.handle.cancel()
