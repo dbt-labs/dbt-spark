@@ -162,7 +162,7 @@ class SparkConnectionManager(SQLConnectionManager):
                 break
             except Exception as e:
                 exc = e
-                if not hasattr(e, 'message') or if e.message is None:
+                if getattr(e, 'message', None) is None:
                     raise
 
                 message = e.message.lower()
