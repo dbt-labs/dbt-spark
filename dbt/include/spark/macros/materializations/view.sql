@@ -1,4 +1,4 @@
-{% materialization table, adapter = 'spark' %}
+{% materialization view, adapter = 'spark' %}
   
   {%- set identifier = model['alias'] -%}
 
@@ -6,7 +6,7 @@
   {%- set target_relation = api.Relation.create(identifier=identifier,
                                                 schema=schema,
                                                 database=database,
-                                                type='table') -%}
+                                                type='view') -%}
 
   {{ run_hooks(pre_hooks) }}
 
@@ -17,9 +17,9 @@
 
   -- build model
   {% call statement('main') -%}
-    {{ create_table_as(False, target_relation, sql) }}
+    {{ create_view_as(target_relation, sql) }}
   {%- endcall %}
 
   {{ run_hooks(post_hooks) }}
 
-{% endmaterialization %}
+{%- endmaterialization -%}
