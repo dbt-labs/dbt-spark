@@ -17,6 +17,9 @@ SPARK_CREDENTIALS_CONTRACT = {
     'type': 'object',
     'additionalProperties': False,
     'properties': {
+        'method': {
+            'enum': ['thrift', 'http'],
+        },
         'host': {
             'type': 'string'
         },
@@ -24,6 +27,9 @@ SPARK_CREDENTIALS_CONTRACT = {
             'type': 'integer',
             'minimum': 0,
             'maximum': 65535,
+        },
+        'user': {
+            'type': 'string'
         },
         'cluster': {
             'type': 'string'
@@ -48,7 +54,7 @@ SPARK_CREDENTIALS_CONTRACT = {
             'maximum': 60,
         }
     },
-    'required': ['host', 'database', 'schema', 'cluster'],
+    'required': ['method', 'host', 'database', 'schema'],
 }
 
 
@@ -143,22 +149,27 @@ class SparkConnectionManager(SQLConnectionManager):
             logger.debug('Connection is already open, skipping open.')
             return connection
 
-        conn_url = SPARK_CONNECTION_URL.format(**connection.credentials)
-        transport = THttpClient.THttpClient(conn_url)
-
-        creds = "token:{}".format(connection.credentials['token']).encode()
-        token = base64.standard_b64encode(creds).decode()
-        transport.setCustomHeaders({
-            'Authorization': 'Basic {}'.format(token)
-        })
-
         connect_retries = connection.credentials.get('connect_retries', 0)
         connect_timeout = connection.credentials.get('connect_timeout', 10)
 
         exc = None
         for i in range(1 + connect_retries):
             try:
-                conn = hive.connect(thrift_transport=transport)
+                if connection.credentials['method'] == 'http':
+                    conn_url = SPARK_CONNECTION_URL.format(**connection.credentials)
+                    transport = THttpClient.THttpClient(conn_url)
+
+                    creds = "token:{}".format(connection.credentials['token']).encode()
+                    token = base64.standard_b64encode(creds).decode()
+                    transport.setCustomHeaders({
+                        'Authorization': 'Basic {}'.format(token)
+                    })
+
+                    conn = hive.connect(thrift_transport=transport)
+                elif connection.credentials['method'] == 'thrift':
+                    conn = hive.connect(host=connection.credentials['host'],
+                                        port=connection.credentials.get('port'),
+                                        username=connection.credentials.get('username'))
                 break
             except Exception as e:
                 exc = e

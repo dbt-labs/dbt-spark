@@ -8,25 +8,32 @@ $ pip install dbt-spark
 
 ### Configuring your profile
 
+**Connection Method**
+
+Connections can be made to Spark in two different modes. The `http` mode is used when connecting to a managed service such as Databricks, which provides an HTTP endpoint; the `thrift` mode is used to connect directly to the master node of a cluster (either on-premise or in the cloud).
+
 A dbt profile can be configured to run against Spark using the following configuration:
 
 | Option  | Description                                        | Required?               | Example                  |
 |---------|----------------------------------------------------|-------------------------|--------------------------|
+| method    | Specify the connection method (`thrift` or `http`)   | Required   | `http`   |
 | schema  | Specify the schema (database) to build models into | Required                | `analytics`              |
 | host    | The hostname to connect to                         | Required                | `yourorg.sparkhost.com`  |
-| port    | The port to connect to the host on                 | Optional (default: 443) | `443`                    |
-| token   | The token to use for authenticating to the cluster | Required                | `abc123`                 |
-| cluster | The name of the cluster to connect to              | Required                | `01234-23423-coffeetime` |
+| port    | The port to connect to the host on                 | Optional (default: 443 for `http`, 10000 for `thrift`) | `443`                    |
+| token   | The token to use for authenticating to the cluster | Required for `http`                | `abc123`                 |
+| cluster | The name of the cluster to connect to              | Required for `http`               | `01234-23423-coffeetime` |
+|user   | The username to use to connect to the cluster  | Optional  | `hadoop`  |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10) | `60` |
 | connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up   | Optional (default: 0)  | `5` |
 
 
-**Example profiles.yml entry:**
+**Example profiles.yml entries:**
 ```
 your_profile_name:
   target: dev
   outputs:
     dev:
+      method: http
       type: spark
       schema: analytics
       host: yourorg.sparkhost.com
@@ -36,6 +43,23 @@ your_profile_name:
       connect_retries: 5
       connect_timeout: 60
 ```
+
+```
+your_profile_name:
+  target: dev
+  outputs:
+    dev:
+      method: thrift
+      type: spark
+      schema: analytics
+      host: 127.0.0.1
+      port: 10000
+      user: hadoop
+      connect_retries: 5
+      connect_timeout: 60
+```
+
+
 
 ### Usage Notes
 
