@@ -19,12 +19,16 @@ A dbt profile can be configured to run against Spark using the following configu
 | method    | Specify the connection method (`thrift` or `http`)   | Required   | `http`   |
 | schema  | Specify the schema (database) to build models into | Required                | `analytics`              |
 | host    | The hostname to connect to                         | Required                | `yourorg.sparkhost.com`  |
-| port    | The port to connect to the host on                 | Optional (default: 443 for `http`, 10000 for `thrift`) | `443`                    |
+| port    | The port to connect to the host on                 | Optional (default: 443 for `http`, 10001 for `thrift`) | `443`                    |
 | token   | The token to use for authenticating to the cluster | Required for `http`                | `abc123`                 |
 | cluster | The name of the cluster to connect to              | Required for `http`               | `01234-23423-coffeetime` |
 |user   | The username to use to connect to the cluster  | Optional  | `hadoop`  |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10) | `60` |
 | connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up   | Optional (default: 0)  | `5` |
+
+**Usage with Amazon EMR**
+
+To connect to Spark running on an Amazon EMR cluster, you will need to run `sudo /usr/lib/spark/sbin/start-thriftserver.sh` on the master node of the cluster to start the Thrift server (see https://aws.amazon.com/premiumsupport/knowledge-center/jdbc-connection-emr/ for further context). You will also need to connect to port `10001`, which will connect to the Spark backend Thrift server; port `10000` will instead connect to a Hive backend, which will not work correctly with dbt.
 
 
 **Example profiles.yml entries:**
@@ -53,7 +57,7 @@ your_profile_name:
       type: spark
       schema: analytics
       host: 127.0.0.1
-      port: 10000
+      port: 10001
       user: hadoop
       connect_retries: 5
       connect_timeout: 60
