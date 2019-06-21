@@ -103,7 +103,20 @@ class ConnectionWrapper(object):
         if sql.strip().endswith(";"):
             sql = sql.strip()[:-1]
 
-        return self._cursor.execute(sql, bindings)
+        poll = None
+        try:
+
+            self._cursor.execute(sql, bindings, async_=True)
+            while True:
+                #poll = self._cursor.fetchone()
+                poll = self._cursor.poll()
+                import time
+                time.sleep(self._cursor._poll_interval)
+                if poll.operationState == self._cursor._STATE_FINISHED:
+                    break
+        except Exception as e:
+            raise
+            pass
 
     @property
     def description(self):
