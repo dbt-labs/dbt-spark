@@ -1,6 +1,6 @@
-from dbt.adapters.spark.connections import SparkConnectionManager
+from dbt.adapters.spark.connections import SparkConnectionManager  # noqa
 from dbt.adapters.spark.connections import SparkCredentials
-from dbt.adapters.spark.relation import SparkRelation
+from dbt.adapters.spark.relation import SparkRelation  # noqa
 from dbt.adapters.spark.impl import SparkAdapter
 
 from dbt.adapters.base import AdapterPlugin

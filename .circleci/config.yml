@@ -1,0 +1,14 @@
+version: 2
+jobs:
+  unit:
+    docker:
+      - image: fishtownjacob/test-container
+    steps:
+      - checkout
+      - run: tox -e flake8,unit
+
+workflows:
+  version: 2
+  test-everything:
+    jobs:
+      - unit
