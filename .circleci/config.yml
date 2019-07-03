@@ -5,7 +5,13 @@ jobs:
       - image: fishtownjacob/test-container
     steps:
       - checkout
-      - run: tox -e flake8,unit
+      - run:
+          name: install test requirements
+          command: bash test/setup.sh
+
+      - run:
+          name: Run unit tests
+          command: tox -e flake8,unit
 
 workflows:
   version: 2
