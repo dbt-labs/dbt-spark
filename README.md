@@ -6,6 +6,10 @@ For more information on using Spark with dbt, consult the [dbt documentation](ht
 ### Installation
 This plugin can be installed via pip:
 ```
+# Install prerequisites:
+$ pip install pyhive[hive]
+
+# Install dbt-spark:
 $ pip install dbt-spark
 ```
 
