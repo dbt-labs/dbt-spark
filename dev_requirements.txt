@@ -1,8 +1,11 @@
 dbt-core==0.13.1
 PyHive>=0.6.0,<0.7.0
-sasl>=0.2.1
+
+# See: https://github.com/dropbox/PyHive/blob/master/dev_requirements.txt
+# For more information on these imports
 thrift>=0.10.0
 thrift_sasl>=0.1.0
+git+https://github.com/cloudera/thrift_sasl  # Using master branch in order to get Python 3 SASL patches
 
 freezegun==0.3.9
 pytest==4.4.0
