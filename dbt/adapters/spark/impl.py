@@ -81,7 +81,7 @@ class SparkAdapter(SQLAdapter):
             ))
         return relations
 
-    # Override that doesn't check the type of the relation -- we do it 
+    # Override that doesn't check the type of the relation -- we do it
     # dynamically in the macro code
     def drop_relation(self, relation, model_name=None):
         if dbt.flags.USE_CACHE:
@@ -94,9 +94,6 @@ class SparkAdapter(SQLAdapter):
         )
 
     def get_catalog(self, manifest):
-        connection = self.connections.get('catalog')
-        client = connection.handle
-
         schemas = manifest.get_used_schemas()
 
         column_names = (
@@ -116,13 +113,16 @@ class SparkAdapter(SQLAdapter):
         for (database_name, schema_name) in schemas:
             relations = self.list_relations(database_name, schema_name)
             for relation in relations:
-                logger.debug("Getting table schema for relation {}".format(relation))
+                logger.debug("Getting table schema for relation {}".format(relation))  # noqa
                 table_columns = self.get_columns_in_relation(relation)
                 rel_type = self.get_relation_type(relation)
 
                 for column_index, column in enumerate(table_columns):
                     # Fixes for pseudocolumns with no type
-                    if column.name in ('# Partition Information', '# col_name'):
+                    if column.name in (
+                        '# Partition Information',
+                        '# col_name'
+                    ):
                         continue
                     elif column.dtype is None:
                         continue

@@ -5,8 +5,10 @@ from dbt.adapters.sql import SQLConnectionManager
 from dbt.logger import GLOBAL_LOGGER as logger
 import dbt.exceptions
 
-from pyhive import hive
+from TCLIService.ttypes import TOperationState as ThriftState
 from thrift.transport import THttpClient
+from pyhive import hive
+
 import base64
 import time
 
@@ -77,6 +79,7 @@ class SparkCredentials(Credentials):
 class ConnectionWrapper(object):
     "Wrap a Spark connection in a way that no-ops transactions"
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html
+
     def __init__(self, handle):
         self.handle = handle
         self._cursor = None
@@ -88,10 +91,25 @@ class ConnectionWrapper(object):
 
     def cancel(self):
         if self._cursor is not None:
-            self._cursor.cancel()
+            # Handle bad response in the pyhive lib when
+            # the connection is cancelled
+            try:
+                self._cursor.cancel()
+            except EnvironmentError as exc:
+                logger.debug(
+                    "Exception while cancelling query: {}".format(exc)
+                )
 
     def close(self):
-        self.handle.close()
+        if self._cursor is not None:
+            # Handle bad response in the pyhive lib when
+            # the connection is cancelled
+            try:
+                self._cursor.close()
+            except EnvironmentError as exc:
+                logger.debug(
+                    "Exception while closing cursor: {}".format(exc)
+                )
 
     def rollback(self, *args, **kwargs):
         logger.debug("NotImplemented: rollback")
@@ -103,7 +121,54 @@ class ConnectionWrapper(object):
         if sql.strip().endswith(";"):
             sql = sql.strip()[:-1]
 
-        return self._cursor.execute(sql, bindings)
+        # Reaching into the private enumeration here is bad form,
+        # but there doesn't appear to be any way to determine that
+        # a query has completed executing from the pyhive public API.
+        # We need to use an async query + poll here, otherwise our
+        # request may be dropped after ~5 minutes by the thrift server
+        STATE_PENDING = [
+            ThriftState.INITIALIZED_STATE,
+            ThriftState.RUNNING_STATE,
+            ThriftState.PENDING_STATE,
+        ]
+
+        STATE_SUCCESS = [
+            ThriftState.FINISHED_STATE,
+        ]
+
+        self._cursor.execute(sql, bindings, async_=True)
+        poll_state = self._cursor.poll()
+        state = poll_state.operationState
+
+        while state in STATE_PENDING:
+            logger.debug("Poll status: {}, sleeping".format(state))
+
+            poll_state = self._cursor.poll()
+            state = poll_state.operationState
+
+        # If an errorMessage is present, then raise a database exception
+        # with that exact message. If no errorMessage is present, the
+        # query did not necessarily succeed: check the state against the
+        # known successful states, raising an error if the query did not
+        # complete in a known good state. This can happen when queries are
+        # cancelled, for instance. The errorMessage will be None, but the
+        # state of the query will be "cancelled". By raising an exception
+        # here, we prevent dbt from showing a status of OK when the query
+        # has in fact failed.
+        if poll_state.errorMessage:
+            logger.debug("Poll response: {}".format(poll_state))
+            logger.debug("Poll status: {}".format(state))
+            dbt.exceptions.raise_database_error(poll_state.errorMessage)
+
+        elif state not in STATE_SUCCESS:
+            status_type = ThriftState._VALUES_TO_NAMES.get(
+                state,
+                'Unknown<{!r}>'.format(state))
+
+            dbt.exceptions.raise_database_error(
+                "Query failed with status: {}".format(status_type))
+
+        logger.debug("Poll status: {}, query complete".format(state))
 
     @property
     def description(self):
@@ -144,32 +209,48 @@ class SparkConnectionManager(SQLConnectionManager):
         logger.debug("NotImplemented: rollback")
 
     @classmethod
+    def validate_creds(cls, creds, required):
+        method = creds.method
+
+        for key in required:
+            if key not in creds:
+                raise dbt.exceptions.DbtProfileError(
+                    "The config '{}' is required when using the {} method"
+                    " to connect to Spark".format(key, method))
+
+    @classmethod
     def open(cls, connection):
         if connection.state == 'open':
             logger.debug('Connection is already open, skipping open.')
             return connection
 
-        connect_retries = connection.credentials.get('connect_retries', 0)
-        connect_timeout = connection.credentials.get('connect_timeout', 10)
+        creds = connection.credentials
+        connect_retries = creds.get('connect_retries', 0)
+        connect_timeout = creds.get('connect_timeout', 10)
 
         exc = None
         for i in range(1 + connect_retries):
             try:
-                if connection.credentials['method'] == 'http':
-                    conn_url = SPARK_CONNECTION_URL.format(**connection.credentials)
+                if creds.method == 'http':
+                    cls.validate_creds(creds, ['token', 'host', 'port',
+                                               'cluster'])
+
+                    conn_url = SPARK_CONNECTION_URL.format(**creds)
                     transport = THttpClient.THttpClient(conn_url)
 
-                    creds = "token:{}".format(connection.credentials['token']).encode()
-                    token = base64.standard_b64encode(creds).decode()
+                    raw_token = "token:{}".format(creds.token).encode()
+                    token = base64.standard_b64encode(raw_token).decode()
                     transport.setCustomHeaders({
                         'Authorization': 'Basic {}'.format(token)
                     })
 
                     conn = hive.connect(thrift_transport=transport)
-                elif connection.credentials['method'] == 'thrift':
-                    conn = hive.connect(host=connection.credentials['host'],
-                                        port=connection.credentials.get('port'),
-                                        username=connection.credentials.get('username'))
+                elif creds.method == 'thrift':
+                    cls.validate_creds(creds, ['host'])
+
+                    conn = hive.connect(host=creds.host,
+                                        port=creds.get('port'),
+                                        username=creds.get('user'))
                 break
             except Exception as e:
                 exc = e
@@ -198,7 +279,6 @@ class SparkConnectionManager(SQLConnectionManager):
 
     @classmethod
     def get_status(cls, cursor):
-        # status = cursor._cursor.poll()
         return 'OK'
 
     def cancel(self, connection):
