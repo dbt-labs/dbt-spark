@@ -10,7 +10,7 @@ with open(os.path.join(this_directory, 'README.md')) as f:
 
 
 package_name = "dbt-spark"
-package_version = "0.13.0"
+package_version = "0.13.1"
 description = """The SparkSQL plugin for dbt (data build tool)"""
 
 setup(
@@ -35,7 +35,6 @@ setup(
     },
     install_requires=[
         'dbt-core=={}'.format(package_version),
-        'PyHive>=0.6.0,<0.7.0',
-        'thrift>=0.11.0,<0.12.0',
+        'PyHive[hive]>=0.6.0,<0.7.0',
     ]
 )
