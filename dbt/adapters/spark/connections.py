@@ -12,8 +12,8 @@ from pyhive import hive
 import base64
 import time
 
-
-SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/0/{cluster}"
+#need to add organization as a parameter, as its required by Azure Databricks and is different per customer.
+SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}"
 
 SPARK_CREDENTIALS_CONTRACT = {
     'type': 'object',
@@ -32,6 +32,9 @@ SPARK_CREDENTIALS_CONTRACT = {
         },
         'user': {
             'type': 'string'
+        },
+        'organization': {
+            'type': 'number'
         },
         'cluster': {
             'type': 'string'
@@ -65,6 +68,7 @@ class SparkCredentials(Credentials):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('database', kwargs.get('schema'))
+        kwargs.setdefault('organization', 0)
 
         super(SparkCredentials, self).__init__(*args, **kwargs)
 
@@ -73,7 +77,7 @@ class SparkCredentials(Credentials):
         return 'spark'
 
     def _connection_keys(self):
-        return ('host', 'port', 'cluster', 'schema')
+        return ('host', 'port', 'cluster', 'schema', 'organization')
 
 
 class ConnectionWrapper(object):
@@ -232,8 +236,9 @@ class SparkConnectionManager(SQLConnectionManager):
         for i in range(1 + connect_retries):
             try:
                 if creds.method == 'http':
+        
                     cls.validate_creds(creds, ['token', 'host', 'port',
-                                               'cluster'])
+                                               'cluster', 'organization'])
 
                     conn_url = SPARK_CONNECTION_URL.format(**creds)
                     transport = THttpClient.THttpClient(conn_url)
