@@ -43,5 +43,5 @@ class SparkRelation(BaseRelation):
             'dbt_created': {'type': 'boolean'},
         },
         'required': ['metadata', 'type', 'path', 'include_policy',
-                     'quote_policy', 'quote_character','dbt_created']
+                     'quote_policy', 'quote_character', 'dbt_created']
     }
