@@ -12,7 +12,7 @@ from pyhive import hive
 import base64
 import time
 
-#adding organization as a parameter, as it is required by Azure Databricks and is different per workspace.
+# adding organization as a parameter, as it is required by Azure Databricks and is different per workspace.
 SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}"
 
 SPARK_CREDENTIALS_CONTRACT = {
@@ -69,7 +69,7 @@ class SparkCredentials(Credentials):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('database', kwargs.get('schema'))
         
-        #coercing org to a string since it is unknown whether Azure Databricks will always keep it numeric
+        # coercing org to a string since it is unknown whether Azure Databricks will always keep it numeric
         if 'organization' in kwargs:
             kwargs['organization'] = str(kwargs['organization'])
         else:
