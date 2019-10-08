@@ -3,3 +3,6 @@ env/
 *.pyc
 __pycache__
 .tox/
+build/
+dist/
+dbt-integration-tests

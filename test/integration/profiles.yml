@@ -1,0 +1,14 @@
+
+spark:
+  target: ci
+  outputs:
+    ci:
+      type: spark
+      method: http
+      schema: 'public_integration_tests'
+      host: '{{ env_var("SPARK_HOST") }}'
+      port: 443
+      token: '{{ env_var("SPARK_TOKEN") }}'
+      cluster: '{{ env_var("SPARK_CLUSTER") }}'
+      connect_timeout: 30
+      connect_retries: 10
