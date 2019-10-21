@@ -6,3 +6,4 @@ __pycache__
 build/
 dist/
 dbt-integration-tests
+test/integration/.user.yml

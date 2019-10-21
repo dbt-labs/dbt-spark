@@ -10,5 +10,5 @@ spark:
       port: 443
       token: '{{ env_var("SPARK_TOKEN") }}'
       cluster: '{{ env_var("SPARK_CLUSTER") }}'
-      connect_timeout: 30
+      connect_timeout: 60
       connect_retries: 10

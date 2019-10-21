@@ -15,16 +15,14 @@ jobs:
 
       - run:
           name: Checkout test project
-          command: git clone https://github.com/fishtown-analytics/dbt-integration-tests.git
-
-      - run:
-          name: "Setup credentials"
-          command: mkdir -p ~/.dbt/ && cp ~/project/test/integration/profiles.yml ~/.dbt/profiles.yml
+          command: git clone --branch spark-support https://github.com/fishtown-analytics/dbt-integration-tests.git
 
       - run:
           name: Run integration tests
           command: tox -e integration
           no_output_timeout: 1h
+          environment:
+              DBT_PROFILES_DIR: /home/dbt_test_user/project/test/integration/
 
       - store_artifacts:
           path: ./logs
