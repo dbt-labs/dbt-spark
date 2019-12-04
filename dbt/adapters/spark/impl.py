@@ -1,7 +1,9 @@
+from agate import Column
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkConnectionManager
 import dbt.exceptions
+from typing import List
 
 from dbt.logger import GLOBAL_LOGGER as logger
 import agate
@@ -15,6 +17,19 @@ DROP_RELATION_MACRO_NAME = 'drop_relation'
 class SparkAdapter(SQLAdapter):
     ConnectionManager = SparkConnectionManager
     Relation = SparkRelation
+
+    column_names = (
+        'table_database',
+        'table_schema',
+        'table_name',
+        'table_type',
+        'table_comment',
+        'table_owner',
+        'column_name',
+        'column_index',
+        'column_type',
+        'column_comment',
+    )
 
     @classmethod
     def date_function(cls):
@@ -57,7 +72,7 @@ class SparkAdapter(SQLAdapter):
     # Override that creates macros without a known type - adapter macros that
     # require a type will dynamically check at query-time
     def list_relations_without_caching(self, information_schema, schema,
-                                       model_name=None):
+                                       model_name=None) -> List[Relation]:
         kwargs = {'information_schema': information_schema, 'schema': schema}
         results = self.execute_macro(
             LIST_RELATIONS_MACRO_NAME,
@@ -93,21 +108,55 @@ class SparkAdapter(SQLAdapter):
             connection_name=model_name
         )
 
+    @staticmethod
+    def _parse_relation(relation: Relation, table_columns: List[Column], rel_type: str) -> List[dict]:
+        table_owner = None
+        found_detailed_table_marker = False
+        for column in table_columns:
+            if column.name == '# Detailed Table Information':
+                found_detailed_table_marker = True
+
+            # In case there is another column with the name Owner
+            if not found_detailed_table_marker:
+                continue
+
+            if column.name == 'Owner':
+                table_owner = column.data_type
+
+        columns = []
+        for column in table_columns:
+            # Fixes for pseudocolumns with no type
+            if column.name in {
+                '# Partition Information',
+                '# col_name',
+                ''
+            }:
+                continue
+            elif column.dtype is None:
+                continue
+            elif column.name == '# Detailed Table Information':
+                # Loop until the detailed table information
+                break
+
+            column_data = (
+                relation.database,
+                relation.schema,
+                relation.name,
+                rel_type,
+                None,
+                table_owner,
+                column.name,
+                len(columns),
+                column.data_type,
+                None
+            )
+            column_dict = dict(zip(SparkAdapter.column_names, column_data))
+            columns.append(column_dict)
+
+        return columns
+
     def get_catalog(self, manifest):
         schemas = manifest.get_used_schemas()
-
-        column_names = (
-            'table_database',
-            'table_schema',
-            'table_name',
-            'table_type',
-            'table_comment',
-            'table_owner',
-            'column_name',
-            'column_index',
-            'column_type',
-            'column_comment',
-        )
 
         columns = []
         for (database_name, schema_name) in schemas:
@@ -116,30 +165,6 @@ class SparkAdapter(SQLAdapter):
                 logger.debug("Getting table schema for relation {}".format(relation))  # noqa
                 table_columns = self.get_columns_in_relation(relation)
                 rel_type = self.get_relation_type(relation)
+                columns += self._parse_relation(relation, table_columns, rel_type)
 
-                for column_index, column in enumerate(table_columns):
-                    # Fixes for pseudocolumns with no type
-                    if column.name in (
-                        '# Partition Information',
-                        '# col_name'
-                    ):
-                        continue
-                    elif column.dtype is None:
-                        continue
-
-                    column_data = (
-                        relation.database,
-                        relation.schema,
-                        relation.name,
-                        rel_type,
-                        None,
-                        None,
-                        column.name,
-                        column_index,
-                        column.data_type,
-                        None,
-                    )
-                    column_dict = dict(zip(column_names, column_data))
-                    columns.append(column_dict)
-
-        return dbt.clients.agate_helper.table_from_data(columns, column_names)
+        return dbt.clients.agate_helper.table_from_data(columns, SparkAdapter.column_names)

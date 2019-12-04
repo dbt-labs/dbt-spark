@@ -46,7 +46,7 @@
 
 {% macro spark__get_columns_in_relation(relation) -%}
   {% call statement('get_columns_in_relation', fetch_result=True) %}
-      describe {{ relation }}
+      describe extended {{ relation }}
   {% endcall %}
 
   {% set table = load_result('get_columns_in_relation').table %}
