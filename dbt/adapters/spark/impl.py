@@ -132,11 +132,11 @@ class SparkAdapter(SQLAdapter):
                 ''
             }:
                 continue
-            elif column.dtype is None:
-                continue
             elif column.name == '# Detailed Table Information':
                 # Loop until the detailed table information
                 break
+            elif column.dtype is None:
+                continue
 
             column_data = (
                 relation.database,
