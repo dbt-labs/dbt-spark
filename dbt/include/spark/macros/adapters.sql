@@ -89,6 +89,12 @@
   {% endif %}
 {%- endmacro %}
 
+{% macro spark_fetch_tblproperties(relation) -%}
+  {% call statement('list_properties', fetch_result=True) -%}
+    SHOW TBLPROPERTIES {{ relation }}
+  {% endcall %}
+  {% do return(load_result('list_properties').table) %}
+{%- endmacro %}
 
 {% macro spark__rename_relation(from_relation, to_relation) -%}
   {% call statement('rename_relation') -%}

@@ -1,17 +1,19 @@
+from typing import List, Dict
+
+import agate
+import dbt.exceptions
 from agate import Column
 from dbt.adapters.sql import SQLAdapter
-from dbt.adapters.spark import SparkRelation
-from dbt.adapters.spark import SparkConnectionManager
-import dbt.exceptions
-from typing import List
-
+from dbt.contracts.graph.manifest import Manifest
 from dbt.logger import GLOBAL_LOGGER as logger
-import agate
 
+from dbt.adapters.spark import SparkConnectionManager
+from dbt.adapters.spark import SparkRelation
 
 LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
 GET_RELATION_TYPE_MACRO_NAME = 'spark_get_relation_type'
 DROP_RELATION_MACRO_NAME = 'drop_relation'
+FETCH_TBLPROPERTIES_MACRO_NAME = 'spark_fetch_tblproperties'
 
 
 class SparkAdapter(SQLAdapter):
@@ -109,8 +111,16 @@ class SparkAdapter(SQLAdapter):
         )
 
     @staticmethod
-    def _parse_relation(relation: Relation, table_columns: List[Column], rel_type: str) -> List[dict]:
-        table_owner = None
+    def _parse_relation(relation: Relation,
+                        table_columns: List[Column],
+                        rel_type: str,
+                        properties: Dict[str, str] = None) -> List[dict]:
+        properties = properties or {}
+        table_owner_key = 'Owner'
+
+        # First check if it is present in the properties
+        table_owner = properties.get(table_owner_key)
+
         found_detailed_table_marker = False
         for column in table_columns:
             if column.name == '# Detailed Table Information':
@@ -120,7 +130,7 @@ class SparkAdapter(SQLAdapter):
             if not found_detailed_table_marker:
                 continue
 
-            if column.name == 'Owner':
+            if not table_owner and column.name == table_owner_key:
                 table_owner = column.data_type
 
         columns = []
@@ -135,7 +145,7 @@ class SparkAdapter(SQLAdapter):
             elif column.name == '# Detailed Table Information':
                 # Loop until the detailed table information
                 break
-            elif column.dtype is None:
+            elif column.data_type is None:
                 continue
 
             column_data = (
@@ -155,16 +165,24 @@ class SparkAdapter(SQLAdapter):
 
         return columns
 
-    def get_catalog(self, manifest):
+    def get_properties(self, relation: Relation) -> Dict[str, str]:
+        properties = self.execute_macro(
+            FETCH_TBLPROPERTIES_MACRO_NAME,
+            kwargs={'relation': relation}
+        )
+        return {key: value for (key, value) in properties}
+
+    def get_catalog(self, manifest: Manifest):
         schemas = manifest.get_used_schemas()
 
         columns = []
         for (database_name, schema_name) in schemas:
             relations = self.list_relations(database_name, schema_name)
             for relation in relations:
+                properties = self.get_properties(relation)
                 logger.debug("Getting table schema for relation {}".format(relation))  # noqa
                 table_columns = self.get_columns_in_relation(relation)
                 rel_type = self.get_relation_type(relation)
-                columns += self._parse_relation(relation, table_columns, rel_type)
+                columns += self._parse_relation(relation, table_columns, rel_type, properties)
 
         return dbt.clients.agate_helper.table_from_data(columns, SparkAdapter.column_names)
