@@ -2,7 +2,6 @@
   
   {%- set identifier = model['alias'] -%}
 
-  {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
   {%- set target_relation = api.Relation.create(identifier=identifier,
                                                 schema=schema,
                                                 database=database,
@@ -11,9 +10,8 @@
   {{ run_hooks(pre_hooks) }}
 
   -- setup: if the target relation already exists, drop it
-  {% if old_relation -%}
-    {{ adapter.drop_relation(old_relation) }}
-  {%- endif %}
+  -- If the target relation already exists, drop it
+  {{ adapter.drop_relation(target_relation) }}
 
   -- build model
   {% call statement('main') -%}
