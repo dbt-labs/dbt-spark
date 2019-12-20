@@ -21,8 +21,6 @@
     {%- set old_relation = none -%}
   {%- endif %}
 
-  {{ run_hooks(pre_hooks) }}
-
   {% call statement() %}
     set spark.sql.sources.partitionOverwriteMode = DYNAMIC
   {% endcall %}
@@ -31,6 +29,7 @@
     set spark.sql.hive.convertMetastoreParquet = false
   {% endcall %}
 
+  {{ run_hooks(pre_hooks) }}
 
   {#-- This is required to make dbt's incremental scheme work #}
   {%- if old_relation is none -%}
