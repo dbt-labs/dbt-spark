@@ -4,3 +4,7 @@ env/
 __pycache__
 .tox/
 .idea/
+build/
+dist/
+dbt-integration-tests
+test/integration/.user.yml

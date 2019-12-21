@@ -7,8 +7,31 @@ jobs:
       - checkout
       - run: tox -e flake8,unit
 
+  integration:
+    docker:
+      - image: fishtownjacob/test-container
+    steps:
+      - checkout
+
+      - run:
+          name: Checkout test project
+          command: git clone --branch spark-support https://github.com/fishtown-analytics/dbt-integration-tests.git
+
+      - run:
+          name: Run integration tests
+          command: tox -e integration
+          no_output_timeout: 1h
+          environment:
+              DBT_PROFILES_DIR: /home/dbt_test_user/project/test/integration/
+
+      - store_artifacts:
+          path: ./logs
+
 workflows:
   version: 2
   test-everything:
     jobs:
       - unit
+      - integration:
+          requires:
+            - unit
