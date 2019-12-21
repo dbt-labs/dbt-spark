@@ -38,7 +38,6 @@ class SparkAdapter(SQLAdapter):
         return self.execute_macro(
             GET_RELATION_TYPE_MACRO_NAME,
             kwargs=kwargs,
-            connection_name=model_name,
             release=True
         )
 
@@ -50,7 +49,6 @@ class SparkAdapter(SQLAdapter):
         results = self.execute_macro(
             LIST_RELATIONS_MACRO_NAME,
             kwargs=kwargs,
-            connection_name=model_name,
             release=True
         )
 
@@ -77,8 +75,7 @@ class SparkAdapter(SQLAdapter):
 
         self.execute_macro(
             DROP_RELATION_MACRO_NAME,
-            kwargs={'relation': relation},
-            connection_name=model_name
+            kwargs={'relation': relation}
         )
 
     def get_catalog(self, manifest):
