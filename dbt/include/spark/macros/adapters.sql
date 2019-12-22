@@ -12,6 +12,13 @@
   {%- endif %}
 {%- endmacro -%}
 
+{% macro location_clause() %}
+  {%- set path = config.get('location', validator=validation.any[basestring]) -%}
+  {%- if path is not none %}
+    location '{{ path }}'
+  {%- endif %}
+{%- endmacro -%}
+
 {% macro partition_cols(label, required=false) %}
   {%- set cols = config.get('partition_by', validator=validation.any[list, basestring]) -%}
   {%- if cols is not none %}
@@ -27,6 +34,22 @@
   {%- endif %}
 {%- endmacro -%}
 
+{% macro clustered_cols(label, required=false) %}
+  {%- set cols = config.get('clustered_by', validator=validation.any[list, basestring]) -%}
+  {%- set buckets = config.get('clustered_by', validator=validation.any[int]) -%}
+  {%- if (cols is not none) and (buckets is not none) %}
+    {%- if cols is string -%}
+      {%- set cols = [cols] -%}
+    {%- endif -%}
+    {{ label }} (
+    {%- for item in cols -%}
+      {{ item }}
+      {%- if not loop.last -%},{%- endif -%}
+    {%- endfor -%}
+    ) into {{ buckets }} buckets
+  {%- endif %}
+{%- endmacro -%}
+
 {% macro spark__create_table_as(temporary, relation, sql) -%}
   {% if temporary -%}
     {{ spark_create_temporary_view(relation, sql) }}
@@ -34,6 +57,8 @@
     create table {{ relation }}
     {{ file_format_clause() }}
     {{ partition_cols(label="partitioned by") }}
+    {{ clustered_cols(label="clustered by") }}
+    {{ location_clause() }}
     as
       {{ sql }}
   {%- endif %}
