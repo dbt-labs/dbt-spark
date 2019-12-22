@@ -36,7 +36,7 @@
 
 {% macro clustered_cols(label, required=false) %}
   {%- set cols = config.get('clustered_by', validator=validation.any[list, basestring]) -%}
-  {%- set buckets = config.get('clustered_by', validator=validation.any[int]) -%}
+  {%- set buckets = config.get('buckets', validator=validation.any[int]) -%}
   {%- if (cols is not none) and (buckets is not none) %}
     {%- if cols is string -%}
       {%- set cols = [cols] -%}
