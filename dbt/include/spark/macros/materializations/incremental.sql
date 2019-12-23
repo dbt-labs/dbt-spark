@@ -13,14 +13,13 @@
   {%- set tmp_relation = api.Relation.create(identifier=tmp_identifier,  type='table') -%}
 
   {%- set full_refresh = flags.FULL_REFRESH == True and old_relation is not none -%}
-  {%- set old_relation_is_view = old_relation is not none and old_relation.is_view -%}
+  {%- set type = spark_get_relation_type(this) if old_relation else none -%}
+  {%- set old_relation_is_view = old_relation is not none and type == 'view' -%}
 
   {%- if full_refresh or old_relation_is_view -%}
     {{ adapter.drop_relation(old_relation) }}
     {%- set old_relation = none -%}
   {%- endif %}
-
-  {{ run_hooks(pre_hooks) }}
 
   {% call statement() %}
     set spark.sql.sources.partitionOverwriteMode = DYNAMIC
@@ -30,6 +29,7 @@
     set spark.sql.hive.convertMetastoreParquet = false
   {% endcall %}
 
+  {{ run_hooks(pre_hooks) }}
 
   {#-- This is required to make dbt's incremental scheme work #}
   {%- if old_relation is none -%}
