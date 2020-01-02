@@ -3,11 +3,13 @@ from contextlib import contextmanager
 from dbt.adapters.base import Credentials
 from dbt.adapters.sql import SQLConnectionManager
 from dbt.logger import GLOBAL_LOGGER as logger
+from dbt.compat import NUMBERS
 import dbt.exceptions
 
 from TCLIService.ttypes import TOperationState as ThriftState
 from thrift.transport import THttpClient
 from pyhive import hive
+from datetime import datetime
 
 import base64
 import time
@@ -136,6 +138,9 @@ class ConnectionWrapper(object):
             ThriftState.FINISHED_STATE,
         ]
 
+        if bindings is not None:
+            bindings = [self._fix_binding(binding) for binding in bindings]
+
         self._cursor.execute(sql, bindings, async_=True)
         poll_state = self._cursor.poll()
         state = poll_state.operationState
@@ -169,6 +174,17 @@ class ConnectionWrapper(object):
                 "Query failed with status: {}".format(status_type))
 
         logger.debug("Poll status: {}, query complete".format(state))
+
+    @classmethod
+    def _fix_binding(cls, value):
+        """Convert complex datatypes to primitives that can be loaded by
+           the Spark driver"""
+        if isinstance(value, NUMBERS):
+            return float(value)
+        elif isinstance(value, datetime):
+            return value.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        else:
+            return value
 
     @property
     def description(self):
