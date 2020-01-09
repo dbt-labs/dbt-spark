@@ -5,6 +5,7 @@
     {{ sql }}
 {% endmacro %}
 
+
 {% macro file_format_clause() %}
   {%- set file_format = config.get('file_format', validator=validation.any[basestring]) -%}
   {%- if file_format is not none %}
@@ -12,11 +13,26 @@
   {%- endif %}
 {%- endmacro -%}
 
+
 {% macro location_clause() %}
   {%- set path = config.get('location', validator=validation.any[basestring]) -%}
   {%- if path is not none %}
     location '{{ path }}'
   {%- endif %}
+{%- endmacro -%}
+
+
+{% macro comment_clause() %}
+  {%- set raw_persist_docs = config.get('persist_docs', {}) -%}
+
+  {%- if raw_persist_docs is mapping -%}
+    {%- set raw_relation = raw_persist_docs.get('relation', false) -%}
+      {%- if raw_relation -%}
+      comment '{{ model.description }}'
+      {% endif %}
+  {%- else -%}
+    {{ exceptions.raise_compiler_error("Invalid value provided for 'persist_docs'. Expected dict but got value: " ~ raw_persist_docs) }}
+  {% endif %}
 {%- endmacro -%}
 
 {% macro partition_cols(label, required=false) %}
@@ -34,6 +50,7 @@
   {%- endif %}
 {%- endmacro -%}
 
+
 {% macro clustered_cols(label, required=false) %}
   {%- set cols = config.get('clustered_by', validator=validation.any[list, basestring]) -%}
   {%- set buckets = config.get('buckets', validator=validation.any[int]) -%}
@@ -50,6 +67,7 @@
   {%- endif %}
 {%- endmacro -%}
 
+
 {% macro spark__create_table_as(temporary, relation, sql) -%}
   {% if temporary -%}
     {{ spark_create_temporary_view(relation, sql) }}
@@ -59,23 +77,37 @@
     {{ partition_cols(label="partitioned by") }}
     {{ clustered_cols(label="clustered by") }}
     {{ location_clause() }}
+    {{ comment_clause() }}
     as
       {{ sql }}
   {%- endif %}
 {%- endmacro -%}
 
+
 {% macro spark__create_view_as(relation, sql) -%}
-  create view {{ relation }} as
+  create view {{ relation }}
+  {{ comment_clause() }}
+  as
     {{ sql }}
 {% endmacro %}
+
 
 {% macro spark__get_columns_in_relation(relation) -%}
   {% call statement('get_columns_in_relation', fetch_result=True) %}
       describe {{ relation }}
   {% endcall %}
 
-  {% set table = load_result('get_columns_in_relation').table %}
-  {{ return(sql_convert_columns_in_relation(table)) }}
+  {% set columns = [] %}
+  {% set vars = {'before_partition_info': True} %}
+  {% for row in load_result('get_columns_in_relation').table if vars.before_partition_info %}
+    {% if row[0].startswith('#') %}
+      {{ vars.update({'before_partition_info': False}) }}
+    {% else %}
+      {{ dbt_utils.log_info(row) }}
+      {{ columns.append(row) }}
+    {% endif %}
+  {% endfor %}
+  {{ return(sql_convert_columns_in_relation(columns)) }}
 
 {% endmacro %}
 

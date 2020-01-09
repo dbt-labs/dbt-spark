@@ -12,12 +12,14 @@ class TestSparkMacros(unittest.TestCase):
         self.jinja_env = Environment(loader=FileSystemLoader('dbt/include/spark/macros'),
                                      extensions=['jinja2.ext.do',])
         
-        self.config = defaultdict(lambda: None)
+        self.config = {}
         
         self.default_context = {}
         self.default_context['validation'] = mock.Mock()
-        self.default_context['config'] = mock.Mock(return_value='')
-        self.default_context['config'].get = lambda key, *args, **kwargs: self.config[key]
+        self.default_context['model'] = mock.Mock()
+        self.default_context['exceptions'] = mock.Mock()
+        self.default_context['config'] = mock.Mock()
+        self.default_context['config'].get = lambda key, default=None, **kwargs: self.config.get(key, default)
 
 
     def __get_template(self, template_filename):
@@ -96,6 +98,16 @@ class TestSparkMacros(unittest.TestCase):
                          "create table my_table location '/mnt/root' as select 1")
 
 
+    def test_macros_create_table_as_comment(self):
+        template = self.__get_template('adapters.sql')
+
+
+        self.config['persist_docs'] = {'relation': True}
+        self.default_context['model'].description = 'Description Test'
+        self.assertEqual(self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1'),
+                         "create table my_table comment 'Description Test' as select 1")
+
+
     def test_macros_create_table_as_all(self):
         template = self.__get_template('adapters.sql')
 
@@ -104,5 +116,8 @@ class TestSparkMacros(unittest.TestCase):
         self.config['partition_by'] = ['partition_1', 'partition_2']
         self.config['clustered_by'] = ['cluster_1', 'cluster_2']
         self.config['buckets'] = '1'
+        self.config['persist_docs'] = {'relation': True}
+        self.default_context['model'].description = 'Description Test'
+        
         self.assertEqual(self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1'),
-                         "create table my_table using delta partitioned by (partition_1,partition_2) clustered by (cluster_1,cluster_2) into 1 buckets location '/mnt/root' as select 1")
+                         "create table my_table using delta partitioned by (partition_1,partition_2) clustered by (cluster_1,cluster_2) into 1 buckets location '/mnt/root' comment 'Description Test' as select 1")
