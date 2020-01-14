@@ -3,94 +3,66 @@ from contextlib import contextmanager
 from dbt.adapters.base import Credentials
 from dbt.adapters.sql import SQLConnectionManager
 from dbt.logger import GLOBAL_LOGGER as logger
-import dbt.exceptions
 
 from TCLIService.ttypes import TOperationState as ThriftState
 from thrift.transport import THttpClient
 from pyhive import hive
 
+from hologram.helpers import StrEnum
+from dataclasses import dataclass
+from typing import Optional
+
+import dbt.exceptions
+import decimal
 import base64
 import time
 
 
-SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/0/{cluster}"
-
-SPARK_CREDENTIALS_CONTRACT = {
-    'type': 'object',
-    'additionalProperties': False,
-    'properties': {
-        'method': {
-            'enum': ['thrift', 'http'],
-        },
-        'host': {
-            'type': 'string'
-        },
-        'port': {
-            'type': 'integer',
-            'minimum': 0,
-            'maximum': 65535,
-        },
-        'user': {
-            'type': 'string'
-        },
-        'cluster': {
-            'type': 'string'
-        },
-        'database': {
-            'type': 'string',
-        },
-        'schema': {
-            'type': 'string',
-        },
-        'token': {
-            'type': 'string',
-        },
-        'connect_timeout': {
-            'type': 'integer',
-            'minimum': 0,
-            'maximum': 60,
-        },
-        'connect_retries': {
-            'type': 'integer',
-            'minimum': 0,
-            'maximum': 60,
-        }
-    },
-    'required': ['method', 'host', 'database', 'schema'],
-}
+class SparkConnectionMethod(StrEnum):
+    THRIFT = 'thrift'
+    HTTP = 'http'
 
 
+@dataclass
 class SparkCredentials(Credentials):
-    SCHEMA = SPARK_CREDENTIALS_CONTRACT
+    host: str
+    method: SparkConnectionMethod
+    schema: str
+    cluster: Optional[str]
+    token: Optional[str]
+    user: Optional[str]
+    database: Optional[str]
+    port: int = 443
+    organization: str = '0'
+    connect_retries: int = 0
+    connect_timeout: int = 10
 
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('database', kwargs.get('schema'))
-
-        super(SparkCredentials, self).__init__(*args, **kwargs)
+    def __post_init__(self):
+        # spark classifies database and schema as the same thing
+        self.database = self.schema
 
     @property
     def type(self):
         return 'spark'
 
     def _connection_keys(self):
-        return ('host', 'port', 'cluster', 'schema')
+        return 'host', 'port', 'schema', 'organization'
 
 
 class ConnectionWrapper(object):
-    "Wrap a Spark connection in a way that no-ops transactions"
+    """Wrap a Spark connection in a way that no-ops transactions"""
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html
 
     def __init__(self, handle):
         self.handle = handle
         self._cursor = None
-        self._fetch_result = None
 
     def cursor(self):
         self._cursor = self.handle.cursor()
         return self
 
     def cancel(self):
-        if self._cursor is not None:
+        if self._cursor:
             # Handle bad response in the pyhive lib when
             # the connection is cancelled
             try:
@@ -101,7 +73,7 @@ class ConnectionWrapper(object):
                 )
 
     def close(self):
-        if self._cursor is not None:
+        if self._cursor:
             # Handle bad response in the pyhive lib when
             # the connection is cancelled
             try:
@@ -136,6 +108,10 @@ class ConnectionWrapper(object):
             ThriftState.FINISHED_STATE,
         ]
 
+        # Convert decimal.Decimal to float as PyHive doesn't work with decimals
+        if bindings:
+            bindings = [float(x) if isinstance(x, decimal.Decimal) else x for x in bindings]
+
         self._cursor.execute(sql, bindings, async_=True)
         poll_state = self._cursor.poll()
         state = poll_state.operationState
@@ -158,14 +134,14 @@ class ConnectionWrapper(object):
         if poll_state.errorMessage:
             logger.debug("Poll response: {}".format(poll_state))
             logger.debug("Poll status: {}".format(state))
-            dbt.exceptions.raise_database_error(poll_state.errorMessage)
+            raise dbt.exceptions.raise_database_error(poll_state.errorMessage)
 
         elif state not in STATE_SUCCESS:
             status_type = ThriftState._VALUES_TO_NAMES.get(
                 state,
                 'Unknown<{!r}>'.format(state))
 
-            dbt.exceptions.raise_database_error(
+            raise dbt.exceptions.raise_database_error(
                 "Query failed with status: {}".format(status_type))
 
         logger.debug("Poll status: {}, query complete".format(state))
@@ -178,10 +154,13 @@ class ConnectionWrapper(object):
 class SparkConnectionManager(SQLConnectionManager):
     TYPE = 'spark'
 
+    SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}"
+
     @contextmanager
-    def exception_handler(self, sql, connection_name='master'):
+    def exception_handler(self, sql):
         try:
             yield
+
         except Exception as exc:
             logger.debug("Error while running:\n{}".format(sql))
             logger.debug(exc)
@@ -194,6 +173,13 @@ class SparkConnectionManager(SQLConnectionManager):
                 raise dbt.exceptions.RuntimeException(msg)
             else:
                 raise dbt.exceptions.RuntimeException(str(exc))
+
+    def cancel(self, connection):
+        connection.handle.cancel()
+
+    @classmethod
+    def get_status(cls, cursor):
+        return 'OK'
 
     # No transactions on Spark....
     def add_begin_query(self, *args, **kwargs):
@@ -213,7 +199,7 @@ class SparkConnectionManager(SQLConnectionManager):
         method = creds.method
 
         for key in required:
-            if key not in creds:
+            if not hasattr(creds, key):
                 raise dbt.exceptions.DbtProfileError(
                     "The config '{}' is required when using the {} method"
                     " to connect to Spark".format(key, method))
@@ -225,17 +211,22 @@ class SparkConnectionManager(SQLConnectionManager):
             return connection
 
         creds = connection.credentials
-        connect_retries = creds.get('connect_retries', 0)
-        connect_timeout = creds.get('connect_timeout', 10)
-
         exc = None
-        for i in range(1 + connect_retries):
+
+        for i in range(1 + creds.connect_retries):
             try:
                 if creds.method == 'http':
-                    cls.validate_creds(creds, ['token', 'host', 'port',
-                                               'cluster'])
+                    cls.validate_creds(creds, ['host', 'port', 'cluster', 'organization', 'token', 'schema'])
 
-                    conn_url = SPARK_CONNECTION_URL.format(**creds)
+                    conn_url = cls.SPARK_CONNECTION_URL.format(
+                        host=creds.host,
+                        port=creds.port,
+                        organization=creds.organization,
+                        cluster=creds.cluster
+                    )
+
+                    logger.debug("connection url: {}".format(conn_url))
+
                     transport = THttpClient.THttpClient(conn_url)
 
                     raw_token = "token:{}".format(creds.token).encode()
@@ -246,16 +237,18 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     conn = hive.connect(thrift_transport=transport)
                 elif creds.method == 'thrift':
-                    cls.validate_creds(creds, ['host'])
+                    cls.validate_creds(creds, ['host', 'port', 'user', 'schema'])
 
                     conn = hive.connect(host=creds.host,
-                                        port=creds.get('port'),
-                                        username=creds.get('user'))
+                                        port=creds.port,
+                                        username=creds.user)
+                else:
+                    raise dbt.exceptions.DbtProfileError("invalid credential method: {}".format(creds.method))
                 break
             except Exception as e:
                 exc = e
                 if getattr(e, 'message', None) is None:
-                    raise
+                    raise dbt.exceptions.FailedToConnectException(str(e))
 
                 message = e.message.lower()
                 is_pending = 'pending' in message
@@ -263,23 +256,15 @@ class SparkConnectionManager(SQLConnectionManager):
 
                 warning = "Warning: {}\n\tRetrying in {} seconds ({} of {})"
                 if is_pending or is_starting:
-                    logger.warning(warning.format(e.message, connect_timeout,
-                                                  i + 1, connect_retries))
-                    time.sleep(connect_timeout)
+                    logger.warning(warning.format(e.message, creds.connect_timeout,
+                                                  i, creds.connect_retries))
+                    time.sleep(creds.connect_timeout)
                 else:
-                    raise
+                    raise dbt.exceptions.FailedToConnectException(str(e))
         else:
             raise exc
 
-        wrapped = ConnectionWrapper(conn)
-
+        handle = ConnectionWrapper(conn)
+        connection.handle = handle
         connection.state = 'open'
-        connection.handle = wrapped
         return connection
-
-    @classmethod
-    def get_status(cls, cursor):
-        return 'OK'
-
-    def cancel(self, connection):
-        connection.handle.cancel()

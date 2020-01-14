@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from setuptools import find_packages
-from distutils.core import setup
+from setuptools import find_packages, setup
 import os
 
 
@@ -10,7 +9,7 @@ with open(os.path.join(this_directory, 'README.md')) as f:
 
 
 package_name = "dbt-spark"
-package_version = "0.13.0"
+package_version = "0.15.0"
 description = """The SparkSQL plugin for dbt (data build tool)"""
 
 setup(
@@ -30,12 +29,11 @@ setup(
         'dbt': [
             'include/spark/dbt_project.yml',
             'include/spark/macros/*.sql',
-            'include/spark/macros/**/*.sql',
+            'include/spark/macros/**/*.sql'
         ]
     },
     install_requires=[
         'dbt-core=={}'.format(package_version),
-        'PyHive>=0.6.0,<0.7.0',
-        'thrift>=0.11.0,<0.12.0',
+        'PyHive[hive]>=0.6.0,<0.7.0'
     ]
 )

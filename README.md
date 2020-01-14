@@ -6,9 +6,6 @@ For more information on using Spark with dbt, consult the [dbt documentation](ht
 ### Installation
 This plugin can be installed via pip:
 ```
-# Install prerequisites:
-$ pip install pyhive[hive]
-
 # Install dbt-spark:
 $ pip install dbt-spark
 ```
@@ -79,18 +76,20 @@ your_profile_name:
 The following configurations can be supplied to models run with the dbt-spark plugin:
 
 
-| Option  | Description                                        | Required?               | Example                  |
-|---------|----------------------------------------------------|-------------------------|--------------------------|
-| file_format  | The file format to use when creating tables | Optional                | `parquet`              |
+| Option      | Description                                        | Required?               | Example                |
+|-------------|----------------------------------------------------|-------------------------|------------------------|
+| file_format | The file format to use when creating tables (`parquet`, `delta`, `csv`, `json`, `text`, `jdbc`, `orc`, `hive` or `libsvm`). | Optional | `delta` |
+| incremental_strategy | The strategy to use for incremental models (`insert_overwrite` or `merge`). Note `merge` requires `file_format` = `delta` and `unique_key` to be specified. | Optional (default: `insert_overwrite`) | `merge` |
+| partition_by | Partition the created table by the specified columns. A directory is created for each partition. | Required | `['date_day']` |
+| cluster_by | Each partition in the created table will be split into a fixed number of buckets by the specified columns. This is typically used with partitioning to read and shuffle less data. | Optional                 | `['name', 'address']`              |
+| num_buckets | Used in conjunction with `cluster_by`. | Optional (required if `cluster_by` is specified) | `3` |
 
 
 
 **Incremental Models**
 
-Spark does not natively support `delete`, `update`, or `merge` statements. As such, [incremental models](https://docs.getdbt.com/docs/configuring-incremental-models)
-are implemented differently than usual in this plugin. To use incremental models, specify a `partition_by` clause in your model config.
-dbt will use an `insert overwrite` query to overwrite the partitions included in your query. Be sure to re-select _all_ of the relevant
-data for a partition when using incremental models.
+To use incremental models, specify a `partition_by` clause in your model config. The default incremental strategy used is `insert_overwrite`, which will overwrite the partitions included in your query. Be sure to re-select _all_ of the relevant
+data for a partition when using the `insert_overwrite` strategy.
 
 ```
 {{ config(
@@ -111,6 +110,23 @@ select
 from {{ ref('events') }}
 where date_day::date >= '2019-01-01'
 group by 1
+```
+
+The `merge` strategy is only supported when using file_format `delta` (supported in Databricks). It also requires you to specify a `unique key` to match existing records.
+
+```
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    partition_by=['date_day'],
+    file_format='delta'
+) }}
+
+select *
+from {{ ref('events') }}
+{% if is_incremental() %}
+  where date_day > (select max(date_day) from {{ this }})
+{% endif %}
 ```
 
 ### Reporting bugs and contributing code
