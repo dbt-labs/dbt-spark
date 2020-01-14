@@ -104,6 +104,12 @@
   {% endcall %}
 {% endmacro %}
 
+{% macro spark__drop_schema(database_name, schema_name) -%}
+  {%- call statement('drop_schema') -%}
+    drop schema if exists {{ schema_name }} cascade
+  {%- endcall -%}
+{% endmacro %}
+
 {% macro list_extended_properties(schema, identifier) %}
   {% call statement('list_extended_properties', fetch_result=True) -%}
     describe extended {{ schema }}.{{ identifier }}
