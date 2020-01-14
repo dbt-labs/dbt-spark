@@ -4,3 +4,5 @@ env/
 __pycache__
 .tox/
 .idea/
+build/
+dist/
