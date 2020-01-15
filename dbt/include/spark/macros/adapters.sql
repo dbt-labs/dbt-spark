@@ -43,40 +43,24 @@
   {%- endif %}
 {%- endmacro -%}
 
-{% macro spark__load_csv_rows(model, agate_table) %}
-    {% set cols_sql = ", ".join(agate_table.column_names) %}
-    {% set bindings = [] %}
+{% macro fetch_tbl_properties(relation) -%}
+  {% call statement('list_properties', fetch_result=True) -%}
+    SHOW TBLPROPERTIES {{ relation }}
+  {% endcall %}
+  {% do return(load_result('list_properties').table) %}
+{%- endmacro %}
 
-    {% set statements = [] %}
-
-    {% for chunk in agate_table.rows | batch(10000) %}
-        {% set bindings = [] %}
-
-        {% for row in chunk %}
-            {% set _ = bindings.extend(row) %}
-        {% endfor %}
-
-        {% set sql %}
-            insert into {{ this.render() }} values
-            {% for row in chunk -%}
-                ({%- for column in agate_table.column_names -%}
-                    %s
-                    {%- if not loop.last%},{%- endif %}
-                {%- endfor -%})
-                {%- if not loop.last%},{%- endif %}
-            {%- endfor %}
-        {% endset %}
-
-        {% set _ = adapter.add_query(sql, bindings=bindings, abridge_sql_log=True) %}
-
-        {% if loop.index0 == 0 %}
-            {% set _ = statements.append(sql) %}
-        {% endif %}
-    {% endfor %}
-
-    {# Return SQL so we can render it out into the compiled files #}
-    {{ return(statements[0]) }}
-{% endmacro %}
+{% macro get_relation_type(relation) -%}
+  {% call statement('get_relation_type', fetch_result=True) -%}
+    SHOW TBLPROPERTIES {{ relation }} ('view.default.database')
+  {%- endcall %}
+  {% set res = load_result('get_relation_type').table %}
+  {% if 'does not have property' in res[0][0] %}
+    {{ return('table') }}
+  {% else %}
+    {{ return('view') }}
+  {% endif %}
+{%- endmacro %}
 
 {#-- We can't use temporary tables with `create ... as ()` syntax #}
 {% macro create_temporary_view(relation, sql) -%}
@@ -110,26 +94,13 @@
   {%- endcall -%}
 {% endmacro %}
 
-{% macro list_extended_properties(schema, identifier) %}
-  {% call statement('list_extended_properties', fetch_result=True) -%}
-    describe extended {{ schema }}.{{ identifier }}
-  {% endcall %}
-
-  {% do return(load_result('list_extended_properties').table) %}
-{% endmacro %}
-
 {% macro spark__get_columns_in_relation(relation) -%}
   {% call statement('get_columns_in_relation', fetch_result=True) %}
-    describe {{ relation }}
+    describe extended {{ relation }}
   {% endcall %}
 
   {% set table = load_result('get_columns_in_relation').table %}
-
-  {% set columns = [] %}
-  {% for row in table %}
-    {% do columns.append(api.Column(*row)) %}
-  {% endfor %}
-  {{ return(columns) }}
+  {{ return(sql_convert_columns_in_relation(table)) }}
 
 {% endmacro %}
 
@@ -156,7 +127,7 @@
   {% call statement('rename_relation') -%}
     {% if not from_relation.type %}
       {% do exceptions.raise_database_error("Cannot drop a relation with a blank type: " ~ from_relation.identifier) %}
-    {% elif from_relation.type in ('table', 'external') %}
+    {% elif from_relation.type in ('table') %}
         alter table {{ from_relation }} rename to {{ to_relation }}
     {% elif from_relation.type == 'view' %}
         alter view {{ from_relation }} rename to {{ to_relation }}
@@ -167,15 +138,8 @@
 {% endmacro %}
 
 {% macro spark__drop_relation(relation) -%}
+  {% set type = relation.type if relation.type is not none else get_relation_type(relation) %}
   {% call statement('drop_relation', auto_begin=False) -%}
-    {% if not relation.type %}
-      {% do exceptions.raise_database_error("Cannot drop a relation with a blank type: " ~ relation.identifier) %}
-    {% elif relation.type in ('table', 'external') %}
-        drop table if exists {{ relation }}
-    {% elif relation.type == 'view' %}
-        drop view if exists {{ relation }}
-    {% else %}
-      {% do exceptions.raise_database_error("Unknown type '" ~ relation.type ~ "' for relation: " ~ relation.identifier) %}
-    {% endif %}
+    drop {{ type }} if exists {{ relation }}
   {%- endcall %}
 {% endmacro %}

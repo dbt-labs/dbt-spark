@@ -1,12 +1,13 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 
+import dbt
 from dbt.adapters.sql import SQLAdapter
 from dbt.contracts.graph.manifest import Manifest
 
 from dbt.adapters.spark import SparkColumn
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark.relation import SparkRelation
-from dbt.adapters.base import RelationType, BaseRelation
+from dbt.adapters.base import BaseRelation
 
 from dbt.clients.agate_helper import table_from_data
 from dbt.logger import GLOBAL_LOGGER as logger
@@ -14,18 +15,34 @@ from dbt.logger import GLOBAL_LOGGER as logger
 import agate
 
 LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
-LIST_EXTENDED_PROPERTIES_MACRO_NAME = 'list_extended_properties'
-GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
+GET_RELATION_TYPE_MACRO_NAME = 'get_relation_type'
 LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
+FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
 
 
 class SparkAdapter(SQLAdapter):
+    COLUMN_NAMES = (
+        'table_database',
+        'table_schema',
+        'table_name',
+        'table_type',
+        'table_comment',
+        'table_owner',
+        'column_name',
+        'column_index',
+        'column_type',
+        'column_comment',
 
-    RELATION_TYPES = {
-        'MANAGED': RelationType.Table,
-        'VIEW': RelationType.View,
-        'EXTERNAL': RelationType.External
-    }
+        'stats:bytes:label',
+        'stats:bytes:value',
+        'stats:bytes:description',
+        'stats:bytes:include',
+
+        'stats:rows:label',
+        'stats:rows:value',
+        'stats:rows:description',
+        'stats:rows:include',
+    )
 
     Relation = SparkRelation
     Column = SparkColumn
@@ -64,22 +81,27 @@ class SparkAdapter(SQLAdapter):
 
         return super().get_relation(database, schema, identifier)
 
-    def list_extended_properties(self, schema, identifier):
-        results = self.execute_macro(
-            LIST_EXTENDED_PROPERTIES_MACRO_NAME,
-            kwargs={'schema': schema, 'identifier': identifier}
+    def get_relation_type(self, relation):
+        kwargs = {'relation': relation}
+        return self.execute_macro(
+            GET_RELATION_TYPE_MACRO_NAME,
+            kwargs=kwargs,
+            release=True
         )
 
-        detail_idx = 0
-        for idx, row in enumerate(results.rows):
-            if row['col_name'] == '# Detailed Table Information':
-                detail_idx = idx
-                continue
+    def add_schema_to_cache(self, schema) -> str:
+        """Cache a new schema in dbt. It will show up in `list relations`."""
+        if schema is None:
+            name = self.nice_connection_name()
+            dbt.exceptions.raise_compiler_error(
+                'Attempted to cache a null schema for {}'.format(name)
+            )
+        if dbt.flags.USE_CACHE:
+            self.cache.add_schema(None, schema)
+        # so jinja doesn't render things
+        return ''
 
-        detail_idx += 1
-        return results[detail_idx:] if detail_idx != 0 else results
-
-    def list_relations_without_caching(self, information_schema, schema):
+    def list_relations_without_caching(self, information_schema, schema) -> List[SparkRelation]:
         kwargs = {'information_schema': information_schema, 'schema': schema}
 
         results = self.execute_macro(
@@ -89,93 +111,110 @@ class SparkAdapter(SQLAdapter):
 
         relations = []
         for _schema, name, _ in results:
-            # get extended properties foreach table
-            details = self.list_extended_properties(_schema, name)
-
-            _type = None
-            for col_name, data_type, _ in details:
-                if col_name == 'Type':
-                    _type = self.RELATION_TYPES.get(data_type, None)
-                    continue
-
-            relations.append(self.Relation.create(
+            relation = self.Relation.create(
                 schema=_schema,
-                identifier=name,
-                type=_type
-            ))
+                identifier=name
+            )
+            self.cache_added(relation)
+            relations.append(relation)
 
         return relations
 
+    @staticmethod
+    def _parse_relation(relation: Relation,
+                        table_columns: List[Column],
+                        rel_type: str,
+                        properties: Dict[str, str] = None) -> List[dict]:
+        properties = properties or {}
+        statistics = {}
+        table_owner_key = 'Owner'
+
+        # First check if it is present in the properties
+        table_owner = properties.get(table_owner_key)
+
+        found_detailed_table_marker = False
+        for column in table_columns:
+            if column.name == '# Detailed Table Information':
+                found_detailed_table_marker = True
+
+            # In case there is another column with the name Owner
+            if not found_detailed_table_marker:
+                continue
+
+            if not table_owner and column.name == table_owner_key:
+                table_owner = column.data_type
+
+            if column.name == 'Statistics':
+                # format: 1109049927 bytes, 14093476 rows
+                statistics = {stats.split(" ")[1]: int(stats.split(" ")[0]) for
+                              stats in column.data_type.split(', ')}
+
+        columns = []
+        for column_index, column in enumerate(table_columns):
+            # Fixes for pseudo-columns with no type
+            if column.name in {
+                '# Partition Information',
+                '# col_name',
+                ''
+            }:
+                continue
+            elif column.name == '# Detailed Table Information':
+                # Loop until the detailed table information
+                break
+            elif column.data_type is None:
+                continue
+
+            column_data = (
+                relation.database,
+                relation.schema,
+                relation.name,
+                rel_type,
+                None,
+                table_owner,
+                column.name,
+                column_index,
+                column.data_type,
+                None,
+
+                # Table level stats
+                'Table size',
+                statistics.get("bytes"),
+                "The size of the table in bytes",
+                statistics.get("bytes") is not None,
+
+                # Column level stats
+                'Number of rows',
+                statistics.get("rows"),
+                "The number of rows in the table",
+                statistics.get("rows") is not None
+            )
+
+            column_dict = dict(zip(SparkAdapter.COLUMN_NAMES, column_data))
+            columns.append(column_dict)
+
+        return columns
+
+    def get_properties(self, relation: Relation) -> Dict[str, str]:
+        properties = self.execute_macro(
+            FETCH_TBL_PROPERTIES_MACRO_NAME,
+            kwargs={'relation': relation}
+        )
+        return {key: value for (key, value) in properties}
+
     def get_catalog(self, manifest: Manifest) -> agate.Table:
         schemas = manifest.get_used_schemas()
-
-        column_names = (
-            'table_database',
-            'table_schema',
-            'table_name',
-            'table_type',
-            'table_comment',
-            'table_owner',
-            'column_name',
-            'column_index',
-            'column_type',
-            'column_comment',
-        )
 
         columns = []
         for database, schema in schemas:
             relations = self.list_relations(database, schema)
             for relation in relations:
+                properties = self.get_properties(relation)
+                logger.debug("Getting table schema for relation {}".format(relation))  # noqa
                 table_columns = self.get_columns_in_relation(relation)
+                rel_type = self.get_relation_type(relation)
+                columns += self._parse_relation(relation, table_columns, rel_type, properties)
 
-                for column_index, column in enumerate(table_columns):
-                    # Fixes for pseudo-columns with no type
-                    if column.name in (
-                        '# Partition Information',
-                        '# col_name'
-                    ):
-                        continue
-                    elif column.data_type is None:
-                        continue
-
-                    column_data = (
-                        relation.database,
-                        relation.schema,
-                        relation.name,
-                        relation.type,
-                        None,
-                        None,
-                        column.name,
-                        column_index,
-                        column.data_type,
-                        None,
-                    )
-                    column_dict = dict(zip(column_names, column_data))
-                    columns.append(column_dict)
-
-        return table_from_data(columns, column_names)
-
-    def get_columns_in_relation(self, relation) -> List[SparkColumn]:
-        table = self.execute_macro(
-            GET_COLUMNS_IN_RELATION_MACRO_NAME,
-            kwargs={'relation': relation}
-        )
-
-        columns = []
-        for col in table:
-            # Fixes for pseudo-columns with no type
-            if col.name in (
-                    '# Partition Information',
-                    '# col_name'
-            ):
-                continue
-            elif col.data_type is None:
-                continue
-
-            column = self.Column(col.name, col.data_type, col.comment)
-            columns.append(column)
-
-        return columns
+        return table_from_data(columns, SparkAdapter.COLUMN_NAMES)
 
     def check_schema_exists(self, database, schema):
         results = self.execute_macro(

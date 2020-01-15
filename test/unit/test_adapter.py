@@ -3,8 +3,8 @@ from unittest import mock
 
 import dbt.flags as flags
 from pyhive import hive
-
-from dbt.adapters.spark import SparkAdapter
+from agate import Column, MappedSequence
+from dbt.adapters.spark import SparkAdapter, SparkRelation
 from .utils import config_from_parts_or_dicts
 
 
@@ -96,3 +96,159 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(connection.credentials.schema, 'analytics')
             self.assertEqual(connection.credentials.database, 'analytics')
 
+    def test_parse_relation(self):
+        rel_type = SparkRelation.RelationType.Table
+
+        relation = SparkRelation.create(
+            database='default_database',
+            schema='default_schema',
+            identifier='mytable',
+            type=rel_type
+        )
+
+        # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
+        plain_rows = [
+            ('col1', 'decimal(22,0)'),
+            ('col2', 'string',),
+            ('# Partition Information', 'data_type'),
+            ('# col_name', 'data_type'),
+            ('dt', 'date'),
+            ('', ''),
+            ('# Detailed Table Information', ''),
+            ('Database', relation.database),
+            ('Owner', 'root'),
+            ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
+            ('Last Access', 'Wed May 20 19:25:00 UTC 1925'),
+            ('Type', 'MANAGED'),
+            ('Provider', 'delta'),
+            ('Location', '/mnt/vo'),
+            ('Serde Library', 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'),
+            ('InputFormat', 'org.apache.hadoop.mapred.SequenceFileInputFormat'),
+            ('OutputFormat', 'org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat'),
+            ('Partition Provider', 'Catalog')
+        ]
+
+        input_cols = [Column(index=None, name=r[0], data_type=r[1], rows=MappedSequence(
+            keys=['col_name', 'data_type'],
+            values=r
+        )) for r in plain_rows]
+
+        rows = SparkAdapter._parse_relation(relation, input_cols, rel_type)
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(rows[0], {
+            'table_database': relation.database,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': relation.type,
+            'stats:bytes:description': 'The size of the table in bytes',
+            'stats:bytes:include': False,
+            'stats:bytes:label': 'Table size',
+            'stats:bytes:value': None,
+            'stats:rows:description': 'The number of rows in the table',
+            'stats:rows:include': False,
+            'stats:rows:label': 'Number of rows',
+            'stats:rows:value': None,
+            'table_comment': None,
+            'table_owner': 'root',
+            'column_name': 'col1',
+            'column_index': 0,
+            'column_type': 'decimal(22,0)',
+            'column_comment': None
+        })
+
+        self.assertEqual(rows[1], {
+            'table_database': relation.database,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': relation.type,
+            'stats:bytes:description': 'The size of the table in bytes',
+            'stats:bytes:include': False,
+            'stats:bytes:label': 'Table size',
+            'stats:bytes:value': None,
+            'stats:rows:description': 'The number of rows in the table',
+            'stats:rows:include': False,
+            'stats:rows:label': 'Number of rows',
+            'stats:rows:value': None,
+            'table_comment': None,
+            'table_owner': 'root',
+            'column_name': 'col2',
+            'column_index': 1,
+            'column_type': 'string',
+            'column_comment': None
+        })
+
+        self.assertEqual(rows[2], {
+            'table_database': relation.database,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': relation.type,
+            'stats:bytes:description': 'The size of the table in bytes',
+            'stats:bytes:include': False,
+            'stats:bytes:label': 'Table size',
+            'stats:bytes:value': None,
+            'stats:rows:description': 'The number of rows in the table',
+            'stats:rows:include': False,
+            'stats:rows:label': 'Number of rows',
+            'stats:rows:value': None,
+            'table_comment': None,
+            'table_owner': 'root',
+            'column_name': 'dt',
+            'column_index': 4,
+            'column_type': 'date',
+            'column_comment': None
+        })
+
+    def test_parse_relation_with_properties(self):
+        rel_type = SparkRelation.RelationType.Table
+
+        relation = SparkRelation.create(
+            database='default_database',
+            schema='default_schema',
+            identifier='mytable',
+            type=rel_type
+        )
+
+        # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
+        plain_rows = [
+            ('col1', 'decimal(19,25)'),
+            ('', ''),
+            ('# Detailed Table Information', ''),
+            ('Database', relation.database),
+            ('Owner', 'root'),
+            ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
+            ('Last Access', 'Wed May 20 19:25:00 UTC 1925'),
+            ('Type', 'MANAGED'),
+            ('Provider', 'delta'),
+            ('Location', '/mnt/vo'),
+            ('Serde Library', 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'),
+            ('InputFormat', 'org.apache.hadoop.mapred.SequenceFileInputFormat'),
+            ('OutputFormat', 'org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat'),
+            ('Partition Provider', 'Catalog')
+        ]
+
+        input_cols = [Column(index=None, name=r[0], data_type=r[1], rows=MappedSequence(
+            keys=['col_name', 'data_type'],
+            values=r
+        )) for r in plain_rows]
+
+        rows = SparkAdapter._parse_relation(relation, input_cols, rel_type, {'Owner': 'Fokko'})
+        self.assertEqual(rows[0], {
+            'table_database': relation.database,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'stats:bytes:description': 'The size of the table in bytes',
+            'stats:bytes:include': False,
+            'stats:bytes:label': 'Table size',
+            'stats:bytes:value': None,
+            'stats:rows:description': 'The number of rows in the table',
+            'stats:rows:include': False,
+            'stats:rows:label': 'Number of rows',
+            'stats:rows:value': None,
+            'table_comment': None,
+            'table_owner': 'Fokko',
+            'column_name': 'col1',
+            'column_index': 0,
+            'column_type': 'decimal(19,25)',
+            'column_comment': None
+        })
