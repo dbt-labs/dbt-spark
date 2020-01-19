@@ -17,6 +17,7 @@ import agate
 LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
 GET_RELATION_TYPE_MACRO_NAME = 'get_relation_type'
 LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
+DROP_RELATION_MACRO_NAME = 'drop_relation'
 FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
 
 
@@ -215,6 +216,17 @@ class SparkAdapter(SQLAdapter):
                 columns += self._parse_relation(relation, table_columns, rel_type, properties)
 
         return table_from_data(columns, SparkAdapter.COLUMN_NAMES)
+
+    # Override that doesn't check the type of the relation -- we do it
+    # dynamically in the macro code
+    def drop_relation(self, relation, model_name=None):
+        if dbt.flags.USE_CACHE:
+            self.cache.drop(relation)
+
+        self.execute_macro(
+            DROP_RELATION_MACRO_NAME,
+            kwargs={'relation': relation}
+        )
 
     def check_schema_exists(self, database, schema):
         results = self.execute_macro(

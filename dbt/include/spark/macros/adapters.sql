@@ -126,7 +126,7 @@
 {% macro spark__rename_relation(from_relation, to_relation) -%}
   {% call statement('rename_relation') -%}
     {% if not from_relation.type %}
-      {% do exceptions.raise_database_error("Cannot drop a relation with a blank type: " ~ from_relation.identifier) %}
+      {% do exceptions.raise_database_error("Cannot rename a relation with a blank type: " ~ from_relation.identifier) %}
     {% elif from_relation.type in ('table') %}
         alter table {{ from_relation }} rename to {{ to_relation }}
     {% elif from_relation.type == 'view' %}

@@ -104,11 +104,8 @@
 
   {% if existing_relation is none %}
     {% set build_sql = create_table_as(False, target_relation, sql) %}
-  {% elif existing_relation.is_view %}
-    {#-- Can't overwrite a view with a table - we must drop --#}
+  {% elif existing_relation.is_view or full_refresh_mode %}
     {% do adapter.drop_relation(existing_relation) %}
-    {% set build_sql = create_table_as(False, target_relation, sql) %}
-  {% elif full_refresh_mode %}
     {% set build_sql = create_table_as(False, target_relation, sql) %}
   {% else %}
     {% do run_query(create_table_as(True, tmp_relation, sql)) %}
