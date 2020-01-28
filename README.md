@@ -10,7 +10,7 @@ This plugin can be installed via pip:
 # Install dbt-spark from github (latest master branch):
 $ pip install git+https://github.com/fishtown-analytics/dbt-spark@master
 
-# OR Install dbt-spark from PyPi (latest stable version published to PyPi):
+# Install dbt-spark from PyPi:
 $ pip install dbt-spark
 ```
 
