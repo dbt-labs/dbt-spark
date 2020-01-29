@@ -57,7 +57,7 @@
 
 {% macro spark__list_relations_without_caching(information_schema, schema) %}
   {% call statement('list_relations_without_caching', fetch_result=True) -%}
-    show tables in {{ schema }}
+    show table extended in {{ schema }} like '*'
   {% endcall %}
 
   {% do return(load_result('list_relations_without_caching').table) %}

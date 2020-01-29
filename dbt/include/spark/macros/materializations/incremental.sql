@@ -13,7 +13,7 @@
   {%- set tmp_relation = api.Relation.create(identifier=tmp_identifier,  type='table') -%}
 
   {%- set full_refresh = flags.FULL_REFRESH == True and old_relation is not none -%}
-  {%- set type = spark_get_relation_type(this) if old_relation else none -%}
+  {%- set type = old_relation.type if old_relation.type is not none else spark_get_relation_type(this) -%}
   {%- set old_relation_is_view = old_relation is not none and type == 'view' -%}
 
   {%- if full_refresh or old_relation_is_view -%}
