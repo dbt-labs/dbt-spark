@@ -26,10 +26,27 @@ A dbt profile can be configured to run against Spark using the following configu
 | host    | The hostname to connect to                         | Required                | `yourorg.sparkhost.com`  |
 | port    | The port to connect to the host on                 | Optional (default: 443 for `http`, 10001 for `thrift`) | `443`                    |
 | token   | The token to use for authenticating to the cluster | Required for `http`                | `abc123`                 |
+| organization | The id of the Azure Databricks workspace being used; only for  Azure Databricks | See Databricks Note | 1234567891234567 |
 | cluster | The name of the cluster to connect to              | Required for `http`               | `01234-23423-coffeetime` |
 | user    | The username to use to connect to the cluster  | Optional  | `hadoop`  |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10) | `60` |
 | connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up   | Optional (default: 0)  | `5` |
+
+**Databricks Note**
+
+AWS and Azure Databricks have differences in their connections, likely due to differences in how their URLs are generated between the two services.
+
+To connect to an Azure Databricks cluster, you will need to obtain your organization ID, which is a unique ID Azure Databricks generates for each customer workspace.  To find the organization ID, see https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#step-2-configure-connection-properties.  When connecting to Azure Databricks, the organization tag is required to be set in the profiles.yml connection file, as it will be defaulted to 0 otherwise, and will not connect to Azure.  This connection method follows the databricks-connect package's semantics for connecting to Databricks.
+
+Of special note is the fact that organization ID is treated as a string by dbt-spark, as opposed to a large number. While all examples to date have contained numeric digits, it is unknown how long that may continue, and what the upper limit of this number is.  If you do have a leading zero, please include it in the organization tag and dbt-spark will pass that along.
+
+dbt-spark has also been tested against AWS Databricks, and it has some differences in the URLs used. It appears to default the positional value where organization lives in AWS connection URLs to 0, so dbt-spark does the same for AWS connections (i.e. simply leave organization-id out when connecting to the AWS version and dbt-spark will construct the correct AWS URL for you).  Note the missing reference to organization here: https://docs.databricks.com/dev-tools/databricks-connect.html#step-2-configure-connection-properties.
+
+Please ignore all references to port 15001 in the databricks-connect docs as that is specific to that tool; port 443 is used for dbt-spark's https connection.
+
+Lastly, the host field for Databricks can be found at the start of your workspace or cluster url: <region>.azuredatabricks.net for Azure, or <account>.cloud.databricks.com for AWS.
+
+
 
 **Usage with Amazon EMR**
 
@@ -37,6 +54,8 @@ To connect to Spark running on an Amazon EMR cluster, you will need to run `sudo
 
 
 **Example profiles.yml entries:**
+
+**http, e.g. AWS Databricks**
 ```
 your_profile_name:
   target: dev
@@ -53,6 +72,25 @@ your_profile_name:
       connect_timeout: 60
 ```
 
+**Azure Databricks, via http**
+```
+your_profile_name:
+  target: dev
+  outputs:
+    dev:
+      method: http
+      type: spark
+      schema: analytics
+      host: yourorg.sparkhost.com
+      port: 443
+      token: abc123
+      organization: 1234567891234567
+      cluster: 01234-23423-coffeetime
+      connect_retries: 5
+      connect_timeout: 60
+```
+
+**Thrift connection**
 ```
 your_profile_name:
   target: dev
