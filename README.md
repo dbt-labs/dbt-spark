@@ -26,6 +26,7 @@ A dbt profile can be configured to run against Spark using the following configu
 | host    | The hostname to connect to                         | Required                | `yourorg.sparkhost.com`  |
 | port    | The port to connect to the host on                 | Optional (default: 443 for `http`, 10001 for `thrift`) | `443`                    |
 | token   | The token to use for authenticating to the cluster | Required for `http`                | `abc123`                 |
+| organiztion | The id of the Azure Databricks workspace being used; only for  Azure Databricks | Optional (default: 0, for Azure Databricks it is REQUIRED to be set) | 1234567891234567 |
 | cluster | The name of the cluster to connect to              | Required for `http`               | `01234-23423-coffeetime` |
 | user    | The username to use to connect to the cluster  | Optional  | `hadoop`  |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10) | `60` |
@@ -37,6 +38,8 @@ To connect to Spark running on an Amazon EMR cluster, you will need to run `sudo
 
 
 **Example profiles.yml entries:**
+
+**AWS Databricks, via http**
 ```
 your_profile_name:
   target: dev
@@ -48,6 +51,24 @@ your_profile_name:
       host: yourorg.sparkhost.com
       port: 443
       token: abc123
+      cluster: 01234-23423-coffeetime
+      connect_retries: 5
+      connect_timeout: 60
+```
+
+**Azure Databricks, via http**
+```
+your_profile_name:
+  target: dev
+  outputs:
+    dev:
+      method: http
+      type: spark
+      schema: analytics
+      host: yourorg.sparkhost.com
+      port: 443
+      token: abc123
+      organization: 1234567891234567
       cluster: 01234-23423-coffeetime
       connect_retries: 5
       connect_timeout: 60
