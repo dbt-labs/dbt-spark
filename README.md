@@ -38,6 +38,8 @@ AWS and Azure Databricks have differences in their connections, likely due to di
 
 To connect to an Azure Databricks cluster, you will need to obtain your organization ID, which is a unique ID Azure Databricks generates for each customer workspace.  To find the organization ID, see https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#step-2-configure-connection-properties.  When connecting to Azure Databricks, the organization tag is required to be set in the profiles.yml connection file, as it will be defaulted to 0 otherwise, and will not connect to Azure.  This connection method follows the databricks-connect package's semantics for connecting to Databricks.
 
+Of special note is the fact that organization ID is treated as a string by dbt-spark, as opposed to a large number. While all examples to date have contained numeric digits, it is unknown how long that may continue, and what the upper limit of this number is.  If you do have a leading zero, please include it in the organization tag and dbt-spark will pass that along.
+
 dbt-spark has also been tested against AWS Databricks, and it has some differences in the URLs used. It appears to default the positional value where organization lives in AWS connection URLs to 0, so dbt-spark does the same for AWS connections (i.e. simply leave organization-id out when connecting to the AWS version and dbt-spark will construct the correct AWS URL for you).  Note the missing reference to organization here: https://docs.databricks.com/dev-tools/databricks-connect.html#step-2-configure-connection-properties.
 
 Please ignore all references to port 15001 in the databricks-connect docs as that is specific to that tool; port 443 is used for dbt-spark's https connection.
