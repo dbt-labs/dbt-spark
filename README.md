@@ -36,7 +36,9 @@ A dbt profile can be configured to run against Spark using the following configu
 
 To connect to an Azure Databricks cluster, you will need to obtain your organization ID, which is a unique ID Azure Databricks generates for each workspace.  To find the organization ID, see https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#step-2-configure-connection-properties.  When connecting to Azure Databricks, the organization tag is required to be set in the profiles.yml connection file, as it will be defaulted to 0 otherwise, and will not connect to Azure.  This connection method follows the databricks-connect package's semantics for connecting to Azure Databricks.
 
-dbt-spark has been tested against AWS Databricks, and it does not appear to be have the same way as Azure.  It appears to default this value in connection URLs to 0, so dbt-spark does the same for AWS' connections (i.e. simply leave organization-id out when connecting to the AWS version).  Note the missing reference to organization here: https://docs.databricks.com/dev-tools/databricks-connect.html#step-2-configure-connection-properties
+dbt-spark has been tested against AWS Databricks, and it does not appear to behave the same way as Azure.  It appears to default this value in connection URLs to 0, so dbt-spark does the same for AWS' connections (i.e. simply leave organization-id out when connecting to the AWS version).  Note the missing reference to organization here: https://docs.databricks.com/dev-tools/databricks-connect.html#step-2-configure-connection-properties.
+
+Please ignore all references to port 15001 in the databricks-connect docs as that is specific to that tool; port 443 is used for dbt-spark's https connection.
 
 **Usage with Amazon EMR**
 
