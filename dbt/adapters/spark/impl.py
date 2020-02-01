@@ -33,18 +33,6 @@ class SparkAdapter(SQLAdapter):
     def convert_datetime_type(cls, agate_table, col_idx):
         return "TIMESTAMP"
 
-    def create_schema(self, database, schema, model_name=None):
-        raise dbt.exceptions.NotImplementedException(
-            'Schema/Database creation is not supported in the Spark adapter. '
-            'Please create the database "{}" manually'.format(database)
-        )
-
-    def drop_schema(self, database, schema, model_name=None):
-        raise dbt.exceptions.NotImplementedException(
-            'Schema/Database deletion is not supported in the Spark adapter. '
-            'Please drop the database "{}" manually'.format(database)
-        )
-
     def get_relation_type(self, relation, model_name=None):
         kwargs = {'relation': relation}
         return self.execute_macro(
