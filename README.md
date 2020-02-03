@@ -26,7 +26,7 @@ A dbt profile can be configured to run against Spark using the following configu
 | host    | The hostname to connect to                         | Required                | `yourorg.sparkhost.com`  |
 | port    | The port to connect to the host on                 | Optional (default: 443 for `http`, 10001 for `thrift`) | `443`                    |
 | token   | The token to use for authenticating to the cluster | Required for `http`                | `abc123`                 |
-| organization | The id of the Azure Databricks workspace being used; only for  Azure Databricks | See Databricks Note | 1234567891234567 |
+| organization | The id of the Azure Databricks workspace being used; only for  Azure Databricks | See Databricks Note | `1234567891234567` |
 | cluster | The name of the cluster to connect to              | Required for `http`               | `01234-23423-coffeetime` |
 | user    | The username to use to connect to the cluster  | Optional  | `hadoop`  |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10) | `60` |
@@ -44,7 +44,7 @@ dbt-spark has also been tested against AWS Databricks, and it has some differenc
 
 Please ignore all references to port 15001 in the databricks-connect docs as that is specific to that tool; port 443 is used for dbt-spark's https connection.
 
-Lastly, the host field for Databricks can be found at the start of your workspace or cluster url: <region>.azuredatabricks.net for Azure, or <account>.cloud.databricks.com for AWS.
+Lastly, the host field for Databricks can be found at the start of your workspace or cluster url (but don't include https://): region.azuredatabricks.net for Azure, or account.cloud.databricks.com for AWS.  
 
 
 
