@@ -84,8 +84,8 @@ The following configurations can be supplied to models run with the dbt-spark pl
 | file_format  | The file format to use when creating tables | Optional                | `parquet`              |
 | location  | The created table uses the specified directory to store its data. | Optional                | `/mnt/root`              |
 | partition_by  | Partition the created table by the specified columns. A directory is created for each partition. | Optional                | `partition_1`              |
-| clustered_by  | Each partition in the created table will be split into a fixed number of buckets by the specified columns. | Optional                | `cluster_1`              |
-| buckets  | The number of buckets to create while clustering | Optional                | `8`              |
+| clustered_by  | Each partition in the created table will be split into a fixed number of buckets by the specified columns. | Optional               | `cluster_1`              |
+| buckets  | The number of buckets to create while clustering | Required if `clustered_by` is specified                | `8`              |
 
 
 **Incremental Models**
