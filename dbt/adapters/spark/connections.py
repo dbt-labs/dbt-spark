@@ -18,7 +18,7 @@ import time
 # and is different per workspace.
 SPARK_CONNECTION_URL = '''
     https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}
-    '''
+    '''.strip()
 
 SPARK_CREDENTIALS_CONTRACT = {
     'type': 'object',
