@@ -15,6 +15,9 @@ DROP_RELATION_MACRO_NAME = 'drop_relation'
 class SparkAdapter(SQLAdapter):
     ConnectionManager = SparkConnectionManager
     Relation = SparkRelation
+    
+    AdapterSpecificConfigs = frozenset({"file_format", "location", "partition_by", 
+                                        "clustered_by", "buckets"})
 
     @classmethod
     def date_function(cls):
