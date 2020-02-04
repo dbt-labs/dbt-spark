@@ -67,6 +67,27 @@ class SparkAdapter(SQLAdapter):
             ))
         return relations
 
+    def get_relation(self, database, schema, identifier):
+        relations_list = self.list_relations(schema, schema)
+
+        matches = self._make_match(relations_list=relations_list,
+                                   database=None, schema=schema,
+                                   identifier=identifier)
+
+        if len(matches) > 1:
+            kwargs = {
+                'identifier': identifier,
+                'schema': schema
+            }
+            dbt.exceptions.get_relation_returned_multiple_results(
+                kwargs, matches
+            )
+
+        elif matches:
+            return matches[0]
+
+        return None
+
     # Override that doesn't check the type of the relation -- we do it
     # dynamically in the macro code
     def drop_relation(self, relation, model_name=None):

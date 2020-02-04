@@ -14,8 +14,11 @@ from datetime import datetime
 import base64
 import time
 
-# adding organization as a parameter, as it is required by Azure Databricks and is different per workspace.
-SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}"
+# adding organization as a parameter, as it is required by Azure Databricks
+# and is different per workspace.
+SPARK_CONNECTION_URL = '''
+    https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}
+    '''.strip()
 
 SPARK_CREDENTIALS_CONTRACT = {
     'type': 'object',
@@ -70,8 +73,9 @@ class SparkCredentials(Credentials):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('database', kwargs.get('schema'))
-        
-        # coercing org to a string since it is unknown whether Azure Databricks will always keep it numeric
+
+        # coercing org to a string since it is unknown whether
+        # Azure Databricks will always keep it numeric
         if 'organization' in kwargs:
             kwargs['organization'] = str(kwargs['organization'])
         else:
@@ -257,7 +261,7 @@ class SparkConnectionManager(SQLConnectionManager):
         for i in range(1 + connect_retries):
             try:
                 if creds.method == 'http':
-        
+
                     cls.validate_creds(creds, ['token', 'host', 'port',
                                                'cluster', 'organization'])
 
