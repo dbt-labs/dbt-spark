@@ -103,7 +103,6 @@
     {% if row[0].startswith('#') %}
       {{ vars.update({'before_partition_info': False}) }}
     {% else %}
-      {{ dbt_utils.log_info(row) }}
       {{ columns.append(row) }}
     {% endif %}
   {% endfor %}
