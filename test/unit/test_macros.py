@@ -26,8 +26,9 @@ class TestSparkMacros(unittest.TestCase):
         return self.jinja_env.get_template(template_filename, globals=self.default_context)
 
 
-    def __run_macro(self, template, name, *args):
-        value = getattr(template.module, name)(*args)
+    def __run_macro(self, template, name, temporary, relation, sql):
+        self.default_context['model'].alias = relation
+        value = getattr(template.module, name)(temporary, relation, sql)
         return re.sub(r'\s\s+', ' ', value)
  
  
@@ -93,9 +94,9 @@ class TestSparkMacros(unittest.TestCase):
         template = self.__get_template('adapters.sql')
 
 
-        self.config['location'] = '/mnt/root'
+        self.config['location_root'] = '/mnt/root'
         self.assertEqual(self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1'),
-                         "create table my_table location '/mnt/root' as select 1")
+                         "create table my_table location '/mnt/root/my_table' as select 1")
 
 
     def test_macros_create_table_as_comment(self):
@@ -112,7 +113,7 @@ class TestSparkMacros(unittest.TestCase):
         template = self.__get_template('adapters.sql')
 
         self.config['file_format'] = 'delta'
-        self.config['location'] = '/mnt/root'
+        self.config['location_root'] = '/mnt/root'
         self.config['partition_by'] = ['partition_1', 'partition_2']
         self.config['clustered_by'] = ['cluster_1', 'cluster_2']
         self.config['buckets'] = '1'
@@ -120,4 +121,4 @@ class TestSparkMacros(unittest.TestCase):
         self.default_context['model'].description = 'Description Test'
         
         self.assertEqual(self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1'),
-                         "create table my_table using delta partitioned by (partition_1,partition_2) clustered by (cluster_1,cluster_2) into 1 buckets location '/mnt/root' comment 'Description Test' as select 1")
+                         "create table my_table using delta partitioned by (partition_1,partition_2) clustered by (cluster_1,cluster_2) into 1 buckets location '/mnt/root/my_table' comment 'Description Test' as select 1")

@@ -15,9 +15,10 @@
 
 
 {% macro location_clause() %}
-  {%- set path = config.get('location', validator=validation.any[basestring]) -%}
-  {%- if path is not none %}
-    location '{{ path }}'
+  {%- set location_root = config.get('location_root', validator=validation.any[basestring]) -%}
+  {%- set identifier = model['alias'] -%}
+  {%- if location_root is not none %}
+    location '{{ location_root }}/{{ identifier }}'
   {%- endif %}
 {%- endmacro -%}
 
