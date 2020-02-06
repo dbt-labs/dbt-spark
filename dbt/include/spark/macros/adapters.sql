@@ -5,11 +5,35 @@
     {{ sql }}
 {% endmacro %}
 
+
 {% macro file_format_clause() %}
   {%- set file_format = config.get('file_format', validator=validation.any[basestring]) -%}
   {%- if file_format is not none %}
     using {{ file_format }}
   {%- endif %}
+{%- endmacro -%}
+
+
+{% macro location_clause() %}
+  {%- set location_root = config.get('location_root', validator=validation.any[basestring]) -%}
+  {%- set identifier = model['alias'] -%}
+  {%- if location_root is not none %}
+    location '{{ location_root }}/{{ identifier }}'
+  {%- endif %}
+{%- endmacro -%}
+
+
+{% macro comment_clause() %}
+  {%- set raw_persist_docs = config.get('persist_docs', {}) -%}
+
+  {%- if raw_persist_docs is mapping -%}
+    {%- set raw_relation = raw_persist_docs.get('relation', false) -%}
+      {%- if raw_relation -%}
+      comment '{{ model.description }}'
+      {% endif %}
+  {%- else -%}
+    {{ exceptions.raise_compiler_error("Invalid value provided for 'persist_docs'. Expected dict but got value: " ~ raw_persist_docs) }}
+  {% endif %}
 {%- endmacro -%}
 
 {% macro partition_cols(label, required=false) %}
@@ -27,6 +51,24 @@
   {%- endif %}
 {%- endmacro -%}
 
+
+{% macro clustered_cols(label, required=false) %}
+  {%- set cols = config.get('clustered_by', validator=validation.any[list, basestring]) -%}
+  {%- set buckets = config.get('buckets', validator=validation.any[int]) -%}
+  {%- if (cols is not none) and (buckets is not none) %}
+    {%- if cols is string -%}
+      {%- set cols = [cols] -%}
+    {%- endif -%}
+    {{ label }} (
+    {%- for item in cols -%}
+      {{ item }}
+      {%- if not loop.last -%},{%- endif -%}
+    {%- endfor -%}
+    ) into {{ buckets }} buckets
+  {%- endif %}
+{%- endmacro -%}
+
+
 {% macro spark__create_table_as(temporary, relation, sql) -%}
   {% if temporary -%}
     {{ spark_create_temporary_view(relation, sql) }}
@@ -34,15 +76,22 @@
     create table {{ relation }}
     {{ file_format_clause() }}
     {{ partition_cols(label="partitioned by") }}
+    {{ clustered_cols(label="clustered by") }}
+    {{ location_clause() }}
+    {{ comment_clause() }}
     as
       {{ sql }}
   {%- endif %}
 {%- endmacro -%}
 
+
 {% macro spark__create_view_as(relation, sql) -%}
-  create view {{ relation }} as
+  create view {{ relation }}
+  {{ comment_clause() }}
+  as
     {{ sql }}
 {% endmacro %}
+
 
 {% macro spark__get_columns_in_relation(relation) -%}
   {% call statement('get_columns_in_relation', fetch_result=True) %}
