@@ -16,7 +16,7 @@ class SparkAdapter(SQLAdapter):
     ConnectionManager = SparkConnectionManager
     Relation = SparkRelation
     
-    AdapterSpecificConfigs = frozenset({"file_format", "location", "partition_by", 
+    AdapterSpecificConfigs = frozenset({"file_format", "location_root", "partition_by", 
                                         "clustered_by", "buckets"})
 
     @classmethod
