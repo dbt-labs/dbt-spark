@@ -97,16 +97,8 @@
       describe {{ relation }}
   {% endcall %}
 
-  {% set columns = [] %}
-  {% set vars = {'before_partition_info': True} %}
-  {% for row in load_result('get_columns_in_relation').table if vars.before_partition_info %}
-    {% if row[0].startswith('#') %}
-      {{ vars.update({'before_partition_info': False}) }}
-    {% else %}
-      {{ columns.append(row) }}
-    {% endif %}
-  {% endfor %}
-  {{ return(sql_convert_columns_in_relation(columns)) }}
+  {% set table = load_result('get_columns_in_relation').table %}
+  {{ return(sql_convert_columns_in_relation(table)) }}
 
 {% endmacro %}
 
