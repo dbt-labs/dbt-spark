@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import TypeVar, Optional
 
 from dbt.adapters.base.column import Column
 
@@ -16,7 +16,7 @@ class SparkColumn(Column):
         self,
         column: str,
         dtype: str,
-        comment: str = None
+        comment: Optional[str]
     ) -> None:
         super().__init__(column, dtype)
 
