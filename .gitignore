@@ -7,3 +7,4 @@ build/
 dist/
 dbt-integration-tests
 test/integration/.user.yml
+.pytest_cache
