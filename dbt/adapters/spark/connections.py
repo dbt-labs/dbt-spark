@@ -46,7 +46,7 @@ class SparkCredentials(Credentials):
         return 'spark'
 
     def _connection_keys(self):
-        return 'host', 'port', 'schema', 'organization'
+        return 'host', 'port', 'cluster', 'schema', 'organization'
 
 
 class ConnectionWrapper(object):
