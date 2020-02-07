@@ -152,6 +152,18 @@ where date_day::date >= '2019-01-01'
 group by 1
 ```
 
+**Maintenance Operations**
+
+These macros are intended to be run as an [operation](https://docs.getdbt.com/docs/using-operations).
+The user who runs these operations must be a super user.
+
+| Operation  | Description                                        |
+|---------|----------------------------------------------------|
+| spark_maintenance | Run the optimize command on all Delta tables |
+| spark_statistics | Run the analyze table compute statistics for columns for all tables |
+
+Running these commands using the cli can be performed using `run-operation`, eg `dbt run-operation spark_maintenance`.
+
 ### Reporting bugs and contributing code
 
 -   Want to report a bug or request a feature? Let us know on [Slack](http://slack.getdbt.com/), or open [an issue](https://github.com/fishtown-analytics/dbt-spark/issues/new).
