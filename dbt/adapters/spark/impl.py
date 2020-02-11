@@ -50,24 +50,29 @@ class SparkAdapter(SQLAdapter):
     def list_relations_without_caching(self, information_schema, schema,
                                        model_name=None):
         kwargs = {'information_schema': information_schema, 'schema': schema}
-        results = self.execute_macro(
-            LIST_RELATIONS_MACRO_NAME,
-            kwargs=kwargs,
-            release=True
-        )
+        try:
+            results = self.execute_macro(
+                LIST_RELATIONS_MACRO_NAME,
+                kwargs=kwargs,
+                release=True
+            )
+        except dbt.exceptions.RuntimeException as e:
+            if hasattr(e, 'msg') and f"Database '{schema}' not found" in e.msg:
+                return []
 
         relations = []
         quote_policy = {
             'schema': True,
             'identifier': True
         }
-        for _database, name, _ in results:
+        for _database, name, _, information in results:
+            rel_type = ('view' if 'Type: VIEW' in information else 'table')
             relations.append(self.Relation.create(
                 database=_database,
                 schema=_database,
                 identifier=name,
                 quote_policy=quote_policy,
-                type=None
+                type=rel_type
             ))
         return relations
 
