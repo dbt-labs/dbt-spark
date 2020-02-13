@@ -59,6 +59,9 @@ class SparkAdapter(SQLAdapter):
         except dbt.exceptions.RuntimeException as e:
             if hasattr(e, 'msg') and f"Database '{schema}' not found" in e.msg:
                 return []
+            else:
+                logger.debug(f"Error while retrieving information about {schema}: {e.msg}")
+                return []
 
         relations = []
         quote_policy = {
