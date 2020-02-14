@@ -20,7 +20,7 @@ class SparkAdapter(SQLAdapter):
     ConnectionManager = SparkConnectionManager
     Relation = SparkRelation
 
-    column_names = (
+    column_names = frozenset({
         'table_database',
         'table_schema',
         'table_name',
@@ -31,7 +31,11 @@ class SparkAdapter(SQLAdapter):
         'column_index',
         'column_type',
         'column_comment',
-    )
+    })
+
+    AdapterSpecificConfigs = frozenset({"file_format", "location_root",
+                                        "partition_by", "clustered_by",
+                                        "buckets"})
 
     @classmethod
     def date_function(cls):
@@ -50,18 +54,6 @@ class SparkAdapter(SQLAdapter):
     def convert_datetime_type(cls, agate_table, col_idx):
         return "TIMESTAMP"
 
-    def create_schema(self, database, schema, model_name=None):
-        raise dbt.exceptions.NotImplementedException(
-            'Schema/Database creation is not supported in the Spark adapter. '
-            'Please create the database "{}" manually'.format(database)
-        )
-
-    def drop_schema(self, database, schema, model_name=None):
-        raise dbt.exceptions.NotImplementedException(
-            'Schema/Database deletion is not supported in the Spark adapter. '
-            'Please drop the database "{}" manually'.format(database)
-        )
-
     def get_relation_type(self, relation, model_name=None):
         kwargs = {'relation': relation}
         return self.execute_macro(
@@ -75,26 +67,52 @@ class SparkAdapter(SQLAdapter):
     def list_relations_without_caching(self, information_schema, schema,
                                        model_name=None) -> List[Relation]:
         kwargs = {'information_schema': information_schema, 'schema': schema}
-        results = self.execute_macro(
-            LIST_RELATIONS_MACRO_NAME,
-            kwargs=kwargs,
-            release=True
-        )
+        try:
+            results = self.execute_macro(
+                LIST_RELATIONS_MACRO_NAME,
+                kwargs=kwargs,
+                release=True
+            )
+        except dbt.exceptions.RuntimeException as e:
+            if hasattr(e, 'msg') and f"Database '{schema}' not found" in e.msg:
+                return []
 
         relations = []
         quote_policy = {
             'schema': True,
             'identifier': True
         }
-        for _database, name, _ in results:
+        for _database, name, _, information in results:
+            rel_type = ('view' if 'Type: VIEW' in information else 'table')
             relations.append(self.Relation.create(
                 database=_database,
                 schema=_database,
                 identifier=name,
                 quote_policy=quote_policy,
-                type=None
+                type=rel_type
             ))
         return relations
+
+    def get_relation(self, database, schema, identifier):
+        relations_list = self.list_relations(schema, schema)
+
+        matches = self._make_match(relations_list=relations_list,
+                                   database=None, schema=schema,
+                                   identifier=identifier)
+
+        if len(matches) > 1:
+            kwargs = {
+                'identifier': identifier,
+                'schema': schema
+            }
+            dbt.exceptions.get_relation_returned_multiple_results(
+                kwargs, matches
+            )
+
+        elif matches:
+            return matches[0]
+
+        return None
 
     # Override that doesn't check the type of the relation -- we do it
     # dynamically in the macro code

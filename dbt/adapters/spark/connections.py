@@ -14,8 +14,11 @@ from datetime import datetime
 import base64
 import time
 
-
-SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/0/{cluster}"
+# adding organization as a parameter, as it is required by Azure Databricks
+# and is different per workspace.
+SPARK_CONNECTION_URL = '''
+    https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}
+    '''.strip()
 
 SPARK_CREDENTIALS_CONTRACT = {
     'type': 'object',
@@ -33,6 +36,9 @@ SPARK_CREDENTIALS_CONTRACT = {
             'maximum': 65535,
         },
         'user': {
+            'type': 'string'
+        },
+        'organization': {
             'type': 'string'
         },
         'cluster': {
@@ -68,6 +74,13 @@ class SparkCredentials(Credentials):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('database', kwargs.get('schema'))
 
+        # coercing org to a string since it is unknown whether
+        # Azure Databricks will always keep it numeric
+        if 'organization' in kwargs:
+            kwargs['organization'] = str(kwargs['organization'])
+        else:
+            kwargs['organization'] = '0'
+
         super(SparkCredentials, self).__init__(*args, **kwargs)
 
     @property
@@ -75,7 +88,7 @@ class SparkCredentials(Credentials):
         return 'spark'
 
     def _connection_keys(self):
-        return ('host', 'port', 'cluster', 'schema')
+        return ('host', 'port', 'cluster', 'schema', 'organization')
 
 
 class ConnectionWrapper(object):
@@ -248,8 +261,9 @@ class SparkConnectionManager(SQLConnectionManager):
         for i in range(1 + connect_retries):
             try:
                 if creds.method == 'http':
+
                     cls.validate_creds(creds, ['token', 'host', 'port',
-                                               'cluster'])
+                                               'cluster', 'organization'])
 
                     conn_url = SPARK_CONNECTION_URL.format(**creds)
                     transport = THttpClient.THttpClient(conn_url)
