@@ -2,7 +2,6 @@ from typing import List, Dict
 
 import agate
 import dbt.exceptions
-from agate import Column
 from dbt.adapters.sql import SQLAdapter
 from dbt.contracts.graph.manifest import Manifest
 from dbt.logger import GLOBAL_LOGGER as logger
@@ -15,23 +14,12 @@ GET_RELATION_TYPE_MACRO_NAME = 'spark_get_relation_type'
 DROP_RELATION_MACRO_NAME = 'drop_relation'
 FETCH_TBLPROPERTIES_MACRO_NAME = 'spark_fetch_tblproperties'
 
+KEY_TABLE_OWNER = 'Owner'
+
 
 class SparkAdapter(SQLAdapter):
     ConnectionManager = SparkConnectionManager
     Relation = SparkRelation
-
-    column_names = frozenset({
-        'table_database',
-        'table_schema',
-        'table_name',
-        'table_type',
-        'table_comment',
-        'table_owner',
-        'column_name',
-        'column_index',
-        'column_type',
-        'column_comment',
-    })
 
     AdapterSpecificConfigs = frozenset({"file_format", "location_root",
                                         "partition_by", "clustered_by",
@@ -65,7 +53,7 @@ class SparkAdapter(SQLAdapter):
     # Override that creates macros without a known type - adapter macros that
     # require a type will dynamically check at query-time
     def list_relations_without_caching(self, information_schema, schema,
-                                       model_name=None) -> List[Relation]:
+                                       model_name=None) -> List:
         kwargs = {'information_schema': information_schema, 'schema': schema}
         try:
             results = self.execute_macro(
@@ -126,57 +114,37 @@ class SparkAdapter(SQLAdapter):
         )
 
     @staticmethod
-    def _parse_relation(relation: Relation,
-                        table_columns: List[Column],
-                        rel_type: str,
-                        properties: Dict[str, str] = None) -> List[dict]:
-        properties = properties or {}
-        table_owner_key = 'Owner'
+    def find_table_information_separator(rows):
+        pos = 0
+        for row in rows:
+            if not row.name:
+                break
+            pos += 1
+        return pos
 
-        # First check if it is present in the properties
-        table_owner = properties.get(table_owner_key)
+    @staticmethod
+    def parse_describe_extended(relation: Relation, table):
 
-        found_detailed_table_marker = False
-        for column in table_columns:
-            if column.name == '# Detailed Table Information':
-                found_detailed_table_marker = True
+        pos = SparkAdapter.find_table_information_separator(table)
 
-            # In case there is another column with the name Owner
-            if not found_detailed_table_marker:
-                continue
-
-            if not table_owner and column.name == table_owner_key:
-                table_owner = column.data_type
+        # Remove rows that start with a hash, they are comments
+        rows = [row for row in table[0:pos] if not row.name.startswith('#')]
+        metadata = {col.name: col.data_type for col in table[pos + 1:]}
 
         columns = []
-        for column in table_columns:
-            # Fixes for pseudocolumns with no type
-            if column.name in {
-                '# Partition Information',
-                '# col_name',
-                ''
-            }:
-                continue
-            elif column.name == '# Detailed Table Information':
-                # Loop until the detailed table information
-                break
-            elif column.data_type is None:
-                continue
-
-            column_data = (
-                relation.database,
-                relation.schema,
-                relation.name,
-                rel_type,
-                None,
-                table_owner,
-                column.name,
-                len(columns),
-                column.data_type,
-                None
-            )
-            column_dict = dict(zip(SparkAdapter.column_names, column_data))
-            columns.append(column_dict)
+        for column in rows:
+            columns.append({
+                'table_database': relation.database,
+                'table_schema': relation.schema,
+                'table_name': relation.name,
+                'table_type': relation.type,
+                'table_comment': None,
+                'table_owner': metadata.get(KEY_TABLE_OWNER),
+                'column_name': column.name,
+                'column_index': len(columns),
+                'column_type': column.data_type,
+                'column_comment': None
+            })
 
         return columns
 
@@ -195,9 +163,11 @@ class SparkAdapter(SQLAdapter):
             relations = self.list_relations(database_name, schema_name)
             for relation in relations:
                 properties = self.get_properties(relation)
-                logger.debug("Getting table schema for relation {}".format(relation))  # noqa
+                logger.debug("Getting table schema for relation {}", relation)
                 table_columns = self.get_columns_in_relation(relation)
                 rel_type = self.get_relation_type(relation)
-                columns += self._parse_relation(relation, table_columns, rel_type, properties)
+                columns += self._parse_relation(
+                    relation, table_columns, rel_type, properties)
 
-        return dbt.clients.agate_helper.table_from_data(columns, SparkAdapter.column_names)
+        return dbt.clients.agate_helper.table_from_data(
+            columns, SparkAdapter.column_names)

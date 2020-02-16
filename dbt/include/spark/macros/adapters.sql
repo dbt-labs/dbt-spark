@@ -99,8 +99,7 @@
   {% endcall %}
 
   {% set table = load_result('get_columns_in_relation').table %}
-  {{ return(sql_convert_columns_in_relation(table)) }}
-
+  {{ return(adapter.parse_describe_extended(table)) }}
 {% endmacro %}
 
 
