@@ -137,15 +137,25 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     @available
-    def parse_describe_extended(self, relation: Relation, raw_rows: List[agate.Row]):
+    def parse_describe_extended(
+            self,
+            relation: Relation,
+            raw_rows: List[agate.Row]
+    ):
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
-        # Find the separator between the rows and the metadata provided by extended
+        # Find the separator between the rows and the metadata provided
+        # by the DESCRIBE TABLE EXTENDED statement
         pos = SparkAdapter.find_table_information_separator(dict_rows)
 
         # Remove rows that start with a hash, they are comments
-        rows = [row for row in raw_rows[0:pos] if not row['col_name'].startswith('#')]
-        metadata = {col['col_name']: col['data_type'] for col in raw_rows[pos + 1:]}
+        rows = [
+            row for row in raw_rows[0:pos]
+            if not row['col_name'].startswith('#')
+        ]
+        metadata = {
+            col['col_name']: col['data_type'] for col in raw_rows[pos + 1:]
+        }
 
         return [dict(zip(self.column_names, (
             relation.database,
