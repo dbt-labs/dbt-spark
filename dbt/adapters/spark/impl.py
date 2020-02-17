@@ -128,7 +128,7 @@ class SparkAdapter(SQLAdapter):
         )
 
     @staticmethod
-    def find_table_information_separator(rows):
+    def find_table_information_separator(rows: List[dict]) -> int:
         pos = 0
         for row in rows:
             if not row['col_name']:
@@ -137,7 +137,7 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     @available
-    def parse_describe_extended(self, relation, raw_rows: List[agate.Row]):
+    def parse_describe_extended(self, relation: Relation, raw_rows: List[agate.Row]):
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
         # Find the separator between the rows and the metadata provided by extended
