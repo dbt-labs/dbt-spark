@@ -2,7 +2,7 @@ import unittest
 
 import dbt.flags as flags
 import mock
-from agate import Column, MappedSequence
+from agate import Row
 from dbt.adapters.base import BaseRelation
 from pyhive import hive
 
@@ -121,12 +121,10 @@ class TestSparkAdapter(unittest.TestCase):
             ('Partition Provider', 'Catalog')
         ]
 
-        input_cols = [Column(index=None, name=r[0], data_type=r[1], rows=MappedSequence(
-            keys=['col_name', 'data_type'],
-            values=r
-        )) for r in plain_rows]
+        input_cols = [Row(keys=['col_name', 'data_type'], values=r) for r in plain_rows]
 
-        rows = SparkAdapter.parse_describe_extended(relation, input_cols)
+        config = self.get_target_http(self.project_cfg)
+        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 3)
         self.assertEqual(rows[0], {
             'table_database': relation.database,
