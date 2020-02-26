@@ -1,0 +1,5 @@
+.circleci
+.dockerignore
+.git
+.vscode
+Dockerfile
