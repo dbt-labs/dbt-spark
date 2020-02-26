@@ -34,6 +34,10 @@ class SparkColumn(Column):
         return "cast({} as {})".format(value, self.dtype)
 
     @property
+    def quoted(self) -> str:
+        return '`{}`'.format(self.column)
+
+    @property
     def data_type(self) -> str:
         return self.dtype
 
