@@ -127,8 +127,14 @@ COPY spark/docker/bootstrap.sh /home/bin/
 RUN chmod -R 777 /home/bin/*
 
 # Install DBT-Spark
+ENV VENV_ROOT=$HOME/venv
 COPY . $DBT_HOME
 WORKDIR $DBT_HOME
-RUN python3 setup.py install
+RUN python3 -m venv ${VENV_ROOT}/dbt-spark && \
+    VENV_BIN=${VENV_ROOT}/dbt-spark/bin && \
+    ${VENV_BIN}/python3 setup.py install && \
+    ln -s ${VENV_BIN}/dbt /usr/bin/dbt-spark && \
+    cd / && \
+    dbt-spark --version
 
 ENTRYPOINT [ "/home/bin/bootstrap.sh" ]
