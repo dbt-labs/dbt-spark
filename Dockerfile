@@ -16,8 +16,10 @@ WORKDIR $HOME
 ### Use spark/conf instead of hadoop/shared/conf:
 ENV HADOOP_CONF_DIR /usr/local/spark/conf
 
-# Prevents some log trimming:
-ENV PYTHONUNBUFFERED 1
+# Env tuning
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8
 
 # Install core libraries and dependencies
 RUN apt-get -y update && \
