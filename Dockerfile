@@ -103,18 +103,8 @@ RUN cd $SPARK_HOME/bin && echo "print('Hello, Delta Lake!')" > pydummy.py && \
 
 # Install python libraries
 RUN pip3 install --upgrade \
-    autocorrect \
-    boto3 \
-    fire \
-    junit-xml \
-    numpy \
-    pandas \
-    pyarrow \
     pyhive[hive] \
-    pyspark \
-    s3fs \
-    tqdm \
-    xmlrunner
+    pyspark
 
 # Image Bootstrap to start spark and any other services:
 COPY spark/docker/bootstrap.sh /home/bin/
