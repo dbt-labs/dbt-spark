@@ -75,9 +75,6 @@ RUN apt-get update && \
     default-libmysqlclient-dev \
     default-mysql-server
 
-# Install Docker
-RUN curl -sSL https://get.docker.com/ | sh
-
 # Install Hadoop
 RUN cd /usr/local && \
     HADOOP_MINOR_VERSION=2.7.7 && \
@@ -109,7 +106,6 @@ RUN cd $SPARK_HOME/bin && echo "print('Hello, Delta Lake!')" > pydummy.py && \
 # Install python libraries
 RUN pip3 install --upgrade \
     autocorrect \
-    docker \
     boto3 \
     fire \
     junit-xml \
