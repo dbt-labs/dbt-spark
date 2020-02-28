@@ -5,16 +5,18 @@ FROM $base_image
 USER root
 
 # Version strings and default paths
-ENV SPARK_VERSION=2.4.5 \
-    HADOOP_VERSION=2.7 \
+
+ARG SPARK_VERSION=2.4.5
+ARG HADOOP_VERSION=2.7.7
+
+ENV SPARK_VERSION=$SPARK_VERSION \
+    HADOOP_VERSION=$HADOOP_VERSION \
     HADOOP_HOME=/usr/local/hdp \
     SPARK_HOME=/usr/local/spark \
+    HADOOP_CONF_DIR=/usr/local/spark/conf \
     DBT_HOME=/usr/local/dbt-spark \
     HOME=/home
 WORKDIR $HOME
-
-### Use spark/conf instead of hadoop/shared/conf:
-ENV HADOOP_CONF_DIR /usr/local/spark/conf
 
 # Env tuning
 ENV PYTHONUNBUFFERED=1 \
@@ -48,16 +50,12 @@ RUN apt-get -y update && \
     echo "which java=`which java`" && \
     java -version
 
-# RUN update-alternatives --config java
-# RUN apt-get -y update && \
-#     apt-get install -y \
-#     -t jessie-backports \
-#     openjdk-8-jre-headless && \
-#     rm -rf /var/lib/apt/lists/*
+# Get 2-part hadoop version string for SPARK_NAME (e.g. 2.7.7 -> 2.7)
+ENV HADOOP_VERSION_SHORT=${HADOOP_VERSION%.*}
 
 # Download spark
 RUN cd /tmp && \
-    SPARK_NAME=spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} && \
+    SPARK_NAME=spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION_SHORT} && \
     curl -o $SPARK_NAME.tgz http://mirrors.sonic.net/apache/spark/spark-${SPARK_VERSION}/$SPARK_NAME.tgz && \
     tar -xzf $SPARK_NAME.tgz -C /usr/local --owner root --group root --no-same-owner && \
     rm $SPARK_NAME.tgz && \
@@ -91,7 +89,7 @@ RUN echo -e "HADOOP_HOME=$HADOOP_HOME\nSPARK_HOME=$SPARK_HOME" && \
     cp `find $HADOOP_HOME/share/hadoop/tools/lib/ -name "*aws*.jar"` $SPARK_HOME/jars/ && \
     find $SPARK_HOME/jars -name "*aws*.jar" -print
 
-# Not working:
+# TODO: Debug install of jars:
 # # Copy mysql jdbc driver into spark classpath
 # RUN find / -name "*mysql-connector-java*.jar" && \
 #     cp `find /usr/ -name "*mysql-connector-java*.jar"` $SPARK_HOME/jars/ && \
@@ -118,9 +116,7 @@ RUN pip3 install --upgrade \
     tqdm \
     xmlrunner
 
-# ENV SCRATCH_DIR /tmp/scratch
-# RUN mkdir -p $SCRATCH_DIR
-
+# Image Bootstrap to start spark and any other services:
 COPY spark/docker/bootstrap.sh /home/bin/
 RUN chmod -R 777 /home/bin/*
 
