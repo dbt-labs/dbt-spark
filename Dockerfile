@@ -2,30 +2,38 @@
 ARG base_image=python:3.8
 FROM $base_image
 
-USER root
-
 # Version strings and default paths
 
 ARG SPARK_VERSION=2.4.5
 ARG HADOOP_VERSION=2.7.7
+ARG HADOOP_VERSION_SHORT=2.7
 
+# Spark
 ENV SPARK_VERSION=$SPARK_VERSION \
-    HADOOP_VERSION=$HADOOP_VERSION \
-    HADOOP_HOME=/usr/local/hdp \
     SPARK_HOME=/usr/local/spark \
-    HADOOP_CONF_DIR=/usr/local/spark/conf \
-    DBT_HOME=/usr/local/dbt-spark \
-    HOME=/home
-WORKDIR $HOME
+    SPARK_OPTS="--driver-java-options=-Xms1024M --driver-java-options=-Xmx4096M --driver-java-options=-Dlog4j.logLevel=info"
 
-# Env tuning
+# Hadoop
+ENV HADOOP_VERSION=$HADOOP_VERSION \
+    HADOOP_VERSION_SHORT=${HADOOP_VERSION_SHORT} \
+    HADOOP_HOME=/usr/local/hdp \
+    HADOOP_CONF_DIR=/usr/local/spark/conf
+
+# Python
 ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8
+    PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.7-src.zip
 
-# Install core libraries and dependencies
+# DBT
+ENV DBT_HOME=/usr/local/dbt-spark
+
+# General
+ENV LANG=C.UTF-8 \
+    PATH=$PATH:$SPARK_HOME/bin
+
 RUN apt-get -y update && \
     apt-get install -y \
+    # Core libraries and deps
     apt-transport-https \
     apt-utils \
     ca-certificates \
@@ -38,22 +46,19 @@ RUN apt-get -y update && \
     lxc \
     openssh-client \
     net-tools \
-    wget && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install Java
-RUN apt-get -y update && \
-    apt-get install -y \
+    wget \
+    # MySQL (hive metastore)
+    default-libmysqlclient-dev \
+    default-mysql-server \
+    # Java
     default-jre && \
-    rm -rf /var/lib/apt/lists/* && \
     echo JAVA_HOME=$JAVA_HOME && \
     echo "which java=`which java`" && \
-    java -version
+    java -version && \
+    # Cleanup
+    rm -rf /var/lib/apt/lists/*
 
-# Get 2-part hadoop version string for SPARK_NAME (e.g. 2.7.7 -> 2.7)
-ENV HADOOP_VERSION_SHORT=${HADOOP_VERSION%.*}
-
-# Download spark
+# Spark
 RUN cd /tmp && \
     SPARK_NAME=spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION_SHORT} && \
     curl -o $SPARK_NAME.tgz http://mirrors.sonic.net/apache/spark/spark-${SPARK_VERSION}/$SPARK_NAME.tgz && \
@@ -62,18 +67,7 @@ RUN cd /tmp && \
     cd /usr/local && \
     ln -s $SPARK_NAME spark
 
-# Spark config
-ENV PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.7-src.zip \
-    SPARK_OPTS="--driver-java-options=-Xms1024M --driver-java-options=-Xmx4096M --driver-java-options=-Dlog4j.logLevel=info" \
-    PATH=$PATH:$SPARK_HOME/bin
-
-# Install mysql server and drivers (for hive metastore)
-RUN apt-get update && \
-    apt-get install -y \
-    default-libmysqlclient-dev \
-    default-mysql-server
-
-# Install Hadoop
+# Hadoop
 RUN cd /usr/local && \
     HADOOP_MINOR_VERSION=2.7.7 && \
     curl -o hadoop-$HADOOP_MINOR_VERSION.tar.gz https://archive.apache.org/dist/hadoop/common/hadoop-$HADOOP_MINOR_VERSION/hadoop-$HADOOP_MINOR_VERSION.tar.gz && \
@@ -83,42 +77,30 @@ RUN cd /usr/local && \
     chmod -R 777 $HADOOP_HOME && \
     rm hadoop-$HADOOP_MINOR_VERSION.tar.gz
 
-# Copy hadoop libraries for AWS & S3 to spark classpath
+# AWS jars
 RUN echo -e "HADOOP_HOME=$HADOOP_HOME\nSPARK_HOME=$SPARK_HOME" && \
     find $HADOOP_HOME/share/hadoop/tools/lib/ -name "*aws*.jar" && \
     cp `find $HADOOP_HOME/share/hadoop/tools/lib/ -name "*aws*.jar"` $SPARK_HOME/jars/ && \
     find $SPARK_HOME/jars -name "*aws*.jar" -print
 
-# TODO: Debug install of jars:
-# # Copy mysql jdbc driver into spark classpath
-# RUN find / -name "*mysql-connector-java*.jar" && \
-#     cp `find /usr/ -name "*mysql-connector-java*.jar"` $SPARK_HOME/jars/ && \
-#     find $SPARK_HOME/jars -name "*mysql-connector-java*.jar" -print
-
-# Install Delta Lake for Spark
+# Delta Lake
 RUN cd $SPARK_HOME/bin && echo "print('Hello, Delta Lake!')" > pydummy.py && \
     ./spark-submit \
     --packages io.delta:delta-core_2.11:0.4.0 \
     --conf spark.yarn.submit.waitAppCompletion=false pydummy.py
 
-# Install python libraries
+# Python libs
 RUN pip3 install --upgrade \
     pyhive[hive] \
     pyspark
 
-# Image Bootstrap to start spark and any other services:
+# Bootstrap scripts
 COPY spark/docker/bootstrap.sh /home/bin/
 RUN chmod -R 777 /home/bin/*
 
-# Install DBT-Spark
-ENV VENV_ROOT=$HOME/venv
+# dbt-spark
 COPY . $DBT_HOME
-WORKDIR $DBT_HOME
-RUN python3 -m venv ${VENV_ROOT}/dbt-spark && \
-    VENV_BIN=${VENV_ROOT}/dbt-spark/bin && \
-    ${VENV_BIN}/python3 setup.py install && \
-    ln -s ${VENV_BIN}/dbt /usr/bin/dbt-spark && \
-    cd / && \
-    dbt-spark --version
+RUN python3 $DBT_HOME/setup.py install && \
+    dbt --version
 
 ENTRYPOINT [ "/home/bin/bootstrap.sh" ]
