@@ -124,11 +124,11 @@ class SparkAdapter(SQLAdapter):
             pos += 1
         return pos
 
-    def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
-        raw_rows: List[agate.Row] = self.execute_macro(
-            GET_COLUMNS_IN_RELATION_MACRO_NAME,
-            kwargs={'relation': relation}
-        )
+    def parse_describe_extended(
+            self,
+            relation: Relation,
+            raw_rows: List[agate.Row]
+    ) -> List[SparkColumn]:
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
         # Find the separator between the rows and the metadata provided
@@ -155,6 +155,11 @@ class SparkAdapter(SQLAdapter):
             column['data_type']
         ) for idx, column in enumerate(rows)]
 
+    def get_columns_in_relation(self,
+                                relation: Relation) -> List[SparkColumn]:
+        rows: List[agate.Row] = super().get_columns_in_relation(relation)
+        return self.parse_describe_extended(relation, rows)
+
     def get_properties(self, relation: Relation) -> Dict[str, str]:
         properties = self.execute_macro(
             FETCH_TBLPROPERTIES_MACRO_NAME,
@@ -173,6 +178,8 @@ class SparkAdapter(SQLAdapter):
             relations = self.list_relations(database_name, schema_name)
             for relation in relations:
                 logger.debug("Getting table schema for relation {}", relation)
-                columns += list(map(to_dict, self.get_columns_in_relation(relation)))
+                columns += list(
+                    map(to_dict, self.get_columns_in_relation(relation))
+                )
 
         return agate.Table.from_object(columns)
