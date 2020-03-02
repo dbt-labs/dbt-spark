@@ -97,9 +97,7 @@
   {% call statement('get_columns_in_relation', fetch_result=True) %}
       describe extended {{ relation }}
   {% endcall %}
-
-  {% set table = load_result('get_columns_in_relation').table %}
-  {{ return(adapter.parse_describe_extended(relation, table)) }}
+  {% do return(load_result('get_columns_in_relation').table) %}
 {% endmacro %}
 
 

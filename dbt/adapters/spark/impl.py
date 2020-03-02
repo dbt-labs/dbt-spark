@@ -2,18 +2,19 @@ from typing import List, Dict
 
 import agate
 import dbt.exceptions
-from dbt.adapters.base import available
 from dbt.adapters.sql import SQLAdapter
 from dbt.contracts.graph.manifest import Manifest
 from dbt.logger import GLOBAL_LOGGER as logger
 
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
+from dbt.adapters.spark.relation import SparkColumn
 
 LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
 GET_RELATION_TYPE_MACRO_NAME = 'spark_get_relation_type'
 DROP_RELATION_MACRO_NAME = 'drop_relation'
 FETCH_TBLPROPERTIES_MACRO_NAME = 'spark_fetch_tblproperties'
+GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
 
 KEY_TABLE_OWNER = 'Owner'
 
@@ -25,19 +26,6 @@ class SparkAdapter(SQLAdapter):
     AdapterSpecificConfigs = frozenset({"file_format", "location_root",
                                         "partition_by", "clustered_by",
                                         "buckets"})
-
-    column_names = (
-        'table_database',
-        'table_schema',
-        'table_name',
-        'table_type',
-        'table_comment',
-        'table_owner',
-        'column_name',
-        'column_index',
-        'column_type',
-        'column_comment'
-    )
 
     @classmethod
     def date_function(cls):
@@ -136,12 +124,11 @@ class SparkAdapter(SQLAdapter):
             pos += 1
         return pos
 
-    @available
-    def parse_describe_extended(
-            self,
-            relation: Relation,
-            raw_rows: List[agate.Row]
-    ):
+    def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
+        raw_rows: List[agate.Row] = self.execute_macro(
+            GET_COLUMNS_IN_RELATION_MACRO_NAME,
+            kwargs={'relation': relation}
+        )
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
         # Find the separator between the rows and the metadata provided
@@ -157,18 +144,16 @@ class SparkAdapter(SQLAdapter):
             col['col_name']: col['data_type'] for col in raw_rows[pos + 1:]
         }
 
-        return [dict(zip(self.column_names, (
+        return [SparkColumn(
             relation.database,
             relation.schema,
             relation.name,
             relation.type,
-            None,
             metadata.get(KEY_TABLE_OWNER),
             column['col_name'],
             idx,
-            column['data_type'],
-            None
-        ))) for idx, column in enumerate(rows)]
+            column['data_type']
+        ) for idx, column in enumerate(rows)]
 
     def get_properties(self, relation: Relation) -> Dict[str, str]:
         properties = self.execute_macro(
@@ -177,15 +162,17 @@ class SparkAdapter(SQLAdapter):
         )
         return {key: value for (key, value) in properties}
 
-    def get_catalog(self, manifest: Manifest):
+    def get_catalog(self, manifest: Manifest) -> agate.Table:
         schemas = manifest.get_used_schemas()
+
+        def to_dict(d: any) -> Dict:
+            return d.__dict__
 
         columns = []
         for (database_name, schema_name) in schemas:
             relations = self.list_relations(database_name, schema_name)
             for relation in relations:
                 logger.debug("Getting table schema for relation {}", relation)
-                columns += self.get_columns_in_relation(relation)
+                columns += list(map(to_dict, self.get_columns_in_relation(relation)))
 
-        return dbt.clients.agate_helper.table_from_data(
-            columns, self.column_names)
+        return agate.Table.from_object(columns)
