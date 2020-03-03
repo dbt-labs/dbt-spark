@@ -126,41 +126,47 @@ class TestSparkAdapter(unittest.TestCase):
         config = self.get_target_http(self.project_cfg)
         rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 3)
-        self.assertEqual(rows[0], {
+        self.assertEqual(rows[0].__dict__, {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
-            'table_comment': None,
             'table_owner': 'root',
+            'column': 'col1',
             'column_name': 'col1',
             'column_index': 0,
-            'column_type': 'decimal(22,0)',
-            'column_comment': None
+            'dtype': 'decimal(22,0)',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
         })
 
-        self.assertEqual(rows[1], {
+        self.assertEqual(rows[1].__dict__, {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
-            'table_comment': None,
             'table_owner': 'root',
+            'column': 'col2',
             'column_name': 'col2',
             'column_index': 1,
-            'column_type': 'string',
-            'column_comment': None
+            'dtype': 'string',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
         })
 
-        self.assertEqual(rows[2], {
+        self.assertEqual(rows[2].__dict__, {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
-            'table_comment': None,
             'table_owner': 'root',
+            'column': 'dt',
             'column_name': 'dt',
             'column_index': 2,
-            'column_type': 'date',
-            'column_comment': None
+            'dtype': 'date',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
         })
