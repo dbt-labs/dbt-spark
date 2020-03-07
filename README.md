@@ -44,7 +44,7 @@ dbt-spark has also been tested against AWS Databricks, and it has some differenc
 
 Please ignore all references to port 15001 in the databricks-connect docs as that is specific to that tool; port 443 is used for dbt-spark's https connection.
 
-Lastly, the host field for Databricks can be found at the start of your workspace or cluster url (but don't include https://): region.azuredatabricks.net for Azure, or account.cloud.databricks.com for AWS.  
+Lastly, the host field for Databricks can be found at the start of your workspace or cluster url (but don't include https://): region.azuredatabricks.net for Azure, or account.cloud.databricks.com for AWS.
 
 
 
@@ -151,6 +151,30 @@ from {{ ref('events') }}
 where date_day::date >= '2019-01-01'
 group by 1
 ```
+
+### Running locally
+
+A `docker-compose` environment starts a Thrift server and a Postgres database (Hive metastore)
+
+```
+docker-compose up
+```
+
+Your profile should look like this:
+
+```
+local-spark:
+  type: spark
+  method: thrift
+  schema: dbt
+  host: 127.0.0.1
+  port: 10000
+  user: hadoop
+  connect_retries: 5
+  connect_timeout: 60
+```
+
+The Spark UI should be available at [http://localhost:4040/sqlserver/](http://localhost:4040/sqlserver/)
 
 ### Reporting bugs and contributing code
 
