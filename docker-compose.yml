@@ -1,0 +1,19 @@
+version: "3.7"
+services:
+
+  dbt-thrift:
+    build: .
+    ports:
+      - "10000:10000"
+      - "18080:18080"
+    depends_on:
+      - hive-metastore
+
+  hive-metastore:
+    image: postgres:9.6.17-alpine
+    volumes:
+      - ./.hive-metastore/:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=dbt
+      - POSTGRES_PASSWORD=dbt
+      - POSTGRES_DB=metastore
