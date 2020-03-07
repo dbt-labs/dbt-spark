@@ -176,6 +176,14 @@ local-spark:
 
 The Spark UI should be available at [http://localhost:4040/sqlserver/](http://localhost:4040/sqlserver/)
 
+Note that the Hive metastore data is persisted under `./.hive-metastore/`, and the Spark-produced data under `./.spark-warehouse/`. To completely reset you environment run the following:
+
+```
+docker-compose down
+rm -rf ./.hive-metastore/
+rm -rf ./.spark-warehouse/
+```
+
 ### Reporting bugs and contributing code
 
 -   Want to report a bug or request a feature? Let us know on [Slack](http://slack.getdbt.com/), or open [an issue](https://github.com/fishtown-analytics/dbt-spark/issues/new).
