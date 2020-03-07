@@ -71,7 +71,8 @@ ENV LANG=C.UTF-8 \
 ENV DEFAULT_DATABASE=dbt
 
 RUN apt-get update && \
-  apt-get install -y procps
+    apt-get install -y procps && \
+    adduser --disabled-password --gecos '' hadoop
 
 COPY --from=builder $SPARK_HOME $SPARK_HOME
 COPY --from=builder $HADOOP_HOME $HADOOP_HOME
