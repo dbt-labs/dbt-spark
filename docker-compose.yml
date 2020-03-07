@@ -1,8 +1,8 @@
 version: "3.7"
 services:
 
-  dbt-thrift:
-    build: .
+  thrift:
+    build: docker/thrift
     ports:
       - "10000:10000"
       - "18080:18080"

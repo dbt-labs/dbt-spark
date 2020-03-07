@@ -45,7 +45,7 @@ RUN curl -o $SPARK_HOME/jars/postgresql.jar https://jdbc.postgresql.org/download
 # ------------------------------------------------
 # ------------------ Main stage ------------------
 # ------------------------------------------------
-FROM python:3.8.1-slim-buster
+FROM openjdk:8-slim-buster
 
 ARG SPARK_VERSION
 ARG HADOOP_VERSION
@@ -67,14 +67,6 @@ ENV HADOOP_VERSION=$HADOOP_VERSION \
     HADOOP_HOME=$HADOOP_HOME \
     HADOOP_CONF_DIR=/usr/local/spark/conf
 
-# Python
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONIOENCODING=utf-8 \
-    PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.7-src.zip
-
-# DBT
-ENV DBT_HOME=/usr/local/dbt-spark
-
 # General
 ENV LANG=C.UTF-8 \
     PATH=$PATH:$SPARK_HOME/bin
@@ -84,43 +76,14 @@ COPY --from=builder $HADOOP_HOME $HADOOP_HOME
 # AWS jars
 COPY --from=builder $HADOOP_HOME/share/hadoop/tools/lib/*aws*jar $SPARK_HOME/jars/
 
-RUN apt-get -y update && \
-  # Java 8
-  apt-get install -y software-properties-common gnupg2 wget && \
-  wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add - && \
-  add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ && \
-  apt-get -y update && \
-  mkdir -p /usr/share/man/man1 && \
-  apt-get install -y \
-  # Core libraries and deps
-  libsasl2-dev \
-  procps \
-  python3-dev \
-  build-essential \
-  # Java
-  adoptopenjdk-8-hotspot && \
-  echo JAVA_HOME=$JAVA_HOME && \
-  echo "which java=`which java`" && \
-  java -version && \
-  # Cleanup
-  rm -rf /var/lib/apt/lists/*
-
-# Python libs
-RUN pip3 install --upgrade \
-    pyhive[hive] \
-    pyspark
-
-# dbt-spark
-COPY . $DBT_HOME
-RUN python3 $DBT_HOME/setup.py install && \
-    dbt --version
-
 # Bootstrap scripts
-COPY docker/bootstrap.sh /home/bin/
-RUN chmod -R 777 /home/bin/*
+COPY bootstrap.sh /home/bin/
 
 # Hive config
-COPY docker/hive-site.xml $SPARK_HOME/conf
+COPY hive-site.xml $SPARK_HOME/conf
+
+RUN apt-get update && \
+    apt-get install -y procps
 
 WORKDIR $SPARK_HOME
 

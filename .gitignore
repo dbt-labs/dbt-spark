@@ -1,3 +1,4 @@
+.hive-metastore/
 *.egg-info
 env/
 *.pyc
