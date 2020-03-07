@@ -1,4 +1,5 @@
 .hive-metastore/
+.spark-warehouse/
 *.egg-info
 env/
 *.pyc

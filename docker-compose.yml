@@ -5,9 +5,14 @@ services:
     build: docker/thrift
     ports:
       - "10000:10000"
-      - "18080:18080"
+      - "4040:4040"
     depends_on:
       - hive-metastore
+    volumes:
+      - ./.spark-warehouse/:/usr/local/spark/spark-warehouse
+    environment:
+      # This database will be created on bootstrap
+      - DEFAULT_DATABASE=dbt
 
   hive-metastore:
     image: postgres:9.6.17-alpine
