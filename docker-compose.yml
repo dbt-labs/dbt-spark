@@ -12,7 +12,7 @@ services:
       - ./.spark-warehouse/:/usr/local/spark/spark-warehouse
     environment:
       # This database will be created on bootstrap
-      - DEFAULT_DATABASE=dbt
+      - DEFAULT_DATABASE=analytics
 
   hive-metastore:
     image: postgres:9.6.17-alpine

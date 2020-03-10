@@ -163,15 +163,18 @@ docker-compose up
 Your profile should look like this:
 
 ```
-local-spark:
-  type: spark
-  method: thrift
-  schema: dbt
-  host: 127.0.0.1
-  port: 10000
-  user: hadoop
-  connect_retries: 5
-  connect_timeout: 60
+your_profile_name:
+  target: local
+  outputs:
+    local:
+      method: thrift
+      type: spark
+      schema: analytics
+      host: 127.0.0.1
+      port: 10001
+      user: hadoop
+      connect_retries: 5
+      connect_timeout: 60
 ```
 
 The Spark UI should be available at [http://localhost:4040/sqlserver/](http://localhost:4040/sqlserver/)
