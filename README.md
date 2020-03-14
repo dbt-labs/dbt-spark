@@ -154,7 +154,7 @@ group by 1
 
 ### Running locally
 
-A `docker-compose` environment starts a Thrift server and a Postgres database (Hive metastore)
+A `docker-compose` environment starts a Spark Thrift server and a Postgres database as a Hive Metastore backend.
 
 ```
 docker-compose up
