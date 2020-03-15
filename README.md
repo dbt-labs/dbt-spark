@@ -154,7 +154,7 @@ group by 1
 
 ### Running locally
 
-A `docker-compose` environment starts a Thrift server and a Postgres database (Hive metastore)
+A `docker-compose` environment starts a Spark Thrift server and a Postgres database as a Hive Metastore backend.
 
 ```
 docker-compose up
@@ -177,7 +177,10 @@ your_profile_name:
       connect_timeout: 60
 ```
 
-The Spark UI should be available at [http://localhost:4040/sqlserver/](http://localhost:4040/sqlserver/)
+Connecting to the local spark instance:
+
+* The Spark UI should be available at [http://localhost:4040/sqlserver/](http://localhost:4040/sqlserver/)
+* The endpoint for SQL-based testing is at `http://localhost:10000` and can be referenced with the Hive or Spark JDBC drivers using connection string `jdbc:hive2://localhost:10000` and default credentials `dbt`:`dbt`
 
 Note that the Hive metastore data is persisted under `./.hive-metastore/`, and the Spark-produced data under `./.spark-warehouse/`. To completely reset you environment run the following:
 
