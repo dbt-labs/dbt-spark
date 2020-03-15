@@ -1,13 +1,13 @@
 version: "3.7"
 services:
 
-  thrift:
+  dbt-spark245-thrift:
     image: godatadriven/spark:2.4.5
     ports:
       - "10000:10000"
       - "4040:4040"
     depends_on:
-      - hive-metastore
+      - dbt-hive-metastore
     command: >
       --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
       --name Thrift JDBC/ODBC Server
@@ -15,9 +15,9 @@ services:
       - ./.spark-warehouse/:/spark-warehouse/
       - ./docker/hive-site.xml:/usr/spark/conf/hive-site.xml
     environment:
-      - WAIT_FOR=hive-metastore:5432
+      - WAIT_FOR=dbt-hive-metastore:5432
 
-  hive-metastore:
+  dbt-hive-metastore:
     image: postgres:9.6.17-alpine
     volumes:
       - ./.hive-metastore/:/var/lib/postgresql/data
