@@ -103,6 +103,7 @@ class TestSparkAdapter(unittest.TestCase):
         plain_rows = [
             ('col1', 'decimal(22,0)'),
             ('col2', 'string',),
+            ('dt', 'date'),
             ('# Partition Information', 'data_type'),
             ('# col_name', 'data_type'),
             ('dt', 'date'),
