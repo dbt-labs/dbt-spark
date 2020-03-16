@@ -95,12 +95,9 @@
 
 {% macro spark__get_columns_in_relation(relation) -%}
   {% call statement('get_columns_in_relation', fetch_result=True) %}
-      describe {{ relation }}
+      describe extended {{ relation }}
   {% endcall %}
-
-  {% set table = load_result('get_columns_in_relation').table %}
-  {{ return(sql_convert_columns_in_relation(table)) }}
-
+  {% do return(load_result('get_columns_in_relation').table) %}
 {% endmacro %}
 
 
@@ -149,6 +146,12 @@
   {% endif %}
 {%- endmacro %}
 
+{% macro spark_fetch_tblproperties(relation) -%}
+  {% call statement('list_properties', fetch_result=True) -%}
+    SHOW TBLPROPERTIES {{ relation }}
+  {% endcall %}
+  {% do return(load_result('list_properties').table) %}
+{%- endmacro %}
 
 {% macro spark__rename_relation(from_relation, to_relation) -%}
   {% call statement('rename_relation') -%}
