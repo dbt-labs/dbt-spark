@@ -70,3 +70,6 @@ class SparkColumn(Column):
     @property
     def quoted(self):
         return '`{}`'.format(self.column)
+
+    def __repr__(self):
+        return "<SparkColumn {}, {}>".format(self.name, self.data_type)

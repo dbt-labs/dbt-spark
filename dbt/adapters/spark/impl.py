@@ -119,7 +119,7 @@ class SparkAdapter(SQLAdapter):
     def find_table_information_separator(rows: List[dict]) -> int:
         pos = 0
         for row in rows:
-            if not row['col_name']:
+            if not row['col_name'] or row['col_name'].startswith('#'):
                 break
             pos += 1
         return pos
@@ -143,7 +143,6 @@ class SparkAdapter(SQLAdapter):
         metadata = {
             col['col_name']: col['data_type'] for col in raw_rows[pos + 1:]
         }
-
         return [SparkColumn(
             relation.database,
             relation.schema,
@@ -181,5 +180,4 @@ class SparkAdapter(SQLAdapter):
                 columns += list(
                     map(to_dict, self.get_columns_in_relation(relation))
                 )
-
         return agate.Table.from_object(columns)
