@@ -171,7 +171,7 @@ your_profile_name:
       type: spark
       schema: analytics
       host: 127.0.0.1
-      port: 10001
+      port: 10000
       user: hadoop
       connect_retries: 5
       connect_timeout: 60
