@@ -17,7 +17,7 @@ jobs:
         environment:
           DBT_INVOCATION_ENV: circle
 
-      - image: dmateusp/spark:2.4.5
+      - image: godatadriven/spark:2.4.5
         environment:
           WAIT_FOR: localhost:5432
         command: >

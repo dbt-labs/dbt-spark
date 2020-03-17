@@ -1,2 +1,0 @@
-FROM godatadriven/spark:2.4.5
-EXPOSE 10000/tcp
