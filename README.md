@@ -172,7 +172,7 @@ your_profile_name:
       schema: analytics
       host: 127.0.0.1
       port: 10000
-      user: hadoop
+      user: dbt
       connect_retries: 5
       connect_timeout: 60
 ```
