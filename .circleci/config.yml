@@ -1,28 +1,52 @@
 version: 2
+
 jobs:
   unit:
     docker:
-      - image: fishtownjacob/test-container
+      - image: fishtownjacob/test-container:4
+        environment:
+          DBT_INVOCATION_ENV: circle
     steps:
       - checkout
       - run: tox -e flake8,unit
 
-  integration:
+  integration-spark245:
     docker:
-      - image: fishtownjacob/test-container
+
+      - image: dmateusp/test-container:4
+        environment:
+          DBT_INVOCATION_ENV: circle
+
+      - image: dmateusp/spark:2.4.5
+        environment:
+          WAIT_FOR: localhost:5432
+        command: >
+          --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
+          --name Thrift JDBC/ODBC Server
+          --conf spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:postgresql://localhost/metastore
+          --conf spark.hadoop.javax.jdo.option.ConnectionUserName=dbt
+          --conf spark.hadoop.javax.jdo.option.ConnectionPassword=dbt
+          --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+
+      - image: postgres:9.6.17-alpine
+        environment:
+          POSTGRES_USER: dbt
+          POSTGRES_PASSWORD: dbt
+          POSTGRES_DB: metastore
+
     steps:
       - checkout
 
       - run:
           name: Checkout test project
           command: git clone --branch spark-support https://github.com/fishtown-analytics/dbt-integration-tests.git
-
       - run:
           name: Run integration tests
-          command: tox -e integration
+          command: tox -e integration-spark-thrift
           no_output_timeout: 1h
           environment:
               DBT_PROFILES_DIR: /home/dbt_test_user/project/test/integration/
+              SPARK_HOST: localhost
 
       - store_artifacts:
           path: ./logs
@@ -32,6 +56,6 @@ workflows:
   test-everything:
     jobs:
       - unit
-      - integration:
+      - integration-spark245:
           requires:
             - unit

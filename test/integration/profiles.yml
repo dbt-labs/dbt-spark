@@ -1,5 +1,4 @@
-
-spark:
+spark-http:
   target: ci
   outputs:
     ci:
@@ -12,3 +11,15 @@ spark:
       cluster: '{{ env_var("SPARK_CLUSTER") }}'
       connect_timeout: 60
       connect_retries: 10
+spark-thrift:
+  target: ci
+  outputs:
+    ci:
+      method: thrift
+      type: spark
+      schema: analytics
+      host: localhost
+      port: 10000
+      user: dbt
+      connect_retries: 5
+      connect_timeout: 60
