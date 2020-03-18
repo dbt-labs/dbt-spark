@@ -17,6 +17,7 @@ FETCH_TBLPROPERTIES_MACRO_NAME = 'spark_fetch_tblproperties'
 GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
 
 KEY_TABLE_OWNER = 'Owner'
+KEY_TABLE_STATISTICS = 'Statistics'
 
 
 class SparkAdapter(SQLAdapter):
@@ -153,6 +154,7 @@ class SparkAdapter(SQLAdapter):
             relation.name,
             relation.type,
             metadata.get(KEY_TABLE_OWNER),
+            metadata.get(KEY_TABLE_STATISTICS),
             column['col_name'],
             idx,
             column['data_type']
@@ -172,16 +174,12 @@ class SparkAdapter(SQLAdapter):
 
     def get_catalog(self, manifest: Manifest) -> agate.Table:
         schemas = manifest.get_used_schemas()
-
-        def to_dict(d: any) -> Dict:
-            return d.__dict__
-
         columns = []
         for (database_name, schema_name) in schemas:
             relations = self.list_relations(database_name, schema_name)
             for relation in relations:
                 logger.debug("Getting table schema for relation {}", relation)
-                columns += list(
-                    map(to_dict, self.get_columns_in_relation(relation))
-                )
+                columns += [
+                    col.to_dict() for col in self.get_columns_in_relation(relation)
+                ]
         return agate.Table.from_object(columns)

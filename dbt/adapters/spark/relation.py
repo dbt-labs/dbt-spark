@@ -55,6 +55,7 @@ class SparkColumn(Column):
                  table_name: str,
                  table_type: str,
                  table_owner: str,
+                 table_stats: str,
                  column_name: str,
                  column_index: int,
                  column_type: str):
@@ -66,6 +67,18 @@ class SparkColumn(Column):
         self.table_owner = table_owner
         self.column_name = column_name
         self.column_index = column_index
+        self.table_stats = {}
+        if table_stats:
+            # format: 1109049927 bytes, 14093476 rows
+            stats = {
+                stats.split(" ")[1]: int(stats.split(" ")[0])
+                for stats in table_stats.split(', ')
+            }
+            for key, val in stats.items():
+                self.table_stats[f'stats:{key}:label'] = key
+                self.table_stats[f'stats:{key}:value'] = val
+                self.table_stats[f'stats:{key}:description'] = ''
+                self.table_stats[f'stats:{key}:include'] = True
 
     @property
     def quoted(self):
@@ -73,3 +86,11 @@ class SparkColumn(Column):
 
     def __repr__(self):
         return "<SparkColumn {}, {}>".format(self.name, self.data_type)
+
+    def to_dict(self):
+        original_dict = self.__dict__.copy()
+        # If there are stats, merge them into the root of the dict
+        if self.table_stats:
+            original_dict.update(self.table_stats)
+        del original_dict['table_stats']
+        return original_dict

@@ -127,7 +127,7 @@ class TestSparkAdapter(unittest.TestCase):
         config = self.get_target_http(self.project_cfg)
         rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 3)
-        self.assertEqual(rows[0].__dict__, {
+        self.assertEqual(rows[0].to_dict(), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
@@ -142,7 +142,7 @@ class TestSparkAdapter(unittest.TestCase):
             'char_size': None
         })
 
-        self.assertEqual(rows[1].__dict__, {
+        self.assertEqual(rows[1].to_dict(), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
@@ -157,7 +157,7 @@ class TestSparkAdapter(unittest.TestCase):
             'char_size': None
         })
 
-        self.assertEqual(rows[2].__dict__, {
+        self.assertEqual(rows[2].to_dict(), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
@@ -170,4 +170,65 @@ class TestSparkAdapter(unittest.TestCase):
             'numeric_scale': None,
             'numeric_precision': None,
             'char_size': None
+        })
+
+    def test_parse_relation_with_statistics(self):
+        self.maxDiff = None
+        rel_type = 'table'
+
+        relation = BaseRelation.create(
+            database='default_database',
+            schema='default_schema',
+            identifier='mytable',
+            type=rel_type
+        )
+
+        # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
+        plain_rows = [
+            ('col1', 'decimal(22,0)'),
+            ('# Partition Information', 'data_type'),
+            (None, None),
+            ('# Detailed Table Information', None),
+            ('Database', relation.database),
+            ('Owner', 'root'),
+            ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
+            ('Last Access', 'Wed May 20 19:25:00 UTC 1925'),
+            ('Statistics', '1109049927 bytes, 14093476 rows'),
+            ('Type', 'MANAGED'),
+            ('Provider', 'delta'),
+            ('Location', '/mnt/vo'),
+            ('Serde Library', 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'),
+            ('InputFormat', 'org.apache.hadoop.mapred.SequenceFileInputFormat'),
+            ('OutputFormat', 'org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat'),
+            ('Partition Provider', 'Catalog')
+        ]
+
+        input_cols = [Row(keys=['col_name', 'data_type'], values=r) for r in plain_rows]
+
+        config = self.get_target_http(self.project_cfg)
+        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].to_dict(), {
+            'table_database': relation.database,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'table_owner': 'root',
+            'column': 'col1',
+            'column_name': 'col1',
+            'column_index': 0,
+            'dtype': 'decimal(22,0)',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None,
+
+            'stats:bytes:description': '',
+            'stats:bytes:include': True,
+            'stats:bytes:label': 'bytes',
+            'stats:bytes:value': 1109049927,
+
+            'stats:rows:description': '',
+            'stats:rows:include': True,
+            'stats:rows:label': 'rows',
+            'stats:rows:value': 14093476,
         })
