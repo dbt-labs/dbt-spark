@@ -38,6 +38,15 @@ jobs:
       - checkout
 
       - run:
+          name: install dockerize
+          command: curl -LO https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.6.1
+      - run:
+          name: Wait for Spark-Thrift
+          command: ./dockerize -wait tcp://localhost:10000 -timeout 15m -wait-retry-interval 5s
+
+      - run:
           name: Checkout test project
           command: git clone --branch spark-support https://github.com/fishtown-analytics/dbt-integration-tests.git
       - run:
