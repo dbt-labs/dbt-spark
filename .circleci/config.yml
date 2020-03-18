@@ -3,21 +3,21 @@ version: 2
 jobs:
   unit:
     docker:
-      - image: fishtownjacob/test-container:4
+      - image: fishtownanalytics/test-container:5
         environment:
           DBT_INVOCATION_ENV: circle
     steps:
       - checkout
       - run: tox -e flake8,unit
 
-  integration-spark245:
+  integration-spark2:
     docker:
 
-      - image: dmateusp/test-container:4
+      - image: fishtownanalytics/test-container:5
         environment:
           DBT_INVOCATION_ENV: circle
 
-      - image: godatadriven/spark:2.4.5
+      - image: godatadriven/spark:2
         environment:
           WAIT_FOR: localhost:5432
         command: >
@@ -56,6 +56,6 @@ workflows:
   test-everything:
     jobs:
       - unit
-      - integration-spark245:
+      - integration-spark2:
           requires:
             - unit
