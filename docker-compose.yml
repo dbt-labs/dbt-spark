@@ -1,8 +1,8 @@
 version: "3.7"
 services:
 
-  dbt-spark245-thrift:
-    image: godatadriven/spark:2.4.5
+  dbt-spark2-thrift:
+    image: godatadriven/spark:2
     ports:
       - "10000:10000"
       - "4040:4040"

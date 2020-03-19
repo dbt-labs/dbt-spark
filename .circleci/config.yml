@@ -1,28 +1,61 @@
 version: 2
+
 jobs:
   unit:
     docker:
-      - image: fishtownjacob/test-container
+      - image: fishtownanalytics/test-container:5
+        environment:
+          DBT_INVOCATION_ENV: circle
     steps:
       - checkout
       - run: tox -e flake8,unit
 
-  integration:
+  integration-spark2:
     docker:
-      - image: fishtownjacob/test-container
+
+      - image: fishtownanalytics/test-container:5
+        environment:
+          DBT_INVOCATION_ENV: circle
+
+      - image: godatadriven/spark:2
+        environment:
+          WAIT_FOR: localhost:5432
+        command: >
+          --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
+          --name Thrift JDBC/ODBC Server
+          --conf spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:postgresql://localhost/metastore
+          --conf spark.hadoop.javax.jdo.option.ConnectionUserName=dbt
+          --conf spark.hadoop.javax.jdo.option.ConnectionPassword=dbt
+          --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+
+      - image: postgres:9.6.17-alpine
+        environment:
+          POSTGRES_USER: dbt
+          POSTGRES_PASSWORD: dbt
+          POSTGRES_DB: metastore
+
     steps:
       - checkout
 
       - run:
-          name: Checkout test project
-          command: git clone --branch spark-support https://github.com/fishtown-analytics/dbt-integration-tests.git
+          name: install dockerize
+          command: curl -LO https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.6.1
+      - run:
+          name: Wait for Spark-Thrift
+          command: ./dockerize -wait tcp://localhost:10000 -timeout 15m -wait-retry-interval 5s
 
       - run:
+          name: Checkout test project
+          command: git clone --branch spark-support https://github.com/fishtown-analytics/dbt-integration-tests.git
+      - run:
           name: Run integration tests
-          command: tox -e integration
+          command: tox -e integration-spark-thrift
           no_output_timeout: 1h
           environment:
               DBT_PROFILES_DIR: /home/dbt_test_user/project/test/integration/
+              SPARK_HOST: localhost
 
       - store_artifacts:
           path: ./logs
@@ -32,6 +65,6 @@ workflows:
   test-everything:
     jobs:
       - unit
-      - integration:
+      - integration-spark2:
           requires:
             - unit
