@@ -50,7 +50,6 @@ jobs:
           no_output_timeout: 1h
           environment:
               DBT_PROFILES_DIR: /home/dbt_test_user/project/test/integration/
-              SPARK_HOST: localhost
 
       - store_artifacts:
           path: ./logs
