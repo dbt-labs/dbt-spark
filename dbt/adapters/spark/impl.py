@@ -180,6 +180,7 @@ class SparkAdapter(SQLAdapter):
             for relation in relations:
                 logger.debug("Getting table schema for relation {}", relation)
                 columns += [
-                    col.to_dict() for col in self.get_columns_in_relation(relation)
+                    col.to_dict() for col in
+                    self.get_columns_in_relation(relation)
                 ]
         return agate.Table.from_object(columns)
