@@ -29,7 +29,7 @@ setup(
         'dbt': [
             'include/spark/dbt_project.yml',
             'include/spark/macros/*.sql',
-            'include/spark/macros/**/*.sql'
+            'include/spark/macros/**/*.sql',
         ]
     },
     install_requires=[

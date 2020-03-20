@@ -1,10 +1,9 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 import agate
 import dbt.exceptions
 import dbt
 from dbt.adapters.sql import SQLAdapter
-from dbt.clients.agate_helper import table_from_data
 from dbt.contracts.graph.manifest import Manifest
 
 from dbt.adapters.spark import SparkConnectionManager
@@ -20,16 +19,9 @@ GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
 LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
 LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
 DROP_RELATION_MACRO_NAME = 'drop_relation'
-FETCH_TBLPROPERTIES_MACRO_NAME = 'spark_fetch_tblproperties'
-GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
 
 KEY_TABLE_OWNER = 'Owner'
 KEY_TABLE_STATISTICS = 'Statistics'
-
-GET_RELATION_TYPE_MACRO_NAME = 'get_relation_type'
-LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
-DROP_RELATION_MACRO_NAME = 'drop_relation'
-FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
 
 
 class SparkAdapter(SQLAdapter):
@@ -97,14 +89,6 @@ class SparkAdapter(SQLAdapter):
 
         return super().get_relation(database, schema, identifier)
 
-    def get_relation_type(self, relation):
-        kwargs = {'relation': relation}
-        return self.execute_macro(
-            GET_RELATION_TYPE_MACRO_NAME,
-            kwargs=kwargs,
-            release=True
-        )
-
     def add_schema_to_cache(self, schema) -> str:
         """Cache a new schema in dbt. It will show up in `list relations`."""
         if schema is None:
@@ -171,13 +155,16 @@ class SparkAdapter(SQLAdapter):
         metadata = {
             col['col_name']: col['data_type'] for col in raw_rows[pos + 1:]
         }
+
+        raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
+        table_stats = SparkColumn.convert_table_stats(raw_table_stats)
         return [SparkColumn(
             table_database=relation.database,
             table_schema=relation.schema,
             table_name=relation.name,
             table_type=relation.type,
             table_owner=metadata.get(KEY_TABLE_OWNER),
-            table_stats=metadata.get(KEY_TABLE_STATISTICS),
+            table_stats=table_stats,
             column=column['col_name'],
             column_index=idx,
             dtype=column['data_type'],
@@ -195,13 +182,6 @@ class SparkAdapter(SQLAdapter):
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
         rows: List[agate.Row] = super().get_columns_in_relation(relation)
         return self.parse_describe_extended(relation, rows)
-
-    def get_properties(self, relation: Relation) -> Dict[str, str]:
-        properties = self.execute_macro(
-            FETCH_TBLPROPERTIES_MACRO_NAME,
-            kwargs={'relation': relation}
-        )
-        return {key: value for (key, value) in properties}
 
     @staticmethod
     def _parse_relation(relation: Relation,
@@ -277,35 +257,30 @@ class SparkAdapter(SQLAdapter):
 
         return columns
 
+    def _massage_column_for_catalog(
+        self, column: SparkColumn
+    ) -> Dict[str, Any]:
+        dct = column.to_dict()
+        # different expectations here - Column.column is the name
+        dct['column_name'] = dct.pop('column')
+        dct['column_type'] = dct.pop('dtype')
+        # table_database can't be None in core.
+        if dct['table_database'] is None:
+            dct['table_database'] = dct['table_schema']
+        return dct
+
     def get_catalog(self, manifest: Manifest) -> agate.Table:
         schemas = manifest.get_used_schemas()
-
         columns = []
         for database, schema in schemas:
             relations = self.list_relations(database, schema)
             for relation in relations:
-                properties = self.get_properties(relation)
-                logger.debug(f"Getting table schema for relation {relation}")
-                table_columns = self.get_columns_in_relation(relation)
-                rel_type = self.get_relation_type(relation)
+                logger.debug("Getting table schema for relation {}", relation)
                 columns.extend(
-                    self._parse_relation(
-                        relation, table_columns, rel_type, properties
-                    )
+                    self._massage_column_for_catalog(col)
+                    for col in self.get_columns_in_relation(relation)
                 )
-
-        return table_from_data(columns, SparkAdapter.COLUMN_NAMES)
-
-    # Override that doesn't check the type of the relation -- we do it
-    # dynamically in the macro code
-    def drop_relation(self, relation, model_name=None):
-        if dbt.flags.USE_CACHE:
-            self.cache.drop(relation)
-
-        self.execute_macro(
-            DROP_RELATION_MACRO_NAME,
-            kwargs={'relation': relation}
-        )
+        return agate.Table.from_object(columns)
 
     def check_schema_exists(self, database, schema):
         results = self.execute_macro(

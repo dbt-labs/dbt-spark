@@ -66,17 +66,6 @@
   {% do return(load_result('list_properties').table) %}
 {%- endmacro %}
 
-{% macro get_relation_type(relation) -%}
-  {% call statement('get_relation_type', fetch_result=True) -%}
-    SHOW TBLPROPERTIES {{ relation }} ('view.default.database')
-  {%- endcall %}
-  {% set res = load_result('get_relation_type').table %}
-  {% if 'does not have property' in res[0][0] %}
-    {{ return('table') }}
-  {% else %}
-    {{ return('view') }}
-  {% endif %}
-{%- endmacro %}
 
 {#-- We can't use temporary tables with `create ... as ()` syntax #}
 {% macro create_temporary_view(relation, sql) -%}
@@ -157,25 +146,6 @@
   {%- endcall -%}
 {% endmacro %}
 
-{% macro spark_get_relation_type(relation) -%}
-  {% call statement('get_relation_type', fetch_result=True) -%}
-    SHOW TBLPROPERTIES {{ relation }} ('view.default.database')
-  {%- endcall %}
-  {% set res = load_result('get_relation_type').table %}
-  {% if 'does not have property' in res[0][0] %}
-    {{ return('table') }}
-  {% else %}
-    {{ return('view') }}
-  {% endif %}
-{%- endmacro %}
-
-{% macro spark_fetch_tblproperties(relation) -%}
-  {% call statement('list_properties', fetch_result=True) -%}
-    SHOW TBLPROPERTIES {{ relation }}
-  {% endcall %}
-  {% do return(load_result('list_properties').table) %}
-{%- endmacro %}
-
 {% macro spark__rename_relation(from_relation, to_relation) -%}
   {% call statement('rename_relation') -%}
     {% if not from_relation.type %}
@@ -191,8 +161,7 @@
 {% endmacro %}
 
 {% macro spark__drop_relation(relation) -%}
-  {% set type = relation.type if relation.type is not none else get_relation_type(relation) %}
   {% call statement('drop_relation', auto_begin=False) -%}
-    drop {{ type }} if exists {{ relation }}
+    drop {{ relation.type }} if exists {{ relation }}
   {%- endcall %}
 {% endmacro %}
