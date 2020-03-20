@@ -9,7 +9,7 @@ with open(os.path.join(this_directory, 'README.md')) as f:
 
 
 package_name = "dbt-spark"
-package_version = "0.15.0"
+package_version = "0.15.3"
 description = """The SparkSQL plugin for dbt (data build tool)"""
 
 setup(
