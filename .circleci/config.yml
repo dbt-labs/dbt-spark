@@ -3,7 +3,7 @@ version: 2
 jobs:
   unit:
     docker:
-      - image: fishtownanalytics/test-container:5
+      - image: fishtownanalytics/test-container:6
         environment:
           DBT_INVOCATION_ENV: circle
     steps:
@@ -13,7 +13,7 @@ jobs:
   integration-spark2:
     docker:
 
-      - image: dmateusp/test-container:dockerize  # TODO: change me before merging
+      - image: fishtownanalytics/test-container:6
         environment:
           DBT_INVOCATION_ENV: circle
 
