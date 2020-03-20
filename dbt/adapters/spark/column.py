@@ -6,21 +6,15 @@ from dbt.adapters.base.column import Column
 Self = TypeVar('Self', bound='SparkColumn')
 
 
-@dataclass(init=False)
+@dataclass
 class SparkColumn(Column):
-    column: str
-    dtype: str
-    comment: str
-
-    def __init__(
-        self,
-        column: str,
-        dtype: str,
-        comment: Optional[str]
-    ) -> None:
-        super().__init__(column, dtype)
-
-        self.comment = comment
+    table_database: Optional[str] = None
+    table_schema: Optional[str] = None
+    table_name: Optional[str] = None
+    table_type: Optional[str] = None
+    table_owner: Optional[str] = None
+    table_stats: Optional[str] = None
+    column_index: Optional[int] = None
 
     @classmethod
     def translate_type(cls, dtype: str) -> str:

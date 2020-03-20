@@ -33,7 +33,9 @@ setup(
         ]
     },
     install_requires=[
-        'dbt-core=={}'.format(package_version),
-        'PyHive[hive]>=0.6.0,<0.7.0'
+        f'dbt-core>=={package_version}',
+        'jinja2<3.0.0',  # until dbt-core reaches 0.16.0: https://github.com/fishtown-analytics/dbt/issues/2147
+        'PyHive[hive]>=0.6.0,<0.7.0',
+        'thrift>=0.11.0,<0.12.0',
     ]
 )

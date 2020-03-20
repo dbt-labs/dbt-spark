@@ -1,21 +1,24 @@
 from contextlib import contextmanager
 
+import dbt.exceptions
 from dbt.adapters.base import Credentials
 from dbt.adapters.sql import SQLConnectionManager
 from dbt.logger import GLOBAL_LOGGER as logger
+from dbt.utils import DECIMALS
 
 from TCLIService.ttypes import TOperationState as ThriftState
 from thrift.transport import THttpClient
 from pyhive import hive
+from datetime import datetime
 
 from hologram.helpers import StrEnum
 from dataclasses import dataclass
 from typing import Optional
 
-import dbt.exceptions
-import decimal
 import base64
 import time
+
+NUMBERS = DECIMALS + (int, float)
 
 
 class SparkConnectionMethod(StrEnum):
@@ -108,9 +111,8 @@ class ConnectionWrapper(object):
             ThriftState.FINISHED_STATE,
         ]
 
-        # Convert decimal.Decimal to float as PyHive doesn't work with decimals
-        if bindings:
-            bindings = [float(x) if isinstance(x, decimal.Decimal) else x for x in bindings]
+        if bindings is not None:
+            bindings = [self._fix_binding(binding) for binding in bindings]
 
         self._cursor.execute(sql, bindings, async_=True)
         poll_state = self._cursor.poll()
@@ -134,17 +136,28 @@ class ConnectionWrapper(object):
         if poll_state.errorMessage:
             logger.debug("Poll response: {}".format(poll_state))
             logger.debug("Poll status: {}".format(state))
-            raise dbt.exceptions.raise_database_error(poll_state.errorMessage)
+            dbt.exceptions.raise_database_error(poll_state.errorMessage)
 
         elif state not in STATE_SUCCESS:
             status_type = ThriftState._VALUES_TO_NAMES.get(
                 state,
                 'Unknown<{!r}>'.format(state))
 
-            raise dbt.exceptions.raise_database_error(
+            dbt.exceptions.raise_database_error(
                 "Query failed with status: {}".format(status_type))
 
         logger.debug("Poll status: {}, query complete".format(state))
+
+    @classmethod
+    def _fix_binding(cls, value):
+        """Convert complex datatypes to primitives that can be loaded by
+           the Spark driver"""
+        if isinstance(value, NUMBERS):
+            return float(value)
+        elif isinstance(value, datetime):
+            return value.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        else:
+            return value
 
     @property
     def description(self):
@@ -216,7 +229,8 @@ class SparkConnectionManager(SQLConnectionManager):
         for i in range(1 + creds.connect_retries):
             try:
                 if creds.method == 'http':
-                    cls.validate_creds(creds, ['host', 'port', 'cluster', 'organization', 'token', 'schema'])
+                    cls.validate_creds(creds, ['token', 'host', 'port',
+                                               'cluster', 'organization'])
 
                     conn_url = cls.SPARK_CONNECTION_URL.format(
                         host=creds.host,

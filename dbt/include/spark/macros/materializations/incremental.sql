@@ -1,3 +1,13 @@
+{% macro get_insert_overwrite_sql(source_relation, target_relation, partitions) %}
+
+    {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
+    {%- set dest_cols_csv = dest_columns | map(attribute='quoted') | join(', ') -%}
+    insert overwrite table {{ target_relation }}
+    {{ partition_cols(label="partition") }}
+    select {{dest_cols_csv}} from {{ source_relation.include(database=false, schema=false) }}
+
+{% endmacro %}
+
 {% macro dbt_spark_validate_get_file_format() %}
   {#-- Find and validate the file format #}
   {%- set file_format = config.get("file_format", default="parquet") -%}
@@ -50,13 +60,10 @@
 
 {% endmacro %}
 
-
 {% macro dbt_spark_get_incremental_sql(strategy, source, target, unique_key) %}
   {%- if strategy == 'insert_overwrite' -%}
     {#-- insert statements don't like CTEs, so support them via a temp view #}
-    insert overwrite table {{ target }}
-    {{ partition_cols(label="partition") }}
-    select * from {{ source.include(schema=false) }}
+    {{ get_insert_overwrite_sql() }}
   {%- else -%}
     {#-- merge all columns with databricks delta - schema changes are handled for us #}
     merge into {{ target }} as DBT_INTERNAL_DEST
@@ -87,12 +94,10 @@
     {% do dbt_spark_validate_merge(file_format) %}
   {% endif %}
 
-  {%- set partitions = config.get('partition_by', validator=validation.any[list, basestring]) -%}
+  {%- set partitions = config.get('partition_by') -%}
   {% if not partitions %}
     {% do exceptions.raise_compiler_error("Table partitions are required for incremental models on Spark") %}
   {% endif %}
-
-  {{ run_hooks(pre_hooks) }}
 
   {% call statement() %}
     set spark.sql.sources.partitionOverwriteMode = DYNAMIC
@@ -101,6 +106,8 @@
   {% call statement() %}
     set spark.sql.hive.convertMetastoreParquet = false
   {% endcall %}
+
+  {{ run_hooks(pre_hooks) }}
 
   {% if existing_relation is none %}
     {% set build_sql = create_table_as(False, target_relation, sql) %}

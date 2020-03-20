@@ -5,11 +5,26 @@
   {%- endif %}
 {%- endmacro -%}
 
-{% macro location_clause(label, required=false) %}
-  {%- set location = config.get('location', validator=validation.any[basestring]) -%}
-  {%- if location is not none %}
-    {{ label }} "{{ location }}"
+{% macro location_clause() %}
+  {%- set location_root = config.get('location_root', validator=validation.any[basestring]) -%}
+  {%- set identifier = model['alias'] -%}
+  {%- if location_root is not none %}
+    location '{{ location_root }}/{{ identifier }}'
   {%- endif %}
+{%- endmacro -%}
+
+
+{% macro comment_clause() %}
+  {%- set raw_persist_docs = config.get('persist_docs', {}) -%}
+
+  {%- if raw_persist_docs is mapping -%}
+    {%- set raw_relation = raw_persist_docs.get('relation', false) -%}
+      {%- if raw_relation -%}
+      comment '{{ model.description }}'
+      {% endif %}
+  {%- else -%}
+    {{ exceptions.raise_compiler_error("Invalid value provided for 'persist_docs'. Expected dict but got value: " ~ raw_persist_docs) }}
+  {% endif %}
 {%- endmacro -%}
 
 {% macro partition_cols(label, required=false) %}
@@ -27,9 +42,10 @@
   {%- endif %}
 {%- endmacro -%}
 
+
 {% macro clustered_cols(label, required=false) %}
-  {%- set cols = config.get('cluster_by', validator=validation.any[list, basestring]) -%}
-  {%- set num_buckets = config.get('num_buckets', validator=validation.any[int]) -%}
+  {%- set cols = config.get('clustered_by', validator=validation.any[list, basestring]) -%}
+  {%- set buckets = config.get('buckets', validator=validation.any[int]) -%}
   {%- if (cols is not none) and (buckets is not none) %}
     {%- if cols is string -%}
       {%- set cols = [cols] -%}
@@ -39,7 +55,7 @@
       {{ item }}
       {%- if not loop.last -%},{%- endif -%}
     {%- endfor -%}
-    ) into {{ num_buckets }} buckets
+    ) into {{ buckets }} buckets
   {%- endif %}
 {%- endmacro -%}
 
@@ -73,14 +89,23 @@
     {{ create_temporary_view(relation, sql) }}
   {%- else -%}
     create table {{ relation }}
-      {{ file_format_clause() }}
-      {{ location_clause(label="location") }}
-      {{ partition_cols(label="partitioned by") }}
-      {{ clustered_cols(label="clustered by") }}
+    {{ file_format_clause() }}
+    {{ partition_cols(label="partitioned by") }}
+    {{ clustered_cols(label="clustered by") }}
+    {{ location_clause() }}
+    {{ comment_clause() }}
     as
       {{ sql }}
   {%- endif %}
 {%- endmacro -%}
+
+
+{% macro spark__create_view_as(relation, sql) -%}
+  create or replace view {{ relation }}
+  {{ comment_clause() }}
+  as
+    {{ sql }}
+{% endmacro %}
 
 {% macro spark__create_schema(database_name, schema_name) -%}
   {%- call statement('create_schema') -%}
@@ -96,17 +121,14 @@
 
 {% macro spark__get_columns_in_relation(relation) -%}
   {% call statement('get_columns_in_relation', fetch_result=True) %}
-    describe extended {{ relation }}
+      describe extended {{ relation }}
   {% endcall %}
-
-  {% set table = load_result('get_columns_in_relation').table %}
-  {{ return(sql_convert_columns_in_relation(table)) }}
-
+  {% do return(load_result('get_columns_in_relation').table) %}
 {% endmacro %}
 
 {% macro spark__list_relations_without_caching(information_schema, schema) %}
   {% call statement('list_relations_without_caching', fetch_result=True) -%}
-    show tables in {{ schema }}
+    show table extended in {{ schema }} like '*'
   {% endcall %}
 
   {% do return(load_result('list_relations_without_caching').table) %}
@@ -121,6 +143,37 @@
 
 {% macro spark__current_timestamp() -%}
   current_timestamp()
+{%- endmacro %}
+
+{% macro spark__create_schema(database_name, schema_name) -%}
+  {%- call statement('create_schema') -%}
+    create schema if not exists {{ schema_name }}
+  {%- endcall -%}
+{% endmacro %}
+
+{% macro spark__drop_schema(database_name, schema_name) -%}
+  {%- call statement('drop_schema') -%}
+    drop schema if exists {{ schema_name }} cascade
+  {%- endcall -%}
+{% endmacro %}
+
+{% macro spark_get_relation_type(relation) -%}
+  {% call statement('get_relation_type', fetch_result=True) -%}
+    SHOW TBLPROPERTIES {{ relation }} ('view.default.database')
+  {%- endcall %}
+  {% set res = load_result('get_relation_type').table %}
+  {% if 'does not have property' in res[0][0] %}
+    {{ return('table') }}
+  {% else %}
+    {{ return('view') }}
+  {% endif %}
+{%- endmacro %}
+
+{% macro spark_fetch_tblproperties(relation) -%}
+  {% call statement('list_properties', fetch_result=True) -%}
+    SHOW TBLPROPERTIES {{ relation }}
+  {% endcall %}
+  {% do return(load_result('list_properties').table) %}
 {%- endmacro %}
 
 {% macro spark__rename_relation(from_relation, to_relation) -%}

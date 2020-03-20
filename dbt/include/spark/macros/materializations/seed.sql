@@ -1,10 +1,12 @@
 {% macro spark__load_csv_rows(model, agate_table) %}
+    {% set agate_table = model['agate_table'] %}
+    {% set batch_size = 1000 %}
     {% set cols_sql = ", ".join(agate_table.column_names) %}
     {% set bindings = [] %}
 
     {% set statements = [] %}
 
-    {% for chunk in agate_table.rows | batch(10000) %}
+    {% for chunk in agate_table.rows | batch(batch_size) %}
         {% set bindings = [] %}
 
         {% for row in chunk %}
@@ -32,3 +34,40 @@
     {# Return SQL so we can render it out into the compiled files #}
     {{ return(statements[0]) }}
 {% endmacro %}
+
+{% macro spark__reset_csv_table(model, full_refresh, old_relation, agate_table) %}
+    {% if old_relation %}
+        {{ adapter.drop_relation(old_relation) }}
+    {% endif %}
+    {% set sql = create_csv_table(model, agate_table) %}
+    {{ return(sql) }}
+{% endmacro %}
+
+{% materialization seed, adapter='spark' %}
+
+  {%- set identifier = model['alias'] -%}
+  {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
+  {%- set csv_table = model["agate_table"] -%}
+
+  {{ run_hooks(pre_hooks, inside_transaction=False) }}
+
+  -- `BEGIN` happens here:
+  {{ run_hooks(pre_hooks, inside_transaction=True) }}
+
+  -- build model
+  {% set create_table_sql = reset_csv_table(model, full_refresh_mode, old_relation) %}
+  {% set status = 'CREATE' %}
+  {% set num_rows = (csv_table.rows | length) %}
+  {% set sql = load_csv_rows(model) %}
+
+  {% call noop_statement('main', status ~ ' ' ~ num_rows) %}
+    {{ create_table_sql }};
+    -- dbt seed --
+    {{ sql }}
+  {% endcall %}
+
+  {{ run_hooks(post_hooks, inside_transaction=True) }}
+  -- `COMMIT` happens here
+  {{ adapter.commit() }}
+  {{ run_hooks(post_hooks, inside_transaction=False) }}
+{% endmaterialization %}
