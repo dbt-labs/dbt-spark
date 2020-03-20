@@ -1,9 +1,7 @@
 import mock
-import unittest
 import re
-from collections import defaultdict
+import unittest
 from jinja2 import Environment, FileSystemLoader
-from dbt.context.common import _add_validation
 
 
 class TestSparkMacros(unittest.TestCase):
