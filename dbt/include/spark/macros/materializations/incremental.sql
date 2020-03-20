@@ -1,4 +1,4 @@
-{% macro get_insert_overwrite_sql(source_relation, target_relation, partitions) %}
+{% macro get_insert_overwrite_sql(source_relation, target_relation) %}
 
     {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
     {%- set dest_cols_csv = dest_columns | map(attribute='quoted') | join(', ') -%}
@@ -60,18 +60,21 @@
 
 {% endmacro %}
 
-{% macro dbt_spark_get_incremental_sql(strategy, source, target, unique_key) %}
-  {%- if strategy == 'insert_overwrite' -%}
-    {#-- insert statements don't like CTEs, so support them via a temp view #}
-    {{ get_insert_overwrite_sql() }}
-  {%- else -%}
-    {#-- merge all columns with databricks delta - schema changes are handled for us #}
+{% macro get_merge_sql(source, target, unique_key) %}
     merge into {{ target }} as DBT_INTERNAL_DEST
     using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
     on DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
     when matched then update set *
     when not matched then insert *
+{% endmacro %}
 
+{% macro dbt_spark_get_incremental_sql(strategy, source, target, unique_key) %}
+  {%- if strategy == 'insert_overwrite' -%}
+    {#-- insert statements don't like CTEs, so support them via a temp view #}
+    {{ get_insert_overwrite_sql(source, target) }}
+  {%- else -%}
+    {#-- merge all columns with databricks delta - schema changes are handled for us #}
+    {{ get_merge_sql(source, target, unique_key) }}
   {%- endif -%}
 
 {% endmacro %}
@@ -92,11 +95,6 @@
   {% if strategy == 'merge' %}
     {%- set unique_key = config.require('unique_key') -%}
     {% do dbt_spark_validate_merge(file_format) %}
-  {% endif %}
-
-  {%- set partitions = config.get('partition_by') -%}
-  {% if not partitions %}
-    {% do exceptions.raise_compiler_error("Table partitions are required for incremental models on Spark") %}
   {% endif %}
 
   {% call statement() %}
