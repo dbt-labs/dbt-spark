@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import dbt.exceptions
 from dbt.adapters.base import Credentials
 from dbt.adapters.sql import SQLConnectionManager
+from dbt.contracts.connection import ConnectionState
 from dbt.logger import GLOBAL_LOGGER as logger
 from dbt.utils import DECIMALS
 
@@ -219,7 +220,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
     @classmethod
     def open(cls, connection):
-        if connection.state == 'open':
+        if connection.state == ConnectionState.OPEN:
             logger.debug('Connection is already open, skipping open.')
             return connection
 
@@ -280,5 +281,5 @@ class SparkConnectionManager(SQLConnectionManager):
 
         handle = ConnectionWrapper(conn)
         connection.handle = handle
-        connection.state = 'open'
+        connection.state = ConnectionState.OPEN
         return connection

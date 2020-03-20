@@ -66,8 +66,10 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(thrift_transport.host, 'myorg.sparkhost.com')
             self.assertEqual(thrift_transport.path, '/sql/protocolv1/o/0123456789/01234-23423-coffeetime')
 
-        with mock.patch.object(hive, 'connect', new=hive_http_connect):
+        # with mock.patch.object(hive, 'connect', new=hive_http_connect):
+        with mock.patch('dbt.adapters.spark.connections.hive.connect', new=hive_http_connect):
             connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
 
             self.assertEqual(connection.state, 'open')
             self.assertNotEqual(connection.handle, None)
@@ -87,6 +89,7 @@ class TestSparkAdapter(unittest.TestCase):
 
         with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
             connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
 
             self.assertEqual(connection.state, 'open')
             self.assertNotEqual(connection.handle, None)

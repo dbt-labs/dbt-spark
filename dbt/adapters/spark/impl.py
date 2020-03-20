@@ -144,6 +144,8 @@ class SparkAdapter(SQLAdapter):
             self.cache_added(relation)
             relations.append(relation)
 
+        return relations
+
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
             database = None
