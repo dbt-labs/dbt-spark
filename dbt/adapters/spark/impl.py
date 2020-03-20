@@ -1,24 +1,27 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
+import agate
+import dbt.exceptions
 import dbt
 from dbt.adapters.sql import SQLAdapter
 from dbt.contracts.graph.manifest import Manifest
 
-from dbt.adapters.spark import SparkColumn
 from dbt.adapters.spark import SparkConnectionManager
-from dbt.adapters.spark.relation import SparkRelation
-from dbt.adapters.base import BaseRelation, RelationType
+from dbt.adapters.spark import SparkRelation
+from dbt.adapters.spark import SparkColumn
 
-from dbt.clients.agate_helper import table_from_data
+
+from dbt.adapters.base import BaseRelation
+
 from dbt.logger import GLOBAL_LOGGER as logger
 
-import agate
-
-LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
-GET_RELATION_TYPE_MACRO_NAME = 'get_relation_type'
+GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
 LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
+LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
 DROP_RELATION_MACRO_NAME = 'drop_relation'
-FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
+
+KEY_TABLE_OWNER = 'Owner'
+KEY_TABLE_STATISTICS = 'Statistics'
 
 
 class SparkAdapter(SQLAdapter):
@@ -49,7 +52,9 @@ class SparkAdapter(SQLAdapter):
     Column = SparkColumn
     ConnectionManager = SparkConnectionManager
 
-    AdapterSpecificConfigs = frozenset({"file_format", "partition_by", "cluster_by", "num_buckets", "location"})
+    AdapterSpecificConfigs = frozenset({"file_format", "location_root",
+                                        "partition_by", "clustered_by",
+                                        "buckets"})
 
     @classmethod
     def date_function(cls) -> str:
@@ -76,20 +81,6 @@ class SparkAdapter(SQLAdapter):
     def convert_datetime_type(cls, agate_table, col_idx):
         return "timestamp"
 
-    def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
-        if not self.Relation.include_policy.database:
-            database = None
-
-        return super().get_relation(database, schema, identifier)
-
-    def get_relation_type(self, relation):
-        kwargs = {'relation': relation}
-        return self.execute_macro(
-            GET_RELATION_TYPE_MACRO_NAME,
-            kwargs=kwargs,
-            release=True
-        )
-
     def add_schema_to_cache(self, schema) -> str:
         """Cache a new schema in dbt. It will show up in `list relations`."""
         if schema is None:
@@ -102,26 +93,91 @@ class SparkAdapter(SQLAdapter):
         # so jinja doesn't render things
         return ''
 
-    def list_relations_without_caching(self, information_schema, schema) -> List[SparkRelation]:
+    def list_relations_without_caching(
+        self, information_schema, schema
+    ) -> List[SparkRelation]:
         kwargs = {'information_schema': information_schema, 'schema': schema}
-
-        results = self.execute_macro(
-            LIST_RELATIONS_MACRO_NAME,
-            kwargs=kwargs
-        )
+        try:
+            results = self.execute_macro(
+                LIST_RELATIONS_MACRO_NAME,
+                kwargs=kwargs,
+                release=True
+            )
+        except dbt.exceptions.RuntimeException as e:
+            if hasattr(e, 'msg') and f"Database '{schema}' not found" in e.msg:
+                return []
+            else:
+                description = "Error while retrieving information about"
+                logger.debug(f"{description} {schema}: {e.msg}")
+                return []
 
         relations = []
-        for _schema, name, _ in results:
+        for _schema, name, _, information in results:
+            rel_type = ('view' if 'Type: VIEW' in information else 'table')
             relation = self.Relation.create(
                 schema=_schema,
                 identifier=name,
-                #TODO: append relation type view/table
-                ## type=RelationType.Table
+                type=rel_type
             )
             self.cache_added(relation)
             relations.append(relation)
 
         return relations
+
+    def get_relation(
+        self, database: str, schema: str, identifier: str
+    ) -> Optional[BaseRelation]:
+        if not self.Relation.include_policy.database:
+            database = None
+
+        return super().get_relation(database, schema, identifier)
+
+    def parse_describe_extended(
+            self,
+            relation: Relation,
+            raw_rows: List[agate.Row]
+    ) -> List[SparkColumn]:
+        # Convert the Row to a dict
+        dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
+        # Find the separator between the rows and the metadata provided
+        # by the DESCRIBE TABLE EXTENDED statement
+        pos = self.find_table_information_separator(dict_rows)
+
+        # Remove rows that start with a hash, they are comments
+        rows = [
+            row for row in raw_rows[0:pos]
+            if not row['col_name'].startswith('#')
+        ]
+        metadata = {
+            col['col_name']: col['data_type'] for col in raw_rows[pos + 1:]
+        }
+
+        raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
+        table_stats = SparkColumn.convert_table_stats(raw_table_stats)
+        return [SparkColumn(
+            table_database=relation.database,
+            table_schema=relation.schema,
+            table_name=relation.name,
+            table_type=relation.type,
+            table_owner=metadata.get(KEY_TABLE_OWNER),
+            table_stats=table_stats,
+            column=column['col_name'],
+            column_index=idx,
+            dtype=column['data_type'],
+        ) for idx, column in enumerate(rows)]
+
+    @staticmethod
+    def find_table_information_separator(rows: List[dict]) -> int:
+        pos = 0
+        for row in rows:
+            if not row['col_name'] or row['col_name'].startswith('#'):
+                break
+            pos += 1
+        return pos
+
+    def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
+        rows: List[agate.Row] = super().get_columns_in_relation(relation)
+        return self.parse_describe_extended(relation, rows)
 
     @staticmethod
     def _parse_relation(relation: Relation,
@@ -197,38 +253,30 @@ class SparkAdapter(SQLAdapter):
 
         return columns
 
-    def get_properties(self, relation: Relation) -> Dict[str, str]:
-        properties = self.execute_macro(
-            FETCH_TBL_PROPERTIES_MACRO_NAME,
-            kwargs={'relation': relation}
-        )
-        return {key: value for (key, value) in properties}
+    def _massage_column_for_catalog(
+        self, column: SparkColumn
+    ) -> Dict[str, Any]:
+        dct = column.to_dict()
+        # different expectations here - Column.column is the name
+        dct['column_name'] = dct.pop('column')
+        dct['column_type'] = dct.pop('dtype')
+        # table_database can't be None in core.
+        if dct['table_database'] is None:
+            dct['table_database'] = dct['table_schema']
+        return dct
 
     def get_catalog(self, manifest: Manifest) -> agate.Table:
         schemas = manifest.get_used_schemas()
-
         columns = []
         for database, schema in schemas:
             relations = self.list_relations(database, schema)
             for relation in relations:
-                properties = self.get_properties(relation)
-                logger.debug("Getting table schema for relation {}".format(relation))  # noqa
-                table_columns = self.get_columns_in_relation(relation)
-                rel_type = self.get_relation_type(relation)
-                columns += self._parse_relation(relation, table_columns, rel_type, properties)
-
-        return table_from_data(columns, SparkAdapter.COLUMN_NAMES)
-
-    # Override that doesn't check the type of the relation -- we do it
-    # dynamically in the macro code
-    def drop_relation(self, relation, model_name=None):
-        if dbt.flags.USE_CACHE:
-            self.cache.drop(relation)
-
-        self.execute_macro(
-            DROP_RELATION_MACRO_NAME,
-            kwargs={'relation': relation}
-        )
+                logger.debug("Getting table schema for relation {}", relation)
+                columns.extend(
+                    self._massage_column_for_catalog(col)
+                    for col in self.get_columns_in_relation(relation)
+                )
+        return agate.Table.from_object(columns)
 
     def check_schema_exists(self, database, schema):
         results = self.execute_macro(

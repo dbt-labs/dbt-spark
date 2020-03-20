@@ -1,3 +1,5 @@
+.hive-metastore/
+.spark-warehouse/
 *.egg-info
 env/
 *.pyc
@@ -7,3 +9,4 @@ __pycache__
 build/
 dist/
 dbt-integration-tests
+test/integration/.user.yml

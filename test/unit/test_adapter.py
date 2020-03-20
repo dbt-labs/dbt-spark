@@ -2,13 +2,10 @@ import unittest
 from unittest import mock
 
 import dbt.flags as flags
+from agate import Row
 from pyhive import hive
-from agate import Column, MappedSequence
 from dbt.adapters.spark import SparkAdapter, SparkRelation
 from .utils import config_from_parts_or_dicts
-
-
-# from spark import connector as spark_connector
 
 
 class TestSparkAdapter(unittest.TestCase):
@@ -69,8 +66,10 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(thrift_transport.host, 'myorg.sparkhost.com')
             self.assertEqual(thrift_transport.path, '/sql/protocolv1/o/0123456789/01234-23423-coffeetime')
 
-        with mock.patch.object(hive, 'connect', new=hive_http_connect):
+        # with mock.patch.object(hive, 'connect', new=hive_http_connect):
+        with mock.patch('dbt.adapters.spark.connections.hive.connect', new=hive_http_connect):
             connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
 
             self.assertEqual(connection.state, 'open')
             self.assertNotEqual(connection.handle, None)
@@ -90,6 +89,7 @@ class TestSparkAdapter(unittest.TestCase):
 
         with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
             connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
 
             self.assertEqual(connection.state, 'open')
             self.assertNotEqual(connection.handle, None)
@@ -97,6 +97,7 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(connection.credentials.database, 'analytics')
 
     def test_parse_relation(self):
+        self.maxDiff = None
         rel_type = SparkRelation.RelationType.Table
 
         relation = SparkRelation.create(
@@ -110,11 +111,12 @@ class TestSparkAdapter(unittest.TestCase):
         plain_rows = [
             ('col1', 'decimal(22,0)'),
             ('col2', 'string',),
+            ('dt', 'date'),
             ('# Partition Information', 'data_type'),
             ('# col_name', 'data_type'),
             ('dt', 'date'),
-            ('', ''),
-            ('# Detailed Table Information', ''),
+            (None, None),
+            ('# Detailed Table Information', None),
             ('Database', relation.database),
             ('Owner', 'root'),
             ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
@@ -128,77 +130,55 @@ class TestSparkAdapter(unittest.TestCase):
             ('Partition Provider', 'Catalog')
         ]
 
-        input_cols = [Column(index=None, name=r[0], data_type=r[1], rows=MappedSequence(
-            keys=['col_name', 'data_type'],
-            values=r
-        )) for r in plain_rows]
+        input_cols = [Row(keys=['col_name', 'data_type'], values=r) for r in plain_rows]
 
-        rows = SparkAdapter._parse_relation(relation, input_cols, rel_type)
+        config = self._get_target_http(self.project_cfg)
+        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 3)
-        self.assertEqual(rows[0], {
+        self.assertEqual(rows[0].to_dict(omit_none=False), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
-            'table_type': relation.type,
-            'stats:bytes:description': 'The size of the table in bytes',
-            'stats:bytes:include': False,
-            'stats:bytes:label': 'Table size',
-            'stats:bytes:value': None,
-            'stats:rows:description': 'The number of rows in the table',
-            'stats:rows:include': False,
-            'stats:rows:label': 'Number of rows',
-            'stats:rows:value': None,
-            'table_comment': None,
+            'table_type': rel_type,
             'table_owner': 'root',
-            'column_name': 'col1',
+            'column': 'col1',
             'column_index': 0,
-            'column_type': 'decimal(22,0)',
-            'column_comment': None
+            'dtype': 'decimal(22,0)',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
         })
 
-        self.assertEqual(rows[1], {
+        self.assertEqual(rows[1].to_dict(omit_none=False), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
-            'table_type': relation.type,
-            'stats:bytes:description': 'The size of the table in bytes',
-            'stats:bytes:include': False,
-            'stats:bytes:label': 'Table size',
-            'stats:bytes:value': None,
-            'stats:rows:description': 'The number of rows in the table',
-            'stats:rows:include': False,
-            'stats:rows:label': 'Number of rows',
-            'stats:rows:value': None,
-            'table_comment': None,
+            'table_type': rel_type,
             'table_owner': 'root',
-            'column_name': 'col2',
+            'column': 'col2',
             'column_index': 1,
-            'column_type': 'string',
-            'column_comment': None
+            'dtype': 'string',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
         })
 
-        self.assertEqual(rows[2], {
+        self.assertEqual(rows[2].to_dict(omit_none=False), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
-            'table_type': relation.type,
-            'stats:bytes:description': 'The size of the table in bytes',
-            'stats:bytes:include': False,
-            'stats:bytes:label': 'Table size',
-            'stats:bytes:value': None,
-            'stats:rows:description': 'The number of rows in the table',
-            'stats:rows:include': False,
-            'stats:rows:label': 'Number of rows',
-            'stats:rows:value': None,
-            'table_comment': None,
+            'table_type': rel_type,
             'table_owner': 'root',
-            'column_name': 'dt',
-            'column_index': 4,
-            'column_type': 'date',
-            'column_comment': None
+            'column': 'dt',
+            'column_index': 2,
+            'dtype': 'date',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
         })
 
-    def test_parse_relation_with_properties(self):
+    def test_parse_relation_with_statistics(self):
+        self.maxDiff = None
         rel_type = SparkRelation.RelationType.Table
 
         relation = SparkRelation.create(
@@ -210,13 +190,15 @@ class TestSparkAdapter(unittest.TestCase):
 
         # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
         plain_rows = [
-            ('col1', 'decimal(19,25)'),
-            ('', ''),
-            ('# Detailed Table Information', ''),
+            ('col1', 'decimal(22,0)'),
+            ('# Partition Information', 'data_type'),
+            (None, None),
+            ('# Detailed Table Information', None),
             ('Database', relation.database),
             ('Owner', 'root'),
             ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
             ('Last Access', 'Wed May 20 19:25:00 UTC 1925'),
+            ('Statistics', '1109049927 bytes, 14093476 rows'),
             ('Type', 'MANAGED'),
             ('Provider', 'delta'),
             ('Location', '/mnt/vo'),
@@ -226,29 +208,31 @@ class TestSparkAdapter(unittest.TestCase):
             ('Partition Provider', 'Catalog')
         ]
 
-        input_cols = [Column(index=None, name=r[0], data_type=r[1], rows=MappedSequence(
-            keys=['col_name', 'data_type'],
-            values=r
-        )) for r in plain_rows]
+        input_cols = [Row(keys=['col_name', 'data_type'], values=r) for r in plain_rows]
 
-        rows = SparkAdapter._parse_relation(relation, input_cols, rel_type, {'Owner': 'Fokko'})
-        self.assertEqual(rows[0], {
+        config = self._get_target_http(self.project_cfg)
+        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].to_dict(omit_none=False), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
-            'stats:bytes:description': 'The size of the table in bytes',
-            'stats:bytes:include': False,
-            'stats:bytes:label': 'Table size',
-            'stats:bytes:value': None,
-            'stats:rows:description': 'The number of rows in the table',
-            'stats:rows:include': False,
-            'stats:rows:label': 'Number of rows',
-            'stats:rows:value': None,
-            'table_comment': None,
-            'table_owner': 'Fokko',
-            'column_name': 'col1',
+            'table_owner': 'root',
+            'column': 'col1',
             'column_index': 0,
-            'column_type': 'decimal(19,25)',
-            'column_comment': None
+            'dtype': 'decimal(22,0)',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None,
+
+            'stats:bytes:description': '',
+            'stats:bytes:include': True,
+            'stats:bytes:label': 'bytes',
+            'stats:bytes:value': 1109049927,
+
+            'stats:rows:description': '',
+            'stats:rows:include': True,
+            'stats:rows:label': 'rows',
+            'stats:rows:value': 14093476,
         })

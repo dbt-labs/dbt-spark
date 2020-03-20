@@ -21,3 +21,4 @@ class SparkIncludePolicy(Policy):
 class SparkRelation(BaseRelation):
     quote_policy: SparkQuotePolicy = SparkQuotePolicy()
     include_policy: SparkIncludePolicy = SparkIncludePolicy()
+    quote_character: str = '`'

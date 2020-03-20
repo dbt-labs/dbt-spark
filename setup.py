@@ -9,7 +9,7 @@ with open(os.path.join(this_directory, 'README.md')) as f:
 
 
 package_name = "dbt-spark"
-package_version = "0.15.0"
+package_version = "0.15.3"
 description = """The SparkSQL plugin for dbt (data build tool)"""
 
 setup(
@@ -29,11 +29,13 @@ setup(
         'dbt': [
             'include/spark/dbt_project.yml',
             'include/spark/macros/*.sql',
-            'include/spark/macros/**/*.sql'
+            'include/spark/macros/**/*.sql',
         ]
     },
     install_requires=[
-        'dbt-core=={}'.format(package_version),
-        'PyHive[hive]>=0.6.0,<0.7.0'
+        f'dbt-core>=={package_version}',
+        'jinja2<3.0.0',  # until dbt-core reaches 0.16.0: https://github.com/fishtown-analytics/dbt/issues/2147
+        'PyHive[hive]>=0.6.0,<0.7.0',
+        'thrift>=0.11.0,<0.12.0',
     ]
 )
