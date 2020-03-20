@@ -55,7 +55,7 @@ class SparkCredentials(Credentials):
 
 class ConnectionWrapper(object):
     """Wrap a Spark connection in a way that no-ops transactions"""
-    # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html
+    # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html  # noqa
 
     def __init__(self, handle):
         self.handle = handle
@@ -168,7 +168,9 @@ class ConnectionWrapper(object):
 class SparkConnectionManager(SQLConnectionManager):
     TYPE = 'spark'
 
-    SPARK_CONNECTION_URL = "https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}"
+    SPARK_CONNECTION_URL = (
+        "https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}"
+    )
 
     @contextmanager
     def exception_handler(self, sql):
@@ -252,13 +254,16 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     conn = hive.connect(thrift_transport=transport)
                 elif creds.method == 'thrift':
-                    cls.validate_creds(creds, ['host', 'port', 'user', 'schema'])
+                    cls.validate_creds(creds,
+                                       ['host', 'port', 'user', 'schema'])
 
                     conn = hive.connect(host=creds.host,
                                         port=creds.port,
                                         username=creds.user)
                 else:
-                    raise dbt.exceptions.DbtProfileError("invalid credential method: {}".format(creds.method))
+                    raise dbt.exceptions.DbtProfileError(
+                        f"invalid credential method: {creds.method}"
+                    )
                 break
             except Exception as e:
                 exc = e
@@ -271,8 +276,9 @@ class SparkConnectionManager(SQLConnectionManager):
 
                 warning = "Warning: {}\n\tRetrying in {} seconds ({} of {})"
                 if is_pending or is_starting:
-                    logger.warning(warning.format(e.message, creds.connect_timeout,
-                                                  i, creds.connect_retries))
+                    msg = warning.format(e.message, creds.connect_timeout,
+                                         i, creds.connect_retries)
+                    logger.warning(msg)
                     time.sleep(creds.connect_timeout)
                 else:
                     raise dbt.exceptions.FailedToConnectException(str(e))

@@ -52,8 +52,6 @@ class SparkAdapter(SQLAdapter):
     Column = SparkColumn
     ConnectionManager = SparkConnectionManager
 
-    AdapterSpecificConfigs = frozenset({"file_format", "partition_by", "cluster_by", "num_buckets", "location"})
-
     AdapterSpecificConfigs = frozenset({"file_format", "location_root",
                                         "partition_by", "clustered_by",
                                         "buckets"})
@@ -83,12 +81,6 @@ class SparkAdapter(SQLAdapter):
     def convert_datetime_type(cls, agate_table, col_idx):
         return "timestamp"
 
-    def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
-        if not self.Relation.include_policy.database:
-            database = None
-
-        return super().get_relation(database, schema, identifier)
-
     def add_schema_to_cache(self, schema) -> str:
         """Cache a new schema in dbt. It will show up in `list relations`."""
         if schema is None:
@@ -101,7 +93,9 @@ class SparkAdapter(SQLAdapter):
         # so jinja doesn't render things
         return ''
 
-    def list_relations_without_caching(self, information_schema, schema) -> List[SparkRelation]:
+    def list_relations_without_caching(
+        self, information_schema, schema
+    ) -> List[SparkRelation]:
         kwargs = {'information_schema': information_schema, 'schema': schema}
         try:
             results = self.execute_macro(
@@ -130,7 +124,9 @@ class SparkAdapter(SQLAdapter):
 
         return relations
 
-    def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
+    def get_relation(
+        self, database: str, schema: str, identifier: str
+    ) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
             database = None
 
