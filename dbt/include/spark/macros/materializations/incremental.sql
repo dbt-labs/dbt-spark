@@ -1,4 +1,4 @@
-{% macro get_insert_overwrite_sql(source_relation, target_relation, partitions) %}
+{% macro get_insert_overwrite_sql(source_relation, target_relation) %}
 
     {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
     {%- set dest_cols_csv = dest_columns | map(attribute='quoted') | join(', ') -%}
@@ -8,27 +8,94 @@
 
 {% endmacro %}
 
-{% materialization incremental, adapter='spark' -%}
+{% macro dbt_spark_validate_get_file_format() %}
+  {#-- Find and validate the file format #}
+  {%- set file_format = config.get("file_format", default="parquet") -%}
 
-  {%- set partitions = config.get('partition_by') -%}
-  {% if not partitions %}
-    {% do exceptions.raise_compiler_error("Table partitions are required for incremental models on Spark") %}
+  {% set invalid_file_format_msg -%}
+    Invalid file format provided: {{ file_format }}
+    Expected one of: 'text', 'csv', 'json', 'jdbc', 'parquet', 'orc', 'hive', 'delta', 'libsvm'
+  {%- endset %}
+
+  {% if file_format not in ['text', 'csv', 'json', 'jdbc', 'parquet', 'orc', 'hive', 'delta', 'libsvm'] %}
+    {% do exceptions.raise_compiler_error(invalid_file_format_msg) %}
   {% endif %}
 
-  {%- set identifier = model['alias'] -%}
-  {%- set tmp_identifier = model['alias'] ~ "__dbt_tmp" -%}
+  {% do return(file_format) %}
+{% endmacro %}
 
-  {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
-  {%- set target_relation = api.Relation.create(identifier=identifier, schema=schema, database=database,  type='table') -%}
-  {%- set tmp_relation = api.Relation.create(identifier=tmp_identifier,  type='table') -%}
+{% macro dbt_spark_validate_get_incremental_strategy(file_format) %}
+  {#-- Find and validate the incremental strategy #}
+  {%- set strategy = config.get("incremental_strategy", default="insert_overwrite") -%}
 
-  {%- set full_refresh = flags.FULL_REFRESH == True and old_relation is not none -%}
-  {%- set old_relation_is_view = old_relation is not none and old_relation.type == 'view' -%}
+  {% set invalid_strategy_msg -%}
+    Invalid incremental strategy provided: {{ strategy }}
+    Expected one of: 'merge', 'insert_overwrite'
+  {%- endset %}
 
-  {%- if full_refresh or old_relation_is_view -%}
-    {{ adapter.drop_relation(old_relation) }}
-    {%- set old_relation = none -%}
-  {%- endif %}
+  {% set invalid_merge_msg -%}
+    Invalid incremental strategy provided: {{ strategy }}
+    You can only choose this strategy when file_format is set to 'delta'
+  {%- endset %}
+
+  {% if strategy not in ['merge', 'insert_overwrite'] %}
+    {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
+  {%-else %}
+    {% if strategy == 'merge' and file_format != 'delta' %}
+      {% do exceptions.raise_compiler_error(invalid_merge_msg) %}
+    {% endif %}
+  {% endif %}
+
+  {% do return(strategy) %}
+{% endmacro %}
+
+{% macro dbt_spark_validate_merge(file_format) %}
+  {% set invalid_file_format_msg -%}
+    You can only choose the 'merge' incremental_strategy when file_format is set to 'delta'
+  {%- endset %}
+
+  {% if file_format != 'delta' %}
+    {% do exceptions.raise_compiler_error(invalid_file_format_msg) %}
+  {% endif %}
+
+{% endmacro %}
+
+{% macro get_merge_sql(source, target, unique_key) %}
+    merge into {{ target }} as DBT_INTERNAL_DEST
+    using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
+    on DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
+    when matched then update set *
+    when not matched then insert *
+{% endmacro %}
+
+{% macro dbt_spark_get_incremental_sql(strategy, source, target, unique_key) %}
+  {%- if strategy == 'insert_overwrite' -%}
+    {#-- insert statements don't like CTEs, so support them via a temp view #}
+    {{ get_insert_overwrite_sql(source, target) }}
+  {%- else -%}
+    {#-- merge all columns with databricks delta - schema changes are handled for us #}
+    {{ get_merge_sql(source, target, unique_key) }}
+  {%- endif -%}
+
+{% endmacro %}
+
+
+{% materialization incremental, adapter='spark' -%}
+  {#-- Validate early so we don't run SQL if the file_format is invalid --#}
+  {% set file_format = dbt_spark_validate_get_file_format() -%}
+  {#-- Validate early so we don't run SQL if the strategy is invalid --#}
+  {% set strategy = dbt_spark_validate_get_incremental_strategy(file_format) -%}
+
+  {%- set full_refresh_mode = (flags.FULL_REFRESH == True) -%}
+
+  {% set target_relation = this %}
+  {% set existing_relation = load_relation(this) %}
+  {% set tmp_relation = make_temp_relation(this) %}
+
+  {% if strategy == 'merge' %}
+    {%- set unique_key = config.require('unique_key') -%}
+    {% do dbt_spark_validate_merge(file_format) %}
+  {% endif %}
 
   {% call statement() %}
     set spark.sql.sources.partitionOverwriteMode = DYNAMIC
@@ -40,26 +107,22 @@
 
   {{ run_hooks(pre_hooks) }}
 
-  {#-- This is required to make dbt's incremental scheme work #}
-  {%- if old_relation is none -%}
+  {% if existing_relation is none %}
+    {% set build_sql = create_table_as(False, target_relation, sql) %}
+  {% elif existing_relation.is_view or full_refresh_mode %}
+    {% do adapter.drop_relation(existing_relation) %}
+    {% set build_sql = create_table_as(False, target_relation, sql) %}
+  {% else %}
+    {% do run_query(create_table_as(True, tmp_relation, sql)) %}
+    {% set build_sql = dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) %}
+  {% endif %}
 
-    {%- call statement('main') -%}
-      {{ create_table_as(False, target_relation, sql) }}
-    {%- endcall %}
-
-  {%- else -%}
-
-    {%- call statement('main') -%}
-      {{ create_table_as(True, tmp_relation, sql) }}
-    {%- endcall -%}
-
-    {#-- insert statements don't like CTEs, so support them via a temp view #}
-    {%- call statement('main') -%}
-      {{ get_insert_overwrite_sql(tmp_relation, target_relation, partitions) }}
-    {%- endcall -%}
-
-  {%- endif %}
+  {%- call statement('main') -%}
+    {{ build_sql }}
+  {%- endcall -%}
 
   {{ run_hooks(post_hooks) }}
+
+  {{ return({'relations': [target_relation]}) }}
 
 {%- endmaterialization %}

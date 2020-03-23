@@ -1,5 +1,5 @@
-{% macro spark__load_csv_rows(model, batch_size=1000) %}
-    {% set agate_table = model['agate_table'] %}
+{% macro spark__load_csv_rows(model, agate_table) %}
+    {% set batch_size = 1000 %}
     {% set cols_sql = ", ".join(agate_table.column_names) %}
     {% set bindings = [] %}
 
@@ -13,7 +13,7 @@
         {% endfor %}
 
         {% set sql %}
-            insert into {{ this.render(False) }} values
+            insert into {{ this.render() }} values
             {% for row in chunk -%}
                 ({%- for column in agate_table.column_names -%}
                     %s
@@ -34,11 +34,11 @@
     {{ return(statements[0]) }}
 {% endmacro %}
 
-{% macro spark__reset_csv_table(model, full_refresh, old_relation) %}
+{% macro spark__reset_csv_table(model, full_refresh, old_relation, agate_table) %}
     {% if old_relation %}
         {{ adapter.drop_relation(old_relation) }}
     {% endif %}
-    {% set sql = create_csv_table(model) %}
+    {% set sql = create_csv_table(model, agate_table) %}
     {{ return(sql) }}
 {% endmacro %}
 
@@ -46,7 +46,10 @@
 
   {%- set identifier = model['alias'] -%}
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
-  {%- set csv_table = model["agate_table"] -%}
+  {%- set target_relation = api.Relation.create(database=database, schema=schema, identifier=identifier,
+                                               type='table') -%}
+  {%- set agate_table = load_agate_table() -%}
+  {%- do store_result('agate_table', status='OK', agate_table=agate_table) -%}
 
   {{ run_hooks(pre_hooks, inside_transaction=False) }}
 
@@ -54,10 +57,10 @@
   {{ run_hooks(pre_hooks, inside_transaction=True) }}
 
   -- build model
-  {% set create_table_sql = reset_csv_table(model, full_refresh_mode, old_relation) %}
+  {% set create_table_sql = reset_csv_table(model, full_refresh_mode, old_relation, agate_table) %}
   {% set status = 'CREATE' %}
-  {% set num_rows = (csv_table.rows | length) %}
-  {% set sql = load_csv_rows(model) %}
+  {% set num_rows = (agate_table.rows | length) %}
+  {% set sql = load_csv_rows(model, agate_table) %}
 
   {% call noop_statement('main', status ~ ' ' ~ num_rows) %}
     {{ create_table_sql }};
@@ -69,4 +72,7 @@
   -- `COMMIT` happens here
   {{ adapter.commit() }}
   {{ run_hooks(post_hooks, inside_transaction=False) }}
+
+  {{ return({'relations': [target_relation]}) }}
+
 {% endmaterialization %}

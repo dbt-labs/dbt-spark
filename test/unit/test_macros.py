@@ -1,17 +1,17 @@
-import mock
-import re
 import unittest
+from unittest import mock
+import re
 from jinja2 import Environment, FileSystemLoader
 
 
 class TestSparkMacros(unittest.TestCase):
-    
+
     def setUp(self):
         self.jinja_env = Environment(loader=FileSystemLoader('dbt/include/spark/macros'),
                                      extensions=['jinja2.ext.do',])
-        
+
         self.config = {}
-        
+
         self.default_context = {}
         self.default_context['validation'] = mock.Mock()
         self.default_context['model'] = mock.Mock()
@@ -28,12 +28,12 @@ class TestSparkMacros(unittest.TestCase):
         self.default_context['model'].alias = relation
         value = getattr(template.module, name)(temporary, relation, sql)
         return re.sub(r'\s\s+', ' ', value)
- 
- 
+
+
     def test_macros_load(self):
         self.jinja_env.get_template('adapters.sql')
- 
- 
+
+
     def test_macros_create_table_as(self):
         template = self.__get_template('adapters.sql')
 
@@ -117,6 +117,6 @@ class TestSparkMacros(unittest.TestCase):
         self.config['buckets'] = '1'
         self.config['persist_docs'] = {'relation': True}
         self.default_context['model'].description = 'Description Test'
-        
+
         self.assertEqual(self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1'),
                          "create table my_table using delta partitioned by (partition_1,partition_2) clustered by (cluster_1,cluster_2) into 1 buckets location '/mnt/root/my_table' comment 'Description Test' as select 1")

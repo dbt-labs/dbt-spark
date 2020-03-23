@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from setuptools import find_packages
-from distutils.core import setup
+from setuptools import find_packages, setup
 import os
 
 
@@ -10,7 +9,7 @@ with open(os.path.join(this_directory, 'README.md')) as f:
 
 
 package_name = "dbt-spark"
-package_version = "0.14.3"
+package_version = "0.15.3"
 description = """The SparkSQL plugin for dbt (data build tool)"""
 
 setup(
@@ -34,8 +33,8 @@ setup(
         ]
     },
     install_requires=[
-        'dbt-core=={}'.format(package_version),
-        'jinja2<3.0.0', # until dbt-core reaches 0.16.0: https://github.com/fishtown-analytics/dbt/issues/2147
+        f'dbt-core>=={package_version}',
+        'jinja2<3.0.0',  # until dbt-core reaches 0.16.0: https://github.com/fishtown-analytics/dbt/issues/2147
         'PyHive[hive]>=0.6.0,<0.7.0',
         'thrift>=0.11.0,<0.12.0',
     ]

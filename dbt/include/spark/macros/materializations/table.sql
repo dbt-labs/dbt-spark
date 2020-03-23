@@ -1,5 +1,5 @@
 {% materialization table, adapter = 'spark' %}
-  
+
   {%- set identifier = model['alias'] -%}
 
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
@@ -21,5 +21,7 @@
   {%- endcall %}
 
   {{ run_hooks(post_hooks) }}
+
+  {{ return({'relations': [target_relation]})}}
 
 {% endmaterialization %}

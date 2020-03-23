@@ -1,19 +1,17 @@
 import unittest
+from unittest import mock
 
 import dbt.flags as flags
-import mock
 from agate import Row
-from dbt.adapters.base import BaseRelation
 from pyhive import hive
-
-from dbt.adapters.spark import SparkAdapter
+from dbt.adapters.spark import SparkAdapter, SparkRelation
 from .utils import config_from_parts_or_dicts
 
 
 class TestSparkAdapter(unittest.TestCase):
 
     def setUp(self):
-        flags.STRICT_MODE = True
+        flags.STRICT_MODE = False
 
         self.project_cfg = {
             'name': 'X',
@@ -26,7 +24,7 @@ class TestSparkAdapter(unittest.TestCase):
             }
         }
 
-    def get_target_http(self, project):
+    def _get_target_http(self, project):
         return config_from_parts_or_dicts(project, {
             'outputs': {
                 'test': {
@@ -36,13 +34,14 @@ class TestSparkAdapter(unittest.TestCase):
                     'host': 'myorg.sparkhost.com',
                     'port': 443,
                     'token': 'abc123',
+                    'organization': '0123456789',
                     'cluster': '01234-23423-coffeetime',
                 }
             },
             'target': 'test'
         })
 
-    def get_target_thrift(self, project):
+    def _get_target_thrift(self, project):
         return config_from_parts_or_dicts(project, {
             'outputs': {
                 'test': {
@@ -58,23 +57,29 @@ class TestSparkAdapter(unittest.TestCase):
         })
 
     def test_http_connection(self):
-        config = self.get_target_http(self.project_cfg)
+        config = self._get_target_http(self.project_cfg)
         adapter = SparkAdapter(config)
 
         def hive_http_connect(thrift_transport):
             self.assertEqual(thrift_transport.scheme, 'https')
             self.assertEqual(thrift_transport.port, 443)
             self.assertEqual(thrift_transport.host, 'myorg.sparkhost.com')
-            self.assertEqual(thrift_transport.path, '/sql/protocolv1/o/0/01234-23423-coffeetime')
+            self.assertEqual(thrift_transport.path, '/sql/protocolv1/o/0123456789/01234-23423-coffeetime')
 
-        with mock.patch.object(hive, 'connect', new=hive_http_connect):
+        # with mock.patch.object(hive, 'connect', new=hive_http_connect):
+        with mock.patch('dbt.adapters.spark.connections.hive.connect', new=hive_http_connect):
             connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
 
             self.assertEqual(connection.state, 'open')
             self.assertNotEqual(connection.handle, None)
+            self.assertEqual(connection.credentials.cluster, '01234-23423-coffeetime')
+            self.assertEqual(connection.credentials.token, 'abc123')
+            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertEqual(connection.credentials.database, 'analytics')
 
     def test_thrift_connection(self):
-        config = self.get_target_thrift(self.project_cfg)
+        config = self._get_target_thrift(self.project_cfg)
         adapter = SparkAdapter(config)
 
         def hive_thrift_connect(host, port, username):
@@ -84,15 +89,18 @@ class TestSparkAdapter(unittest.TestCase):
 
         with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
             connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
 
             self.assertEqual(connection.state, 'open')
             self.assertNotEqual(connection.handle, None)
+            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertEqual(connection.credentials.database, 'analytics')
 
     def test_parse_relation(self):
         self.maxDiff = None
-        rel_type = 'table'
+        rel_type = SparkRelation.RelationType.Table
 
-        relation = BaseRelation.create(
+        relation = SparkRelation.create(
             database='default_database',
             schema='default_schema',
             identifier='mytable',
@@ -124,17 +132,16 @@ class TestSparkAdapter(unittest.TestCase):
 
         input_cols = [Row(keys=['col_name', 'data_type'], values=r) for r in plain_rows]
 
-        config = self.get_target_http(self.project_cfg)
+        config = self._get_target_http(self.project_cfg)
         rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 3)
-        self.assertEqual(rows[0].to_dict(), {
+        self.assertEqual(rows[0].to_dict(omit_none=False), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
             'table_owner': 'root',
             'column': 'col1',
-            'column_name': 'col1',
             'column_index': 0,
             'dtype': 'decimal(22,0)',
             'numeric_scale': None,
@@ -142,14 +149,13 @@ class TestSparkAdapter(unittest.TestCase):
             'char_size': None
         })
 
-        self.assertEqual(rows[1].to_dict(), {
+        self.assertEqual(rows[1].to_dict(omit_none=False), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
             'table_owner': 'root',
             'column': 'col2',
-            'column_name': 'col2',
             'column_index': 1,
             'dtype': 'string',
             'numeric_scale': None,
@@ -157,14 +163,13 @@ class TestSparkAdapter(unittest.TestCase):
             'char_size': None
         })
 
-        self.assertEqual(rows[2].to_dict(), {
+        self.assertEqual(rows[2].to_dict(omit_none=False), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
             'table_owner': 'root',
             'column': 'dt',
-            'column_name': 'dt',
             'column_index': 2,
             'dtype': 'date',
             'numeric_scale': None,
@@ -174,9 +179,9 @@ class TestSparkAdapter(unittest.TestCase):
 
     def test_parse_relation_with_statistics(self):
         self.maxDiff = None
-        rel_type = 'table'
+        rel_type = SparkRelation.RelationType.Table
 
-        relation = BaseRelation.create(
+        relation = SparkRelation.create(
             database='default_database',
             schema='default_schema',
             identifier='mytable',
@@ -205,17 +210,16 @@ class TestSparkAdapter(unittest.TestCase):
 
         input_cols = [Row(keys=['col_name', 'data_type'], values=r) for r in plain_rows]
 
-        config = self.get_target_http(self.project_cfg)
+        config = self._get_target_http(self.project_cfg)
         rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0].to_dict(), {
+        self.assertEqual(rows[0].to_dict(omit_none=False), {
             'table_database': relation.database,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
             'table_owner': 'root',
             'column': 'col1',
-            'column_name': 'col1',
             'column_index': 0,
             'dtype': 'decimal(22,0)',
             'numeric_scale': None,
