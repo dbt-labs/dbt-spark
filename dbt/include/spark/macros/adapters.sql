@@ -96,12 +96,6 @@
     {{ sql }}
 {% endmacro %}
 
-{% macro spark__create_schema(database_name, schema_name) -%}
-  {%- call statement('create_schema') -%}
-    create schema if not exists {{schema_name}}
-  {% endcall %}
-{% endmacro %}
-
 {% macro spark__drop_schema(database_name, schema_name) -%}
   {%- call statement('drop_schema') -%}
     drop schema if exists {{ schema_name }} cascade
