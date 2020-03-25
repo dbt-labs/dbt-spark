@@ -62,8 +62,12 @@
 
 
 {% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=[]) %}
-  {% set merge_source = source.include(schema=false) %}
-  {% do return(default__get_merge_sql(target, source, unique_key, dest_columns, predicates)) %}
+  {# ignore dest_columns - we will just use `*` #}
+    merge into {{ target }} as DBT_INTERNAL_DEST
+      using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
+      on DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
+      when matched then update set *
+      when not matched then insert *
 {% endmacro %}
 
 
@@ -73,8 +77,7 @@
     {{ get_insert_overwrite_sql(source, target) }}
   {%- else -%}
     {#-- merge all columns with databricks delta - schema changes are handled for us #}
-    {% set dest_columns = adapter.get_columns_in_relation(target) %}
-    {{ get_merge_sql(target, source, unique_key, dest_columns, predicates=none) }}
+    {{ get_merge_sql(target, source, unique_key, dest_columns=none, predicates=none) }}
   {%- endif -%}
 
 {% endmacro %}

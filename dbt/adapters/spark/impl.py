@@ -81,6 +81,9 @@ class SparkAdapter(SQLAdapter):
     def convert_datetime_type(cls, agate_table, col_idx):
         return "timestamp"
 
+    def quote(self, identifier):
+        return '`{}`'.format(identifier)
+
     def add_schema_to_cache(self, schema) -> str:
         """Cache a new schema in dbt. It will show up in `list relations`."""
         if schema is None:
