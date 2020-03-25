@@ -119,7 +119,6 @@ class SparkAdapter(SQLAdapter):
                 identifier=name,
                 type=rel_type
             )
-            self.cache_added(relation)
             relations.append(relation)
 
         return relations
