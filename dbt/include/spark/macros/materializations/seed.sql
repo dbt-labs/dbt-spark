@@ -46,6 +46,8 @@
 
   {%- set identifier = model['alias'] -%}
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
+  {%- set target_relation = api.Relation.create(database=database, schema=schema, identifier=identifier,
+                                               type='table') -%}
   {%- set agate_table = load_agate_table() -%}
   {%- do store_result('agate_table', status='OK', agate_table=agate_table) -%}
 
@@ -70,4 +72,7 @@
   -- `COMMIT` happens here
   {{ adapter.commit() }}
   {{ run_hooks(post_hooks, inside_transaction=False) }}
+
+  {{ return({'relations': [target_relation]}) }}
+
 {% endmaterialization %}
