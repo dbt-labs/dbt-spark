@@ -98,7 +98,7 @@ class TestSparkAdapter(unittest.TestCase):
 
     def test_parse_relation(self):
         self.maxDiff = None
-        rel_type = SparkRelation.RelationType.Table
+        rel_type = SparkRelation.get_relation_type.Table
 
         relation = SparkRelation.create(
             database='default_database',
@@ -179,7 +179,7 @@ class TestSparkAdapter(unittest.TestCase):
 
     def test_parse_relation_with_statistics(self):
         self.maxDiff = None
-        rel_type = SparkRelation.RelationType.Table
+        rel_type = SparkRelation.get_relation_type.Table
 
         relation = SparkRelation.create(
             database='default_database',
