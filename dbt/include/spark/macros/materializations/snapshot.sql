@@ -5,7 +5,12 @@
     {%- endfor -%})
 {%- endmacro %}
 
-{% macro build_snapshot_table(strategy, sql) %}
+{% macro spark__snapshot_string_as_time(timestamp) -%}
+    {%- set result = "to_timestamp('" ~ timestamp ~ "')" -%}
+    {{ return(result) }}
+{%- endmacro %}
+
+{% macro spark_build_snapshot_table(strategy, sql) %}
 
     select *,
         {{ strategy.scd_id }} as dbt_scd_id,
@@ -19,7 +24,7 @@
 
 {% endmacro %}
 
-{% macro snapshot_staging_table_inserts(strategy, source_sql, target_relation) -%}
+{% macro spark_snapshot_staging_table_inserts(strategy, source_sql, target_relation) -%}
 
     with snapshot_query as (
 
@@ -70,7 +75,7 @@
 {%- endmacro %}
 
 
-{% macro snapshot_staging_table_updates(strategy, source_sql, target_relation) -%}
+{% macro spark_snapshot_staging_table_updates(strategy, source_sql, target_relation) -%}
 
     with snapshot_query as (
 
