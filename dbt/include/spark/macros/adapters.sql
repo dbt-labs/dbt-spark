@@ -20,7 +20,7 @@
   {%- if raw_persist_docs is mapping -%}
     {%- set raw_relation = raw_persist_docs.get('relation', false) -%}
       {%- if raw_relation -%}
-      comment '{{ model.description }}'
+      comment '{{ model.description | replace("'", "\\'") }}'
       {% endif %}
   {%- else -%}
     {{ exceptions.raise_compiler_error("Invalid value provided for 'persist_docs'. Expected dict but got value: " ~ raw_persist_docs) }}
@@ -96,15 +96,15 @@
     {{ sql }}
 {% endmacro %}
 
-{% macro spark__create_schema(database_name, schema_name) -%}
+{% macro spark__create_schema(relation) -%}
   {%- call statement('create_schema') -%}
-    create schema if not exists {{schema_name}}
+    create schema if not exists {{relation}}
   {% endcall %}
 {% endmacro %}
 
-{% macro spark__drop_schema(database_name, schema_name) -%}
+{% macro spark__drop_schema(relation) -%}
   {%- call statement('drop_schema') -%}
-    drop schema if exists {{ schema_name }} cascade
+    drop schema if exists {{ relation }} cascade
   {%- endcall -%}
 {% endmacro %}
 
@@ -115,9 +115,9 @@
   {% do return(load_result('get_columns_in_relation').table) %}
 {% endmacro %}
 
-{% macro spark__list_relations_without_caching(information_schema, schema) %}
+{% macro spark__list_relations_without_caching(relation) %}
   {% call statement('list_relations_without_caching', fetch_result=True) -%}
-    show table extended in {{ schema }} like '*'
+    show table extended in {{ relation }} like '*'
   {% endcall %}
 
   {% do return(load_result('list_relations_without_caching').table) %}

@@ -32,10 +32,10 @@ class SparkCredentials(Credentials):
     host: str
     method: SparkConnectionMethod
     schema: str
-    cluster: Optional[str]
-    token: Optional[str]
-    user: Optional[str]
     database: Optional[str]
+    cluster: Optional[str] = None
+    token: Optional[str] = None
+    user: Optional[str] = None
     port: int = 443
     organization: str = '0'
     connect_retries: int = 0
@@ -43,6 +43,14 @@ class SparkCredentials(Credentials):
 
     def __post_init__(self):
         # spark classifies database and schema as the same thing
+        if (
+            self.database is not None and
+            self.database != self.schema
+        ):
+            raise dbt.exceptions.RuntimeException(
+                f'In credentials: got database={self.database} but '
+                f'schema={self.schema} - on spark, both most be the same value'
+            )
         self.database = self.schema
 
     @property
