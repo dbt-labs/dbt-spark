@@ -1,4 +1,16 @@
-## dbt-spark
+<p align="center">
+  <img src="https://raw.githubusercontent.com/fishtown-analytics/dbt/master/etc/dbt-horizontal.png" alt="dbt logo"/>
+</p>
+<p align="center">
+  <a href="https://circleci.com/gh/fishtown-analytics/dbt-spark/tree/master">
+    <img src="https://circleci.com/gh/fishtown-analytics/dbt-spark/tree/master.svg?style=svg" alt="CircleCI" />
+  </a>
+  <a href="https://community.getdbt.com">
+    <img src="https://community.getdbt.com/badge.svg" alt="Slack" />
+  </a>
+</p>
+
+# dbt-spark
 
 ### Documentation
 For more information on using Spark with dbt, consult the dbt documentation:
