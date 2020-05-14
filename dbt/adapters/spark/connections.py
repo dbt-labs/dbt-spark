@@ -48,8 +48,10 @@ class SparkCredentials(Credentials):
             self.database != self.schema
         ):
             raise dbt.exceptions.RuntimeException(
-                f'In credentials: got database={self.database} but '
-                f'schema={self.schema} - on spark, both most be the same value'
+                f'    schema: {self.schema} \n'
+                f'    database: {self.database} \n'
+                f'On Spark, database must be omitted or have the same value as'
+                f' schema.'
             )
         self.database = self.schema
 
