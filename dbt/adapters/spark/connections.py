@@ -277,21 +277,19 @@ class SparkConnectionManager(SQLConnectionManager):
                 break
             except Exception as e:
                 exc = e
-                if getattr(e, 'message', None) is None:
-                    raise dbt.exceptions.FailedToConnectException(str(e))
-
-                message = e.message.lower()
-                is_pending = 'pending' in message
-                is_starting = 'temporarily_unavailable' in message
-
-                warning = "Warning: {}\n\tRetrying in {} seconds ({} of {})"
-                if is_pending or is_starting:
-                    msg = warning.format(e.message, creds.connect_timeout,
-                                         i, creds.connect_retries)
+                retryable_message = _is_retryable_error(e)
+                if retryable_message:
+                    msg = (
+                        f"Warning: {retryable_message}\n\tRetrying in "
+                        f"{creds.connect_timeout} seconds "
+                        f"({i} of {creds.connect_retries})"
+                    )
                     logger.warning(msg)
                     time.sleep(creds.connect_timeout)
                 else:
-                    raise dbt.exceptions.FailedToConnectException(str(e))
+                    raise dbt.exceptions.FailedToConnectException(
+                        'failed to connect'
+                    ) from e
         else:
             raise exc
 
@@ -299,3 +297,17 @@ class SparkConnectionManager(SQLConnectionManager):
         connection.handle = handle
         connection.state = ConnectionState.OPEN
         return connection
+
+
+def _is_retryable_error(exc: Exception) -> Optional[str]:
+    if isinstance(exc, EOFError):
+        return 'EOFError'
+    message = getattr(exc, 'message', None)
+    if message is None:
+        return None
+    message = message.lower()
+    if 'pending' in message:
+        return exc.message
+    if 'temporarily_unavailable' in message:
+        return exc.message
+    return None
