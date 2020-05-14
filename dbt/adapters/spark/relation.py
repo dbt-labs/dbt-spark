@@ -28,9 +28,12 @@ class SparkRelation(BaseRelation):
         # some core things set database='', which we should ignore.
         if self.database and self.database != self.schema:
             raise RuntimeException(
-                f'In relation with identifier={self.identifier}, '
-                f'schema={self.schema}: got database={self.database}, but it '
-                f'should not be set'
+                f'Error while parsing relation {self.name}: \n'
+                f'    identifier: {self.identifier} \n'
+                f'    schema: {self.schema} \n'
+                f'    database: {self.database} \n'
+                f'On Spark, database should not be set. Use the schema '
+                f'config to set a custom schema/database for this relation.'
             )
 
     def render(self):
