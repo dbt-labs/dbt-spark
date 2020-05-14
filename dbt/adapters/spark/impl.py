@@ -1,10 +1,11 @@
-from typing import Optional, List, Dict, Any
+from dataclasses import dataclass
+from typing import Optional, List, Dict, Any, Union
 
 import agate
 import dbt.exceptions
 import dbt
+from dbt.adapters.base import AdapterConfig
 from dbt.adapters.sql import SQLAdapter
-from dbt.contracts.graph.manifest import Manifest
 
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
@@ -22,6 +23,15 @@ DROP_RELATION_MACRO_NAME = 'drop_relation'
 
 KEY_TABLE_OWNER = 'Owner'
 KEY_TABLE_STATISTICS = 'Statistics'
+
+
+@dataclass
+class SparkConfig(AdapterConfig):
+    file_format: str = 'parquet'
+    location_root: Optional[str] = None
+    partition_by: Optional[Union[List[str], str]] = None
+    clustered_by: Optional[Union[List[str], str]] = None
+    buckets: Optional[int] = None
 
 
 class SparkAdapter(SQLAdapter):
@@ -51,10 +61,7 @@ class SparkAdapter(SQLAdapter):
     Relation = SparkRelation
     Column = SparkColumn
     ConnectionManager = SparkConnectionManager
-
-    AdapterSpecificConfigs = frozenset({"file_format", "location_root",
-                                        "partition_by", "clustered_by",
-                                        "buckets"})
+    AdapterSpecificConfigs = SparkConfig
 
     @classmethod
     def date_function(cls) -> str:
@@ -97,9 +104,9 @@ class SparkAdapter(SQLAdapter):
         return ''
 
     def list_relations_without_caching(
-        self, information_schema, schema
+        self, schema_relation: SparkRelation
     ) -> List[SparkRelation]:
-        kwargs = {'information_schema': information_schema, 'schema': schema}
+        kwargs = {'schema_relation': schema_relation}
         try:
             results = self.execute_macro(
                 LIST_RELATIONS_MACRO_NAME,
@@ -107,11 +114,12 @@ class SparkAdapter(SQLAdapter):
                 release=True
             )
         except dbt.exceptions.RuntimeException as e:
-            if hasattr(e, 'msg') and f"Database '{schema}' not found" in e.msg:
+            errmsg = getattr(e, 'msg', '')
+            if f"Database '{schema_relation}' not found" in errmsg:
                 return []
             else:
                 description = "Error while retrieving information about"
-                logger.debug(f"{description} {schema}: {e.msg}")
+                logger.debug(f"{description} {schema_relation}: {e.msg}")
                 return []
 
         relations = []
@@ -267,18 +275,39 @@ class SparkAdapter(SQLAdapter):
             dct['table_database'] = dct['table_schema']
         return dct
 
-    def get_catalog(self, manifest: Manifest) -> agate.Table:
-        schemas = manifest.get_used_schemas()
-        columns = []
-        for database, schema in schemas:
-            relations = self.list_relations(database, schema)
-            for relation in relations:
+    def _get_catalog_for_relations(self, database: str, schema: str):
+        with self.connection_named(f'{database}.{schema}'):
+            columns = []
+            for relation in self.list_relations(database, schema):
                 logger.debug("Getting table schema for relation {}", relation)
                 columns.extend(
                     self._massage_column_for_catalog(col)
                     for col in self.get_columns_in_relation(relation)
                 )
         return agate.Table.from_object(columns)
+
+    def _get_one_catalog(
+        self, information_schema, schemas, manifest,
+    ) -> agate.Table:
+        name = f'{information_schema.database}.information_schema'
+
+        if len(schemas) != 1:
+            dbt.exceptions.raise_compiler_error(
+                'Expected only one schema in spark _get_one_catalog'
+            )
+
+        database = information_schema.database
+        schema = list(schemas)[0]
+
+        with self.connection_named(name):
+            columns = []
+            for relation in self.list_relations(database, schema):
+                logger.debug("Getting table schema for relation {}", relation)
+                columns.extend(
+                    self._massage_column_for_catalog(col)
+                    for col in self.get_columns_in_relation(relation)
+                )
+            return agate.Table.from_object(columns)
 
     def check_schema_exists(self, database, schema):
         results = self.execute_macro(
