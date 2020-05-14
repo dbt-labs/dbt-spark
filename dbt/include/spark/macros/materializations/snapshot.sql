@@ -55,6 +55,7 @@
 
 
 {% macro spark__create_columns(relation, columns) %}
+    {% if columns|length > 0 %}
     {% call statement() %}
       alter table {{ relation }} add columns (
         {% for column in columns %}
@@ -62,6 +63,7 @@
         {% endfor %}
       );
     {% endcall %}
+    {% endif %}
 {% endmacro %}
 
 
@@ -72,6 +74,16 @@
 
   {%- set strategy_name = config.get('strategy') -%}
   {%- set unique_key = config.get('unique_key') %}
+  {%- set file_format = config.get('file_format', 'parquet') -%}
+  
+  {% set invalid_format_msg -%}
+    Invalid file format: {{ file_format }}
+    Snapshot functionality requires file_format be set to 'delta'
+  {%- endset %}
+  
+  {%- if file_format != 'delta' -%}
+    {% do exceptions.raise_compiler_error(invalid_format_msg) %}
+  {% endif %}
 
   {% if not adapter.check_schema_exists(model.database, model.schema) %}
     {% do create_schema(model.database, model.schema) %}
