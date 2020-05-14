@@ -5,166 +5,63 @@
     {%- endfor -%})
 {%- endmacro %}
 
+
 {% macro spark__snapshot_string_as_time(timestamp) -%}
     {%- set result = "to_timestamp('" ~ timestamp ~ "')" -%}
     {{ return(result) }}
 {%- endmacro %}
 
-{% macro spark_build_snapshot_table(strategy, sql) %}
 
-    select *,
-        {{ strategy.scd_id }} as dbt_scd_id,
-        {{ strategy.unique_key }} as dbt_unique_key,
-        {{ strategy.updated_at }} as dbt_updated_at,
-        {{ strategy.updated_at }} as dbt_valid_from,
-        nullif({{ strategy.updated_at }}, {{ strategy.updated_at }}) as dbt_valid_to
-    from (
-        {{ sql }}
-    ) sbq
-
-{% endmacro %}
-
-{% macro spark_snapshot_staging_table_inserts(strategy, source_sql, target_relation) -%}
-
-    with snapshot_query as (
-
-        {{ source_sql }}
-
-    ),
-
-    snapshotted_data as (
-
-        select *
-
-        from {{ target_relation }}
-
-    ),
-
-    source_data as (
-
-        select *,
-            {{ strategy.scd_id }} as dbt_scd_id,
-            {{ strategy.unique_key }} as dbt_unique_key,
-            {{ strategy.updated_at }} as dbt_updated_at,
-            {{ strategy.updated_at }} as dbt_valid_from,
-            nullif({{ strategy.updated_at }}, {{ strategy.updated_at }}) as dbt_valid_to
-
-        from snapshot_query
-    ),
-
-    insertions as (
-
-        select
-            source_data.*
-
-        from source_data
-        left outer join snapshotted_data on snapshotted_data.dbt_unique_key = source_data.dbt_unique_key
-        where snapshotted_data.dbt_unique_key is null
-           or (
-                snapshotted_data.dbt_unique_key is not null
-            and snapshotted_data.dbt_valid_to is null
-            and (
-                {{ strategy.row_changed }}
-            )
-        )
-
-    )
-
-    select * from insertions
-
-{%- endmacro %}
-
-
-{% macro spark_snapshot_staging_table_updates(strategy, source_sql, target_relation) -%}
-
-    with snapshot_query as (
-
-        {{ source_sql }}
-
-    ),
-
-    snapshotted_data as (
-
-        select *
-
-        from {{ target_relation }}
-
-    ),
-
-    source_data as (
-
-        select
-            *,
-            {{ strategy.scd_id }} as dbt_scd_id,
-            {{ strategy.unique_key }} as dbt_unique_key,
-            {{ strategy.updated_at }} as dbt_updated_at,
-            {{ strategy.updated_at }} as dbt_valid_from
-
-        from snapshot_query
-    ),
-
-    updates as (
-
-        select
-            'update' as dbt_change_type,
-            snapshotted_data.dbt_scd_id,
-            source_data.dbt_valid_from as dbt_valid_to
-
-        from source_data
-        join snapshotted_data on snapshotted_data.dbt_unique_key = source_data.dbt_unique_key
-        where snapshotted_data.dbt_valid_to is null
-        and (
-            {{ strategy.row_changed }}
-        )
-
-    )
-
-    select * from updates
-
-{%- endmacro %}
-
-{% macro build_snapshot_staging_table_updates(strategy, sql, target_relation) %}
-    {% set tmp_update_relation = make_temp_relation(target_relation, '__dbt_tmp_update') %}
-
-    {% set update_select = snapshot_staging_table_updates(strategy, sql, target_relation) %}
-
-    {% call statement('build_snapshot_staging_relation_updates') %}
-        {{ create_table_as(True, tmp_update_relation, update_select) }}
-    {% endcall %}
-
-    {% do return(tmp_update_relation) %}
-{% endmacro %}
-
-{% macro build_snapshot_staging_table_insert(strategy, sql, target_relation) %}
-    {% set tmp_insert_relation = make_temp_relation(target_relation, '__dbt_tmp_insert') %}
-
-    {% set inserts_select = snapshot_staging_table_inserts(strategy, sql, target_relation) %}
-
-    {% call statement('build_snapshot_staging_relation_inserts') %}
-        {{ create_table_as(True, tmp_insert_relation, inserts_select) }}
-    {% endcall %}
-
-
-    {% do return(tmp_insert_relation) %}
-{% endmacro %}
-
-{% macro spark__snapshot_merge_update_sql(target, source) -%}
+{% macro spark__snapshot_merge_sql(target, source, insert_cols) -%}
 
     merge into {{ target }} as DBT_INTERNAL_DEST
-    using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
+    using {{ source }} as DBT_INTERNAL_SOURCE
     on DBT_INTERNAL_SOURCE.dbt_scd_id = DBT_INTERNAL_DEST.dbt_scd_id
-    when matched then update set DBT_INTERNAL_DEST.dbt_valid_to = DBT_INTERNAL_SOURCE.dbt_valid_to
+    when matched
+     and DBT_INTERNAL_DEST.dbt_valid_to is null
+     and DBT_INTERNAL_SOURCE.dbt_change_type = 'update'
+        then update
+        set dbt_valid_to = DBT_INTERNAL_SOURCE.dbt_valid_to
+
+    when not matched
+     and DBT_INTERNAL_SOURCE.dbt_change_type = 'insert'
+        then insert *
     ;
 {% endmacro %}
 
 
-{% macro spark__snapshot_merge_insert_sql(target, source) -%}
+{% macro spark_build_snapshot_staging_table(strategy, sql, target_relation) %}
+    {% set tmp_identifier = target_relation.identifier ~ '__dbt_tmp' %}
+                                
+    {%- set tmp_relation = api.Relation.create(identifier=tmp_identifier,
+                                                  schema=target_relation.schema,
+                                                  database=target_relation.database,
+                                                  type='view') -%}
 
-    merge into {{ target }} as DBT_INTERNAL_DEST
-    using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
-    on DBT_INTERNAL_SOURCE.dbt_scd_id = DBT_INTERNAL_DEST.dbt_scd_id
-    when not matched then insert *
-    ;
+    {% set select = snapshot_staging_table(strategy, sql, target_relation) %}
+
+    {# needs to be a non-temp view so that its columns can be ascertained via `describe` #}
+    {% call statement('build_snapshot_staging_relation') %}
+        {{ create_view_as(tmp_relation, select) }}
+    {% endcall %}
+
+    {% do return(tmp_relation) %}
+{% endmacro %}
+
+
+{% macro spark__post_snapshot(staging_relation) %}
+    {% do adapter.drop_relation(staging_relation) %}
+{% endmacro %}
+
+
+{% macro spark__create_columns(relation, columns) %}
+    {% call statement() %}
+      alter table {{ relation }} add columns (
+        {% for column in columns %}
+          `{{ column.name }}` {{ column.data_type }} {{- ',' if not loop.last -}}
+        {% endfor %}
+      );
+    {% endcall %}
 {% endmacro %}
 
 
@@ -186,6 +83,9 @@
           identifier=target_table,
           type='table') -%}
 
+  {%- if not target_relation.is_table -%}
+    {% do exceptions.relation_wrong_type(target_relation, 'table') %}
+  {%- endif -%}
 
   {{ run_hooks(pre_hooks, inside_transaction=False) }}
 
@@ -197,34 +97,53 @@
   {% if not target_relation_exists %}
 
       {% set build_sql = build_snapshot_table(strategy, model['injected_sql']) %}
-      {% call statement('main') -%}
-          {{ create_table_as(False, target_relation, build_sql) }}
-      {% endcall %}
+      {% set final_sql = create_table_as(False, target_relation, build_sql) %}
 
   {% else %}
 
       {{ adapter.valid_snapshot_target(target_relation) }}
 
-      {% set staging_insert_table = build_snapshot_staging_table_insert(strategy, sql, target_relation) %}
+      {% set staging_table = spark_build_snapshot_staging_table(strategy, sql, target_relation) %}
 
-      {% call statement('main') %}
-          {{ spark__snapshot_merge_insert_sql(
-                target = target_relation,
-                source = staging_insert_table
-             )
-          }}
-      {% endcall %}
+      -- this may no-op if the database does not require column expansion
+      {% do adapter.expand_target_column_types(from_relation=staging_table,
+                                               to_relation=target_relation) %}
 
-      {% set staging_update_table = build_snapshot_staging_table_updates(strategy, sql, target_relation) %}
+      {% set missing_columns = adapter.get_missing_columns(staging_table, target_relation)
+                                   | rejectattr('name', 'equalto', 'dbt_change_type')
+                                   | rejectattr('name', 'equalto', 'DBT_CHANGE_TYPE')
+                                   | rejectattr('name', 'equalto', 'dbt_unique_key')
+                                   | rejectattr('name', 'equalto', 'DBT_UNIQUE_KEY')
+                                   | list %}
 
-      {% call statement('main-2') %}
-          {{ spark__snapshot_merge_update_sql(
-                target = target_relation,
-                source = staging_update_table
-             )
-          }}
-      {% endcall %}
+      {% do create_columns(target_relation, missing_columns) %}
+
+      {% set source_columns = adapter.get_columns_in_relation(staging_table)
+                                   | rejectattr('name', 'equalto', 'dbt_change_type')
+                                   | rejectattr('name', 'equalto', 'DBT_CHANGE_TYPE')
+                                   | rejectattr('name', 'equalto', 'dbt_unique_key')
+                                   | rejectattr('name', 'equalto', 'DBT_UNIQUE_KEY')
+                                   | list %}
+
+      {% set quoted_source_columns = [] %}
+      {% for column in source_columns %}
+        {% do quoted_source_columns.append(adapter.quote(column.name)) %}
+      {% endfor %}
+
+      {% set final_sql = snapshot_merge_sql(
+            target = target_relation,
+            source = staging_table,
+            insert_cols = quoted_source_columns
+         )
+      %}
+
   {% endif %}
+
+  {% call statement('main') %}
+      {{ final_sql }}
+  {% endcall %}
+
+  {% do persist_docs(target_relation, model) %}
 
   {{ run_hooks(post_hooks, inside_transaction=True) }}
 
