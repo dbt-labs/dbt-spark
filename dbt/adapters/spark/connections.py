@@ -277,6 +277,13 @@ class SparkConnectionManager(SQLConnectionManager):
                 break
             except Exception as e:
                 exc = e
+                if isinstance(e, EOFError):
+                    # The user almost certainly has invalid credentials.
+                    # Perhaps a token expired, or something
+                    msg = 'Failed to connect'
+                    if creds.token is not None:
+                        msg += ', is your token valid?'
+                    raise dbt.exceptions.FailedToConnectException(msg) from e
                 retryable_message = _is_retryable_error(e)
                 if retryable_message:
                     msg = (
@@ -300,8 +307,6 @@ class SparkConnectionManager(SQLConnectionManager):
 
 
 def _is_retryable_error(exc: Exception) -> Optional[str]:
-    if isinstance(exc, EOFError):
-        return 'EOFError'
     message = getattr(exc, 'message', None)
     if message is None:
         return None
