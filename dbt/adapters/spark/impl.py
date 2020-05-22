@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 import agate
 import dbt.exceptions
 import dbt
-from dbt.adapters.base.relation import SchemaSearchMap
+from dbt.adapters.base.relation import SchemaSearchMap, RelationType
 from dbt.adapters.sql import SQLAdapter
 from dbt.node_types import NodeType
 
@@ -117,7 +117,8 @@ class SparkAdapter(SQLAdapter):
 
         relations = []
         for _schema, name, _, information in results:
-            rel_type = ('view' if 'Type: VIEW' in information else 'table')
+            rel_type = (RelationType.View
+                        if 'Type: VIEW' in information else RelationType.Table)
             relation = self.Relation.create(
                 schema=_schema,
                 identifier=name,
@@ -132,7 +133,6 @@ class SparkAdapter(SQLAdapter):
     ) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
             database = None
-
         return super().get_relation(database, schema, identifier)
 
     def parse_describe_extended(
@@ -256,9 +256,8 @@ class SparkAdapter(SQLAdapter):
 
         return columns
 
-    def _massage_column_for_catalog(
-        self, column: SparkColumn
-    ) -> Dict[str, Any]:
+    @staticmethod
+    def _massage_column_for_catalog(column: SparkColumn) -> Dict[str, Any]:
         dct = column.to_dict()
         # different expectations here - Column.column is the name
         dct['column_name'] = dct.pop('column')
@@ -279,7 +278,7 @@ class SparkAdapter(SQLAdapter):
                 )
         return agate.Table.from_object(columns)
 
-    def _get_cache_schemas(self, manifest, exec_only=False):
+    def _get_cache_schemas(self, manifest, exec_only=False) -> SchemaSearchMap:
         info_schema_name_map = SchemaSearchMap()
         for node in manifest.nodes.values():
             if exec_only and node.resource_type not in NodeType.executable():

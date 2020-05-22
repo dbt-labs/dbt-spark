@@ -40,6 +40,9 @@ class SparkCredentials(Credentials):
     organization: str = '0'
     connect_retries: int = 0
     connect_timeout: int = 10
+    _ALIASES = {
+        'database': 'schema'
+    }
 
     def __post_init__(self):
         # spark classifies database and schema as the same thing
