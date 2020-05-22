@@ -1,11 +1,11 @@
-from typing import Optional, List, Dict, Any
+from dataclasses import dataclass
+from typing import Optional, List, Dict, Any, Union
 
 import agate
 import dbt.exceptions
 import dbt
-from dbt.adapters.base.relation import SchemaSearchMap
+from dbt.adapters.base import AdapterConfig
 from dbt.adapters.sql import SQLAdapter
-from dbt.node_types import NodeType
 
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
@@ -23,6 +23,15 @@ DROP_RELATION_MACRO_NAME = 'drop_relation'
 
 KEY_TABLE_OWNER = 'Owner'
 KEY_TABLE_STATISTICS = 'Statistics'
+
+
+@dataclass
+class SparkConfig(AdapterConfig):
+    file_format: str = 'parquet'
+    location_root: Optional[str] = None
+    partition_by: Optional[Union[List[str], str]] = None
+    clustered_by: Optional[Union[List[str], str]] = None
+    buckets: Optional[int] = None
 
 
 class SparkAdapter(SQLAdapter):
@@ -52,10 +61,7 @@ class SparkAdapter(SQLAdapter):
     Relation = SparkRelation
     Column = SparkColumn
     ConnectionManager = SparkConnectionManager
-
-    AdapterSpecificConfigs = frozenset({"file_format", "location_root",
-                                        "partition_by", "clustered_by",
-                                        "buckets"})
+    AdapterSpecificConfigs = SparkConfig
 
     @classmethod
     def date_function(cls) -> str:
@@ -98,9 +104,9 @@ class SparkAdapter(SQLAdapter):
         return ''
 
     def list_relations_without_caching(
-        self, information_schema, schema
+        self, schema_relation: SparkRelation
     ) -> List[SparkRelation]:
-        kwargs = {'information_schema': information_schema, 'schema': schema}
+        kwargs = {'schema_relation': schema_relation}
         try:
             results = self.execute_macro(
                 LIST_RELATIONS_MACRO_NAME,
@@ -108,11 +114,12 @@ class SparkAdapter(SQLAdapter):
                 release=True
             )
         except dbt.exceptions.RuntimeException as e:
-            if hasattr(e, 'msg') and f"Database '{schema}' not found" in e.msg:
+            errmsg = getattr(e, 'msg', '')
+            if f"Database '{schema_relation}' not found" in errmsg:
                 return []
             else:
                 description = "Error while retrieving information about"
-                logger.debug(f"{description} {schema}: {e.msg}")
+                logger.debug(f"{description} {schema_relation}: {e.msg}")
                 return []
 
         relations = []
@@ -278,21 +285,6 @@ class SparkAdapter(SQLAdapter):
                     for col in self.get_columns_in_relation(relation)
                 )
         return agate.Table.from_object(columns)
-
-    def _get_cache_schemas(self, manifest, exec_only=False):
-        info_schema_name_map = SchemaSearchMap()
-        for node in manifest.nodes.values():
-            if exec_only and node.resource_type not in NodeType.executable():
-                continue
-            relation = self.Relation.create(
-                database=node.database,
-                schema=node.schema,
-                identifier='information_schema',
-                quote_policy=self.config.quoting,
-            )
-            key = relation.information_schema_only()
-            info_schema_name_map[key] = {node.schema}
-        return info_schema_name_map
 
     def _get_one_catalog(
         self, information_schema, schemas, manifest,
