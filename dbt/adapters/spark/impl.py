@@ -284,7 +284,7 @@ class SparkAdapter(SQLAdapter):
             if exec_only and node.resource_type not in NodeType.executable():
                 continue
             relation = self.Relation.create(
-                database=node.database,
+                database=node.schema,
                 schema=node.schema,
                 identifier='information_schema',
                 quote_policy=self.config.quoting,
