@@ -123,7 +123,13 @@ class SparkAdapter(SQLAdapter):
                 return []
 
         relations = []
-        for _schema, name, _, information in results:
+        for row in results:
+            if len(row) != 4:
+                raise dbt.exceptions.RuntimeException(
+                    f'Invalid value from "show table extended ...", '
+                    f'got {len(row)} values, expected 4'
+                )
+            _schema, name, _, information = row
             rel_type = ('view' if 'Type: VIEW' in information else 'table')
             relation = self.Relation.create(
                 schema=_schema,
