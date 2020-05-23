@@ -154,7 +154,6 @@ class SparkAdapter(SQLAdapter):
         metadata = {
             col['col_name']: col['data_type'] for col in raw_rows[pos + 1:]
         }
-
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
         return [SparkColumn(
@@ -181,80 +180,6 @@ class SparkAdapter(SQLAdapter):
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
         rows: List[agate.Row] = super().get_columns_in_relation(relation)
         return self.parse_describe_extended(relation, rows)
-
-    @staticmethod
-    def _parse_relation(relation: Relation,
-                        table_columns: List[Column],
-                        rel_type: str,
-                        properties: Dict[str, str] = None) -> List[dict]:
-        properties = properties or {}
-        statistics = {}
-        table_owner_key = 'Owner'
-
-        # First check if it is present in the properties
-        table_owner = properties.get(table_owner_key)
-
-        found_detailed_table_marker = False
-        for column in table_columns:
-            if column.name == '# Detailed Table Information':
-                found_detailed_table_marker = True
-
-            # In case there is another column with the name Owner
-            if not found_detailed_table_marker:
-                continue
-
-            if not table_owner and column.name == table_owner_key:
-                table_owner = column.data_type
-
-            if column.name == 'Statistics':
-                # format: 1109049927 bytes, 14093476 rows
-                statistics = {stats.split(" ")[1]: int(stats.split(" ")[0]) for
-                              stats in column.data_type.split(', ')}
-
-        columns = []
-        for column_index, column in enumerate(table_columns):
-            # Fixes for pseudo-columns with no type
-            if column.name in {
-                '# Partition Information',
-                '# col_name',
-                ''
-            }:
-                continue
-            elif column.name == '# Detailed Table Information':
-                # Loop until the detailed table information
-                break
-            elif column.data_type is None:
-                continue
-
-            column_data = (
-                relation.database,
-                relation.schema,
-                relation.name,
-                rel_type,
-                None,
-                table_owner,
-                column.name,
-                column_index,
-                column.data_type,
-                None,
-
-                # Table level stats
-                'Table size',
-                statistics.get("bytes"),
-                "The size of the table in bytes",
-                statistics.get("bytes") is not None,
-
-                # Column level stats
-                'Number of rows',
-                statistics.get("rows"),
-                "The number of rows in the table",
-                statistics.get("rows") is not None
-            )
-
-            column_dict = dict(zip(SparkAdapter.COLUMN_NAMES, column_data))
-            columns.append(column_dict)
-
-        return columns
 
     @staticmethod
     def _massage_column_for_catalog(column: SparkColumn) -> Dict[str, Any]:

@@ -42,7 +42,9 @@ class SparkColumn(Column):
     def convert_table_stats(raw_stats: Optional[str]) -> Dict[str, Any]:
         table_stats = {}
         if raw_stats:
-            # format: 1109049927 bytes, 14093476 rows
+            # format:
+            #   - 1109049927 bytes, 14093476 rows
+            #   - 884216620 bytes
             stats = {
                 stats.split(" ")[1]: int(stats.split(" ")[0])
                 for stats in raw_stats.split(', ')
