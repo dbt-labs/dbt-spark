@@ -37,7 +37,7 @@ class SparkCredentials(Credentials):
     token: Optional[str] = None
     user: Optional[str] = None
     port: int = 443
-    organization: str = '0'
+    organization: int = 0
     connect_retries: int = 0
     connect_timeout: int = 10
 
