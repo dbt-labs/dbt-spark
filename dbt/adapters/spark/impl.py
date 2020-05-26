@@ -132,6 +132,7 @@ class SparkAdapter(SQLAdapter):
             _schema, name, _, information = row
             rel_type = ('view' if 'Type: VIEW' in information else 'table')
             relation = self.Relation.create(
+                database=_schema,
                 schema=_schema,
                 identifier=name,
                 type=rel_type
