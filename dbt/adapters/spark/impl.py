@@ -1,12 +1,13 @@
+from concurrent.futures import Future
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Union, Iterable
-
 import agate
 
 import dbt
 import dbt.exceptions
 
 from dbt.adapters.base import AdapterConfig
+from dbt.adapters.base.impl import catch_as_completed
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
@@ -14,6 +15,7 @@ from dbt.adapters.spark import SparkColumn
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.logger import GLOBAL_LOGGER as logger
+from dbt.utils import executor
 
 GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
 LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
@@ -219,6 +221,24 @@ class SparkAdapter(SQLAdapter):
         )
         return dict(properties)
 
+    def get_catalog(self, manifest):
+        schema_map = self._get_catalog_schemas(manifest)
+        if len(schema_map) != 1:
+            dbt.exceptions.raise_compiler_error(
+                f'Expected only one database in get_catalog, found '
+                f'{list(schema_map)}'
+            )
+
+        with executor(self.config) as tpe:
+            futures: List[Future[agate.Table]] = []
+            for info, schemas in schema_map.items():
+                for schema in schemas:
+                    futures.append(tpe.submit(
+                        self._get_one_catalog, info, [schema], manifest
+                    ))
+            catalogs, exceptions = catch_as_completed(futures)
+        return catalogs, exceptions
+
     def _get_one_catalog(
         self, information_schema, schemas, manifest,
     ) -> agate.Table:
@@ -226,7 +246,8 @@ class SparkAdapter(SQLAdapter):
 
         if len(schemas) != 1:
             dbt.exceptions.raise_compiler_error(
-                'Expected only one schema in spark _get_one_catalog'
+                f'Expected only one schema in spark _get_one_catalog, found '
+                f'{schemas}'
             )
 
         database = information_schema.database
