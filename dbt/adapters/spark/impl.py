@@ -1,25 +1,27 @@
+from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Union
-
+from typing import Optional, List, Dict, Any, Union, Iterable
 import agate
-import dbt.exceptions
-import dbt
-from dbt.adapters.base import AdapterConfig
-from dbt.adapters.sql import SQLAdapter
 
+import dbt
+import dbt.exceptions
+
+from dbt.adapters.base import AdapterConfig
+from dbt.adapters.base.impl import catch_as_completed
+from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
-
-
 from dbt.adapters.base import BaseRelation
-
+from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.logger import GLOBAL_LOGGER as logger
+from dbt.utils import executor
 
 GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
 LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
 LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
 DROP_RELATION_MACRO_NAME = 'drop_relation'
+FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
 
 KEY_TABLE_OWNER = 'Owner'
 KEY_TABLE_STATISTICS = 'Statistics'
@@ -171,7 +173,7 @@ class SparkAdapter(SQLAdapter):
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
         return [SparkColumn(
-            table_database=relation.database,
+            table_database=None,
             table_schema=relation.schema,
             table_name=relation.name,
             table_type=relation.type,
@@ -195,102 +197,47 @@ class SparkAdapter(SQLAdapter):
         rows: List[agate.Row] = super().get_columns_in_relation(relation)
         return self.parse_describe_extended(relation, rows)
 
-    @staticmethod
-    def _parse_relation(relation: Relation,
-                        table_columns: List[Column],
-                        rel_type: str,
-                        properties: Dict[str, str] = None) -> List[dict]:
-        properties = properties or {}
-        statistics = {}
-        table_owner_key = 'Owner'
+    def _get_columns_for_catalog(
+        self, relation: SparkRelation
+    ) -> Iterable[Dict[str, Any]]:
+        properties = self.get_properties(relation)
+        columns = self.get_columns_in_relation(relation)
+        owner = properties.get(KEY_TABLE_OWNER)
 
-        # First check if it is present in the properties
-        table_owner = properties.get(table_owner_key)
+        for column in columns:
+            if owner:
+                column.table_owner = owner
+            # convert SparkColumns into catalog dicts
+            as_dict = column.to_dict()
+            as_dict['column_name'] = as_dict.pop('column', None)
+            as_dict['column_type'] = as_dict.pop('dtype')
+            as_dict['table_database'] = None
+            yield as_dict
 
-        found_detailed_table_marker = False
-        for column in table_columns:
-            if column.name == '# Detailed Table Information':
-                found_detailed_table_marker = True
+    def get_properties(self, relation: Relation) -> Dict[str, str]:
+        properties = self.execute_macro(
+            FETCH_TBL_PROPERTIES_MACRO_NAME,
+            kwargs={'relation': relation}
+        )
+        return dict(properties)
 
-            # In case there is another column with the name Owner
-            if not found_detailed_table_marker:
-                continue
-
-            if not table_owner and column.name == table_owner_key:
-                table_owner = column.data_type
-
-            if column.name == 'Statistics':
-                # format: 1109049927 bytes, 14093476 rows
-                statistics = {stats.split(" ")[1]: int(stats.split(" ")[0]) for
-                              stats in column.data_type.split(', ')}
-
-        columns = []
-        for column_index, column in enumerate(table_columns):
-            # Fixes for pseudo-columns with no type
-            if column.name in {
-                '# Partition Information',
-                '# col_name',
-                ''
-            }:
-                continue
-            elif column.name == '# Detailed Table Information':
-                # Loop until the detailed table information
-                break
-            elif column.data_type is None:
-                continue
-
-            column_data = (
-                relation.database,
-                relation.schema,
-                relation.name,
-                rel_type,
-                None,
-                table_owner,
-                column.name,
-                column_index,
-                column.data_type,
-                None,
-
-                # Table level stats
-                'Table size',
-                statistics.get("bytes"),
-                "The size of the table in bytes",
-                statistics.get("bytes") is not None,
-
-                # Column level stats
-                'Number of rows',
-                statistics.get("rows"),
-                "The number of rows in the table",
-                statistics.get("rows") is not None
+    def get_catalog(self, manifest):
+        schema_map = self._get_catalog_schemas(manifest)
+        if len(schema_map) != 1:
+            dbt.exceptions.raise_compiler_error(
+                f'Expected only one database in get_catalog, found '
+                f'{list(schema_map)}'
             )
 
-            column_dict = dict(zip(SparkAdapter.COLUMN_NAMES, column_data))
-            columns.append(column_dict)
-
-        return columns
-
-    def _massage_column_for_catalog(
-        self, column: SparkColumn
-    ) -> Dict[str, Any]:
-        dct = column.to_dict()
-        # different expectations here - Column.column is the name
-        dct['column_name'] = dct.pop('column')
-        dct['column_type'] = dct.pop('dtype')
-        # table_database can't be None in core.
-        if dct['table_database'] is None:
-            dct['table_database'] = dct['table_schema']
-        return dct
-
-    def _get_catalog_for_relations(self, database: str, schema: str):
-        with self.connection_named(f'{database}.{schema}'):
-            columns = []
-            for relation in self.list_relations(database, schema):
-                logger.debug("Getting table schema for relation {}", relation)
-                columns.extend(
-                    self._massage_column_for_catalog(col)
-                    for col in self.get_columns_in_relation(relation)
-                )
-        return agate.Table.from_object(columns)
+        with executor(self.config) as tpe:
+            futures: List[Future[agate.Table]] = []
+            for info, schemas in schema_map.items():
+                for schema in schemas:
+                    futures.append(tpe.submit(
+                        self._get_one_catalog, info, [schema], manifest
+                    ))
+            catalogs, exceptions = catch_as_completed(futures)
+        return catalogs, exceptions
 
     def _get_one_catalog(
         self, information_schema, schemas, manifest,
@@ -299,21 +246,21 @@ class SparkAdapter(SQLAdapter):
 
         if len(schemas) != 1:
             dbt.exceptions.raise_compiler_error(
-                'Expected only one schema in spark _get_one_catalog'
+                f'Expected only one schema in spark _get_one_catalog, found '
+                f'{schemas}'
             )
 
         database = information_schema.database
         schema = list(schemas)[0]
 
         with self.connection_named(name):
-            columns = []
+            columns: List[Dict[str, Any]] = []
             for relation in self.list_relations(database, schema):
                 logger.debug("Getting table schema for relation {}", relation)
-                columns.extend(
-                    self._massage_column_for_catalog(col)
-                    for col in self.get_columns_in_relation(relation)
-                )
-            return agate.Table.from_object(columns)
+                columns.extend(self._get_columns_for_catalog(relation))
+            return agate.Table.from_object(
+                columns, column_types=DEFAULT_TYPE_TESTER
+            )
 
     def check_schema_exists(self, database, schema):
         results = self.execute_macro(

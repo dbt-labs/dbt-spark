@@ -53,7 +53,7 @@ class SparkCredentials(Credentials):
                 f'On Spark, database must be omitted or have the same value as'
                 f' schema.'
             )
-        self.database = self.schema
+        self.database = None
 
     @property
     def type(self):

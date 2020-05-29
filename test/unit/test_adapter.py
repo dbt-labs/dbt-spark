@@ -73,11 +73,11 @@ class TestSparkAdapter(unittest.TestCase):
             connection.handle  # trigger lazy-load
 
             self.assertEqual(connection.state, 'open')
-            self.assertNotEqual(connection.handle, None)
+            self.assertIsNotNone(connection.handle)
             self.assertEqual(connection.credentials.cluster, '01234-23423-coffeetime')
             self.assertEqual(connection.credentials.token, 'abc123')
             self.assertEqual(connection.credentials.schema, 'analytics')
-            self.assertEqual(connection.credentials.database, 'analytics')
+            self.assertIsNone(connection.credentials.database)
 
     def test_thrift_connection(self):
         config = self._get_target_thrift(self.project_cfg)
@@ -93,9 +93,9 @@ class TestSparkAdapter(unittest.TestCase):
             connection.handle  # trigger lazy-load
 
             self.assertEqual(connection.state, 'open')
-            self.assertNotEqual(connection.handle, None)
+            self.assertIsNotNone(connection.handle)
             self.assertEqual(connection.credentials.schema, 'analytics')
-            self.assertEqual(connection.credentials.database, 'analytics')
+            self.assertIsNone(connection.credentials.database)
 
     def test_parse_relation(self):
         self.maxDiff = None
@@ -106,6 +106,7 @@ class TestSparkAdapter(unittest.TestCase):
             identifier='mytable',
             type=rel_type
         )
+        assert relation.database is None
 
         # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
         plain_rows = [
@@ -117,7 +118,7 @@ class TestSparkAdapter(unittest.TestCase):
             ('dt', 'date'),
             (None, None),
             ('# Detailed Table Information', None),
-            ('Database', relation.database),
+            ('Database', None),
             ('Owner', 'root'),
             ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
             ('Last Access', 'Wed May 20 19:25:00 UTC 1925'),
@@ -136,7 +137,7 @@ class TestSparkAdapter(unittest.TestCase):
         rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 3)
         self.assertEqual(rows[0].to_dict(omit_none=False), {
-            'table_database': relation.database,
+            'table_database': None,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
@@ -150,7 +151,7 @@ class TestSparkAdapter(unittest.TestCase):
         })
 
         self.assertEqual(rows[1].to_dict(omit_none=False), {
-            'table_database': relation.database,
+            'table_database': None,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
@@ -164,7 +165,7 @@ class TestSparkAdapter(unittest.TestCase):
         })
 
         self.assertEqual(rows[2].to_dict(omit_none=False), {
-            'table_database': relation.database,
+            'table_database': None,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
@@ -186,6 +187,7 @@ class TestSparkAdapter(unittest.TestCase):
             identifier='mytable',
             type=rel_type
         )
+        assert relation.database is None
 
         # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
         plain_rows = [
@@ -193,7 +195,7 @@ class TestSparkAdapter(unittest.TestCase):
             ('# Partition Information', 'data_type'),
             (None, None),
             ('# Detailed Table Information', None),
-            ('Database', relation.database),
+            ('Database', None),
             ('Owner', 'root'),
             ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
             ('Last Access', 'Wed May 20 19:25:00 UTC 1925'),
@@ -213,7 +215,7 @@ class TestSparkAdapter(unittest.TestCase):
         rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].to_dict(omit_none=False), {
-            'table_database': relation.database,
+            'table_database': None,
             'table_schema': relation.schema,
             'table_name': relation.name,
             'table_type': rel_type,
