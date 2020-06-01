@@ -12,6 +12,13 @@
 
 # dbt-spark
 
+This plugin ports [dbt](https://getdbt.com) functionality to Spark. It supports
+running dbt against Spark clusters that are hosted via Databricks (AWS + Azure), 
+Amazon EMR, or Docker.
+
+We have not tested extensively against older versions of Apache Spark. The
+plugin uses syntax that requires version 2.2.0 or newer.
+
 ### Documentation
 For more information on using Spark with dbt, consult the dbt documentation:
 - [Spark profile](https://docs.getdbt.com/docs/profile-spark)
