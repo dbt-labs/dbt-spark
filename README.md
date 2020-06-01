@@ -47,7 +47,7 @@ A dbt profile can be configured to run against Spark using the following configu
 | host    | The hostname to connect to                         | Required                | `yourorg.sparkhost.com`  |
 | port    | The port to connect to the host on                 | Optional (default: 443 for `http`, 10001 for `thrift`) | `443`                    |
 | token   | The token to use for authenticating to the cluster | Required for `http`                | `abc123`                 |
-| organization | The id of the Azure Databricks workspace being used; only for  Azure Databricks | See Databricks Note | `1234567891234567` |
+| organization | The id of the Azure Databricks workspace being used | Required for Azure Databricks | `1234567891234567` |
 | cluster | The name of the cluster to connect to              | Required for `http`               | `01234-23423-coffeetime` |
 | user    | The username to use to connect to the cluster  | Optional  | `hadoop`  |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10) | `60` |
@@ -57,7 +57,7 @@ A dbt profile can be configured to run against Spark using the following configu
 
 AWS and Azure Databricks have differences in their connections, likely due to differences in how their URLs are generated between the two services.
 
-**Organization:** To connect to an Azure Databricks cluster, you will need to obtain your organization ID, which is a unique ID Azure Databricks generates for each customer workspace.  To find the organization ID, see https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#step-2-configure-connection-properties. This is a string field; if there is a leading zero, be sure to include it.
+**Organization:** To connect to the Azure Databricks, you will need to obtain your organization ID, which is a unique ID Azure Databricks generates for the workspace. The organisation is [included in the url](https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#step-2-configure-connection-properties), for example, `?o=1234567891234567`.
 
 **Port:** Please ignore all references to port 15001 in the databricks-connect docs as that is specific to that tool; port 443 is used for dbt-spark's https connection.
 
