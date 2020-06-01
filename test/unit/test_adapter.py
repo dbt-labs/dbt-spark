@@ -35,7 +35,7 @@ class TestSparkAdapter(unittest.TestCase):
                     'host': 'myorg.sparkhost.com',
                     'port': 443,
                     'token': 'abc123',
-                    'organization': '0123456789',
+                    'organization': 123456789,
                     'cluster': '01234-23423-coffeetime',
                 }
             },
@@ -65,7 +65,7 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(thrift_transport.scheme, 'https')
             self.assertEqual(thrift_transport.port, 443)
             self.assertEqual(thrift_transport.host, 'myorg.sparkhost.com')
-            self.assertEqual(thrift_transport.path, '/sql/protocolv1/o/0123456789/01234-23423-coffeetime')
+            self.assertEqual(thrift_transport.path, '/sql/protocolv1/o/123456789/01234-23423-coffeetime')
 
         # with mock.patch.object(hive, 'connect', new=hive_http_connect):
         with mock.patch('dbt.adapters.spark.connections.hive.connect', new=hive_http_connect):
@@ -259,7 +259,7 @@ class TestSparkAdapter(unittest.TestCase):
                     'host': 'myorg.sparkhost.com',
                     'port': 443,
                     'token': 'abc123',
-                    'organization': '0123456789',
+                    'organization': 123456789,
                     'cluster': '01234-23423-coffeetime',
                 }
             },
