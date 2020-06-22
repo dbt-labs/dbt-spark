@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/fishtown-analytics/dbt/master/etc/dbt-horizontal.png" alt="dbt logo"/>
+  <img src="/etc/dbt-logo-full.svg" alt="dbt logo" width="500"/>
 </p>
 <p align="center">
   <a href="https://circleci.com/gh/fishtown-analytics/dbt-spark/tree/master">
@@ -13,7 +13,7 @@
 # dbt-spark
 
 This plugin ports [dbt](https://getdbt.com) functionality to Spark. It supports
-running dbt against Spark clusters that are hosted via Databricks (AWS + Azure), 
+running dbt against Spark clusters that are hosted via Databricks (AWS + Azure),
 Amazon EMR, or Docker.
 
 We have not tested extensively against older versions of Apache Spark. The
