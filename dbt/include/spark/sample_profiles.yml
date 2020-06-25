@@ -1,0 +1,14 @@
+your_profile_name:
+  target: dev
+  outputs:
+    dev:
+      method: http
+      type: spark
+      schema: analytics
+      host: yourorg.sparkhost.com
+      organization: 1234567891234567    # Azure Databricks ONLY
+      port: 443
+      token: abc123
+      cluster: 01234-23423-coffeetime
+      connect_retries: 5
+      connect_timeout: 60
