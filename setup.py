@@ -54,6 +54,7 @@ setup(
     package_data={
         'dbt': [
             'include/spark/dbt_project.yml',
+            'include/spark/sample_profiles.yml',
             'include/spark/macros/*.sql',
             'include/spark/macros/**/*.sql',
         ]
