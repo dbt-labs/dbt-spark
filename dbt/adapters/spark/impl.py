@@ -269,3 +269,66 @@ class SparkAdapter(SQLAdapter):
 
         exists = True if schema in [row[0] for row in results] else False
         return exists
+
+    def get_rows_different_sql(
+        self,
+        relation_a: BaseRelation,
+        relation_b: BaseRelation,
+        column_names: Optional[List[str]] = None,
+        except_operator: str = 'EXCEPT',
+    ) -> str:
+        """Generate SQL for a query that returns a single row with a two
+        columns: the number of rows that are different between the two
+        relations and the number of mismatched rows.
+        """
+        # This method only really exists for test reasons.
+        names: List[str]
+        if column_names is None:
+            columns = self.get_columns_in_relation(relation_a)
+            names = sorted((self.quote(c.name) for c in columns))
+        else:
+            names = sorted((self.quote(n) for n in column_names))
+        columns_csv = ', '.join(names)
+
+        sql = COLUMNS_EQUAL_SQL.format(
+            columns=columns_csv,
+            relation_a=str(relation_a),
+            relation_b=str(relation_b),
+        )
+
+        return sql
+
+
+# spark does something interesting with joins when both tables have the same
+# static values for the join condition and complains that the join condition is
+# "trivial". Which is true, though it seems like an unreasonable cause for
+# failure! It also doesn't like the `from foo, bar` syntax as opposed to
+# `from foo cross join bar`.
+COLUMNS_EQUAL_SQL = '''
+with diff_count as (
+    SELECT
+        1 as id,
+        COUNT(*) as num_missing FROM (
+            (SELECT {columns} FROM {relation_a} EXCEPT
+             SELECT {columns} FROM {relation_b})
+             UNION ALL
+            (SELECT {columns} FROM {relation_b} EXCEPT
+             SELECT {columns} FROM {relation_a})
+        ) as a
+), table_a as (
+    SELECT COUNT(*) as num_rows FROM {relation_a}
+), table_b as (
+    SELECT COUNT(*) as num_rows FROM {relation_b}
+), row_count_diff as (
+    select
+        1 as id,
+        table_a.num_rows - table_b.num_rows as difference
+    from table_a
+    cross join table_b
+)
+select
+    row_count_diff.difference as row_count_difference,
+    diff_count.num_missing as num_mismatched
+from row_count_diff
+cross join diff_count
+'''.strip()
