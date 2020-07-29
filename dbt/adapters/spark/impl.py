@@ -112,8 +112,7 @@ class SparkAdapter(SQLAdapter):
         try:
             results = self.execute_macro(
                 LIST_RELATIONS_MACRO_NAME,
-                kwargs=kwargs,
-                release=True
+                kwargs=kwargs
             )
         except dbt.exceptions.RuntimeException as e:
             errmsg = getattr(e, 'msg', '')
