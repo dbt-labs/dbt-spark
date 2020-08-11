@@ -1,0 +1,24 @@
+default:
+  outputs:
+
+    # Use this if connecting to a hosted spark (e.g. Databricks)
+    dev:
+      type: spark
+      method: http
+      schema: [dev_schema]
+      host: [host]
+      organization: [organization id]    # Azure Databricks ONLY
+      port: [port]
+      token: [token]
+      cluster: [cluster id]
+
+    # Use this if connecting to Dockerized spark
+    prod:
+      type: spark
+      method: thrift
+      schema: [dev_schema]
+      host: [host]
+      port: [port]
+      user: [prod_user]
+
+  target: dev
