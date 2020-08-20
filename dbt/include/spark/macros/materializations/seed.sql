@@ -1,7 +1,5 @@
 {% macro spark__load_csv_rows(model, agate_table) %}
     {% set batch_size = 1000 %}
-    {% set cols_sql = ", ".join(agate_table.column_names) %}
-    {% set bindings = [] %}
 
     {% set statements = [] %}
 
@@ -9,24 +7,28 @@
         {% set bindings = [] %}
 
         {% for row in chunk %}
-            {% set _ = bindings.extend(row) %}
+          {% do bindings.extend(row) %}
         {% endfor %}
 
         {% set sql %}
             insert into {{ this.render() }} values
             {% for row in chunk -%}
-                ({%- for column in agate_table.column_names -%}
+                ({%- for column in agate_table.columns -%}
+                    {%- if 'ISODate' in (column.data_type | string) -%}
+                      cast(%s as timestamp)
+                    {%- else -%}
                     %s
+                    {%- endif -%}
                     {%- if not loop.last%},{%- endif %}
                 {%- endfor -%})
                 {%- if not loop.last%},{%- endif %}
             {%- endfor %}
         {% endset %}
 
-        {% set _ = adapter.add_query(sql, bindings=bindings, abridge_sql_log=True) %}
+        {% do adapter.add_query(sql, bindings=bindings, abridge_sql_log=True) %}
 
         {% if loop.index0 == 0 %}
-            {% set _ = statements.append(sql) %}
+            {% do statements.append(sql) %}
         {% endif %}
     {% endfor %}
 
