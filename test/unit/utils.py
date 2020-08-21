@@ -38,7 +38,7 @@ def profile_from_dict(profile, profile_name, cli_vars='{}'):
     from dbt.config import Profile
     from dbt.config.renderer import ProfileRenderer
     from dbt.context.base import generate_base_context
-    from dbt.utils import parse_cli_vars
+    from dbt.config.utils import parse_cli_vars
     if not isinstance(cli_vars, dict):
         cli_vars = parse_cli_vars(cli_vars)
 
@@ -50,11 +50,11 @@ def profile_from_dict(profile, profile_name, cli_vars='{}'):
     )
 
 
-def project_from_dict(project, profile, packages=None, cli_vars='{}'):
+def project_from_dict(project, profile, packages=None, selectors=None, cli_vars='{}'):
     from dbt.context.target import generate_target_context
     from dbt.config import Project
     from dbt.config.renderer import DbtProjectYamlRenderer
-    from dbt.utils import parse_cli_vars
+    from dbt.config.utils import parse_cli_vars
     if not isinstance(cli_vars, dict):
         cli_vars = parse_cli_vars(cli_vars)
 
@@ -63,11 +63,11 @@ def project_from_dict(project, profile, packages=None, cli_vars='{}'):
     project_root = project.pop('project-root', os.getcwd())
 
     return Project.render_from_dict(
-            project_root, project, packages, renderer
+            project_root, project, packages, selectors, renderer
         )
 
 
-def config_from_parts_or_dicts(project, profile, packages=None, cli_vars='{}'):
+def config_from_parts_or_dicts(project, profile, packages=None, selectors=None, cli_vars='{}'):
     from dbt.config import Project, Profile, RuntimeConfig
     from copy import deepcopy
 
@@ -88,6 +88,7 @@ def config_from_parts_or_dicts(project, profile, packages=None, cli_vars='{}'):
             deepcopy(project),
             profile,
             packages,
+            selectors,
             cli_vars,
         )
 
@@ -101,14 +102,20 @@ def config_from_parts_or_dicts(project, profile, packages=None, cli_vars='{}'):
     )
 
 
-def inject_adapter(value):
+def inject_plugin(plugin):
+    from dbt.adapters.factory import FACTORY
+    key = plugin.adapter.type()
+    FACTORY.plugins[key] = plugin
+
+
+def inject_adapter(value, plugin):
     """Inject the given adapter into the adapter factory, so your hand-crafted
     artisanal adapter will be available from get_adapter() as if dbt loaded it.
     """
+    inject_plugin(plugin)
     from dbt.adapters.factory import FACTORY
     key = value.type()
     FACTORY.adapters[key] = value
-    FACTORY.adapter_types[key] = type(value)
 
 
 class ContractTestCase(TestCase):
