@@ -232,7 +232,8 @@ class SparkAdapter(SQLAdapter):
             futures: List[Future[agate.Table]] = []
             for info, schemas in schema_map.items():
                 for schema in schemas:
-                    futures.append(tpe.submit(
+                    futures.append(tpe.submit_connected(
+                        self, schema,
                         self._get_one_catalog, info, [schema], manifest
                     ))
             catalogs, exceptions = catch_as_completed(futures)
@@ -241,8 +242,6 @@ class SparkAdapter(SQLAdapter):
     def _get_one_catalog(
         self, information_schema, schemas, manifest,
     ) -> agate.Table:
-        name = f'{information_schema.database}.information_schema'
-
         if len(schemas) != 1:
             dbt.exceptions.raise_compiler_error(
                 f'Expected only one schema in spark _get_one_catalog, found '
@@ -252,14 +251,13 @@ class SparkAdapter(SQLAdapter):
         database = information_schema.database
         schema = list(schemas)[0]
 
-        with self.connection_named(name):
-            columns: List[Dict[str, Any]] = []
-            for relation in self.list_relations(database, schema):
-                logger.debug("Getting table schema for relation {}", relation)
-                columns.extend(self._get_columns_for_catalog(relation))
-            return agate.Table.from_object(
-                columns, column_types=DEFAULT_TYPE_TESTER
-            )
+        columns: List[Dict[str, Any]] = []
+        for relation in self.list_relations(database, schema):
+            logger.debug("Getting table schema for relation {}", relation)
+            columns.extend(self._get_columns_for_catalog(relation))
+        return agate.Table.from_object(
+            columns, column_types=DEFAULT_TYPE_TESTER
+        )
 
     def check_schema_exists(self, database, schema):
         results = self.execute_macro(
