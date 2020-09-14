@@ -222,7 +222,7 @@ class SparkAdapter(SQLAdapter):
 
     def get_catalog(self, manifest):
         schema_map = self._get_catalog_schemas(manifest)
-        if len(schema_map) != 1:
+        if len(schema_map) > 1:
             dbt.exceptions.raise_compiler_error(
                 f'Expected only one database in get_catalog, found '
                 f'{list(schema_map)}'
@@ -232,7 +232,8 @@ class SparkAdapter(SQLAdapter):
             futures: List[Future[agate.Table]] = []
             for info, schemas in schema_map.items():
                 for schema in schemas:
-                    futures.append(tpe.submit(
+                    futures.append(tpe.submit_connected(
+                        self, schema,
                         self._get_one_catalog, info, [schema], manifest
                     ))
             catalogs, exceptions = catch_as_completed(futures)
@@ -241,8 +242,6 @@ class SparkAdapter(SQLAdapter):
     def _get_one_catalog(
         self, information_schema, schemas, manifest,
     ) -> agate.Table:
-        name = f'{information_schema.database}.information_schema'
-
         if len(schemas) != 1:
             dbt.exceptions.raise_compiler_error(
                 f'Expected only one schema in spark _get_one_catalog, found '
@@ -252,14 +251,13 @@ class SparkAdapter(SQLAdapter):
         database = information_schema.database
         schema = list(schemas)[0]
 
-        with self.connection_named(name):
-            columns: List[Dict[str, Any]] = []
-            for relation in self.list_relations(database, schema):
-                logger.debug("Getting table schema for relation {}", relation)
-                columns.extend(self._get_columns_for_catalog(relation))
-            return agate.Table.from_object(
-                columns, column_types=DEFAULT_TYPE_TESTER
-            )
+        columns: List[Dict[str, Any]] = []
+        for relation in self.list_relations(database, schema):
+            logger.debug("Getting table schema for relation {}", relation)
+            columns.extend(self._get_columns_for_catalog(relation))
+        return agate.Table.from_object(
+            columns, column_types=DEFAULT_TYPE_TESTER
+        )
 
     def check_schema_exists(self, database, schema):
         results = self.execute_macro(
@@ -269,3 +267,66 @@ class SparkAdapter(SQLAdapter):
 
         exists = True if schema in [row[0] for row in results] else False
         return exists
+
+    def get_rows_different_sql(
+        self,
+        relation_a: BaseRelation,
+        relation_b: BaseRelation,
+        column_names: Optional[List[str]] = None,
+        except_operator: str = 'EXCEPT',
+    ) -> str:
+        """Generate SQL for a query that returns a single row with a two
+        columns: the number of rows that are different between the two
+        relations and the number of mismatched rows.
+        """
+        # This method only really exists for test reasons.
+        names: List[str]
+        if column_names is None:
+            columns = self.get_columns_in_relation(relation_a)
+            names = sorted((self.quote(c.name) for c in columns))
+        else:
+            names = sorted((self.quote(n) for n in column_names))
+        columns_csv = ', '.join(names)
+
+        sql = COLUMNS_EQUAL_SQL.format(
+            columns=columns_csv,
+            relation_a=str(relation_a),
+            relation_b=str(relation_b),
+        )
+
+        return sql
+
+
+# spark does something interesting with joins when both tables have the same
+# static values for the join condition and complains that the join condition is
+# "trivial". Which is true, though it seems like an unreasonable cause for
+# failure! It also doesn't like the `from foo, bar` syntax as opposed to
+# `from foo cross join bar`.
+COLUMNS_EQUAL_SQL = '''
+with diff_count as (
+    SELECT
+        1 as id,
+        COUNT(*) as num_missing FROM (
+            (SELECT {columns} FROM {relation_a} EXCEPT
+             SELECT {columns} FROM {relation_b})
+             UNION ALL
+            (SELECT {columns} FROM {relation_b} EXCEPT
+             SELECT {columns} FROM {relation_a})
+        ) as a
+), table_a as (
+    SELECT COUNT(*) as num_rows FROM {relation_a}
+), table_b as (
+    SELECT COUNT(*) as num_rows FROM {relation_b}
+), row_count_diff as (
+    select
+        1 as id,
+        table_a.num_rows - table_b.num_rows as difference
+    from table_a
+    cross join table_b
+)
+select
+    row_count_diff.difference as row_count_difference,
+    diff_count.num_missing as num_mismatched
+from row_count_diff
+cross join diff_count
+'''.strip()
