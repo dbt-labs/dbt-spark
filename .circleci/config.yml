@@ -2,21 +2,19 @@ version: 2.1
 
 jobs:
   unit:
+    environment:
+      DBT_INVOCATION_ENV: circle
     docker:
-      - image: fishtownanalytics/test-container:6
-        environment:
-          DBT_INVOCATION_ENV: circle
+      - image: fishtownanalytics/test-container:9
     steps:
       - checkout
       - run: tox -e flake8,unit
 
   integration-spark2:
+    environment:
+      DBT_INVOCATION_ENV: circle
     docker:
-
-      - image: fishtownanalytics/test-container:6
-        environment:
-          DBT_INVOCATION_ENV: circle
-
+      - image: fishtownanalytics/test-container:9
       - image: godatadriven/spark:2
         environment:
           WAIT_FOR: localhost:5432
@@ -48,9 +46,6 @@ jobs:
           name: Run integration tests
           command: tox -e integration-spark-thrift
           no_output_timeout: 1h
-          environment:
-              DBT_PROFILES_DIR: /home/dbt_test_user/project/test/integration/
-
       - store_artifacts:
           path: ./logs
 
