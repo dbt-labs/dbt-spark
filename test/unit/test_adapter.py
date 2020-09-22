@@ -57,6 +57,22 @@ class TestSparkAdapter(unittest.TestCase):
             'target': 'test'
         })
 
+    def _get_target_thrift_kerberos(self, project):
+        return config_from_parts_or_dicts(project, {
+            'outputs': {
+                'test': {
+                    'type': 'spark',
+                    'method': 'thrift',
+                    'schema': 'analytics',
+                    'host': 'myorg.sparkhost.com',
+                    'port': 10001,
+                    'user': 'dbt',
+                    'auth': 'KERBEROS',
+                    'kerberos_service_name': 'hive'
+                }
+            },
+            'target': 'test'
+        })
     def test_http_connection(self):
         config = self._get_target_http(self.project_cfg)
         adapter = SparkAdapter(config)
@@ -83,10 +99,32 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_thrift(self.project_cfg)
         adapter = SparkAdapter(config)
 
-        def hive_thrift_connect(host, port, username):
+        def hive_thrift_connect(host, port, username, auth, kerberos_service_name):
             self.assertEqual(host, 'myorg.sparkhost.com')
             self.assertEqual(port, 10001)
             self.assertEqual(username, 'dbt')
+            self.assertIsNone(auth)
+            self.assertIsNone(kerberos_service_name)
+
+        with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
+            connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
+
+            self.assertEqual(connection.state, 'open')
+            self.assertIsNotNone(connection.handle)
+            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertIsNone(connection.credentials.database)
+
+    def test_thrift_connection_kerberos(self):
+        config = self._get_target_thrift_kerberos(self.project_cfg)
+        adapter = SparkAdapter(config)
+
+        def hive_thrift_connect(host, port, username, auth, kerberos_service_name):
+            self.assertEqual(host, 'myorg.sparkhost.com')
+            self.assertEqual(port, 10001)
+            self.assertEqual(username, 'dbt')
+            self.assertEqual(auth, 'KERBEROS')
+            self.assertEqual(kerberos_service_name, 'hive')
 
         with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
             connection = adapter.acquire_connection('dummy')
