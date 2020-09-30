@@ -37,8 +37,8 @@ class SparkCredentials(Credentials):
     token: Optional[str] = None
     user: Optional[str] = None
     port: int = 443
-    auth: Optional[str]=None
-    kerberos_service_name: Optional[str]=None
+    auth: Optional[str] = None
+    kerberos_service_name: Optional[str] = None
     organization: str = '0'
     connect_retries: int = 0
     connect_timeout: int = 10
@@ -273,7 +273,7 @@ class SparkConnectionManager(SQLConnectionManager):
                                         port=creds.port,
                                         username=creds.user,
                                         auth=creds.auth,
-                                        kerberos_service_name=creds.kerberos_service_name)
+                                        kerberos_service_name=creds.kerberos_service_name)  # noqa
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
