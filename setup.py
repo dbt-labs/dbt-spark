@@ -63,5 +63,6 @@ setup(
         f'dbt-core=={dbt_version}',
         'PyHive[hive]>=0.6.0,<0.7.0',
         'thrift>=0.11.0,<0.12.0',
+        'pyodbc>=4.0.30',
     ]
 )

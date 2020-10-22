@@ -10,6 +10,7 @@ from dbt.utils import DECIMALS
 from TCLIService.ttypes import TOperationState as ThriftState
 from thrift.transport import THttpClient
 from pyhive import hive
+import pyodbc
 from datetime import datetime
 
 from hologram.helpers import StrEnum
@@ -25,6 +26,12 @@ NUMBERS = DECIMALS + (int, float)
 class SparkConnectionMethod(StrEnum):
     THRIFT = 'thrift'
     HTTP = 'http'
+    ODBC = 'odbc'
+
+
+class SparkClusterType(StrEnum):
+    ALL_PURPOSE = "all-purpose"
+    VIRTUAL = "virtual"
 
 
 @dataclass
@@ -33,6 +40,8 @@ class SparkCredentials(Credentials):
     method: SparkConnectionMethod
     schema: str
     database: Optional[str]
+    driver: Optional[str] = None
+    cluster_type: Optional[SparkClusterType] = SparkClusterType.ALL_PURPOSE
     cluster: Optional[str] = None
     token: Optional[str] = None
     user: Optional[str] = None
@@ -62,10 +71,10 @@ class SparkCredentials(Credentials):
         return 'spark'
 
     def _connection_keys(self):
-        return 'host', 'port', 'cluster', 'schema', 'organization'
+        return 'host', 'port', 'cluster', 'cluster_type', 'schema', 'organization'
 
 
-class ConnectionWrapper(object):
+class PyhiveConnectionWrapper(object):
     """Wrap a Spark connection in a way that no-ops transactions"""
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html  # noqa
 
@@ -177,11 +186,27 @@ class ConnectionWrapper(object):
         return self._cursor.description
 
 
+class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
+
+    def execute(self, sql, bindings=None):
+        if sql.strip().endswith(";"):
+            sql = sql.strip()[:-1]
+
+        # pyodbc does not handle a None type binding!
+        if bindings is None:
+            self._cursor.execute(sql)
+        else:
+
+            self._cursor.execute(sql, bindings)
+
+
 class SparkConnectionManager(SQLConnectionManager):
     TYPE = 'spark'
 
+    SPARK_CLUSTER_HTTP_PATH = "sql/protocolv1/o/{organization}/{cluster}"
+    SPARK_VIRTUAL_CLUSTER_HTTP_PATH = "/sql/1.0/endpoints/{cluster}"
     SPARK_CONNECTION_URL = (
-        "https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}"
+        "https://{host}:{port}/" + SPARK_CLUSTER_HTTP_PATH
     )
 
     @contextmanager
@@ -265,6 +290,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     })
 
                     conn = hive.connect(thrift_transport=transport)
+                    handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == 'thrift':
                     cls.validate_creds(creds,
                                        ['host', 'port', 'user', 'schema'])
@@ -274,6 +300,39 @@ class SparkConnectionManager(SQLConnectionManager):
                                         username=creds.user,
                                         auth=creds.auth,
                                         kerberos_service_name=creds.kerberos_service_name)  # noqa
+                    handle = PyhiveConnectionWrapper(conn)
+                elif creds.method == 'odbc':
+                    required_fields = ['driver', 'host', 'port', 'token',
+                                       'organization', 'cluster', 'cluster_type']  # noqa
+                    cls.validate_creds(creds, required_fields)
+
+                    http_path = None
+
+                    if creds.cluster_type == SparkClusterType.ALL_PURPOSE:
+                        http_path = cls.SPARK_CLUSTER_HTTP_PATH.format(
+                            organization=creds.organization,
+                            cluster=creds.cluster
+                        )
+                    elif creds.cluster_type == SparkClusterType.VIRTUAL:
+                        http_path = cls.SPARK_VIRTUAL_CLUSTER_HTTP_PATH.format(
+                            cluster=creds.cluster
+                        )
+
+                    connection_params = []
+                    connection_params.append(f"DRIVER={creds.driver}")
+                    connection_params.append(f"Host={creds.host}")
+                    connection_params.append(f"PORT={creds.port}")
+                    connection_params.append("UID=token")
+                    connection_params.append(f"PWD={creds.token}")
+                    connection_params.append(f"HTTPPath={http_path}")
+                    connection_params.append("AuthMech=3")
+                    connection_params.append("ThriftTransport=2")
+                    connection_params.append("SSL=1")
+
+                    connection_str = ";".join(connection_params)
+
+                    conn = pyodbc.connect(connection_str, autocommit=True)
+                    handle = PyodbcConnectionWrapper(conn)
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
@@ -304,7 +363,6 @@ class SparkConnectionManager(SQLConnectionManager):
         else:
             raise exc
 
-        handle = ConnectionWrapper(conn)
         connection.handle = handle
         connection.state = ConnectionState.OPEN
         return connection
