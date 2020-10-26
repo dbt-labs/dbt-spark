@@ -6,12 +6,14 @@ from dbt.adapters.sql import SQLConnectionManager
 from dbt.contracts.connection import ConnectionState
 from dbt.logger import GLOBAL_LOGGER as logger
 from dbt.utils import DECIMALS
+from dbt.adapters.spark import __version__
 
 from TCLIService.ttypes import TOperationState as ThriftState
 from thrift.transport import THttpClient
 from pyhive import hive
 import pyodbc
 from datetime import datetime
+import sqlparams
 
 from hologram.helpers import StrEnum
 from dataclasses import dataclass
@@ -21,6 +23,10 @@ import base64
 import time
 
 NUMBERS = DECIMALS + (int, float)
+
+
+def _build_odbc_connnection_string(**kwargs) -> str:
+    return ";".join([f"{k}={v}" for k, v in kwargs.items()])
 
 
 class SparkConnectionMethod(StrEnum):
@@ -71,7 +77,8 @@ class SparkCredentials(Credentials):
         return 'spark'
 
     def _connection_keys(self):
-        return 'host', 'port', 'cluster', 'cluster_type', 'schema', 'organization'
+        return ('host', 'port', 'cluster',
+                'cluster_type', 'schema', 'organization')
 
 
 class PyhiveConnectionWrapper(object):
@@ -192,12 +199,14 @@ class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
         if sql.strip().endswith(";"):
             sql = sql.strip()[:-1]
 
+        query = sqlparams.SQLParams('format', 'qmark')
         # pyodbc does not handle a None type binding!
         if bindings is None:
+            sql, bindings = query.format(sql, [])
             self._cursor.execute(sql)
         else:
-
-            self._cursor.execute(sql, bindings)
+            sql, bindings = query.format(sql, bindings)
+            self._cursor.execute(sql, *bindings)
 
 
 class SparkConnectionManager(SQLConnectionManager):
@@ -317,19 +326,26 @@ class SparkConnectionManager(SQLConnectionManager):
                         http_path = cls.SPARK_VIRTUAL_CLUSTER_HTTP_PATH.format(
                             cluster=creds.cluster
                         )
+                    else:
+                        raise dbt.exceptions.DbtProfileError(
+                            f"invalid custer type: {creds.cluster_type}"
+                        )
 
-                    connection_params = []
-                    connection_params.append(f"DRIVER={creds.driver}")
-                    connection_params.append(f"Host={creds.host}")
-                    connection_params.append(f"PORT={creds.port}")
-                    connection_params.append("UID=token")
-                    connection_params.append(f"PWD={creds.token}")
-                    connection_params.append(f"HTTPPath={http_path}")
-                    connection_params.append("AuthMech=3")
-                    connection_params.append("ThriftTransport=2")
-                    connection_params.append("SSL=1")
+                    dbt_spark_version = __version__.version
+                    user_agent_entry = f"fishtown-analytics-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
 
-                    connection_str = ";".join(connection_params)
+                    connection_str = _build_odbc_connnection_string(
+                        DRIVER=creds.driver,
+                        HOST=creds.host,
+                        PORT=creds.port,
+                        UID="token",
+                        PWD=creds.token,
+                        HTTPPath=http_path,
+                        AuthMech=3,
+                        ThriftTransport=2,
+                        SSL=1,
+                        UserAgentEntry=user_agent_entry,
+                    )
 
                     conn = pyodbc.connect(connection_str, autocommit=True)
                     handle = PyodbcConnectionWrapper(conn)
