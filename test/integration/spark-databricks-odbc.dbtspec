@@ -4,7 +4,7 @@ target:
   cluster: "{{ env_var('DBT_DATABRICKS_CLUSTER_NAME') }}"
   token: "{{ env_var('DBT_DATABRICKS_TOKEN') }}"
   method: odbc
-  driver: /Library/simba/spark/lib/libsparkodbc_sbu.dylib
+  driver: "{{ env_var('ODBC_DRIVER') }}"
   port: 443
   schema: "analytics_{{ var('_dbt_random_suffix') }}"
   connect_retries: 5
