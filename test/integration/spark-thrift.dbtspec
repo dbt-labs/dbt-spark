@@ -16,7 +16,7 @@ projects:
     facts:
       base:
         rowcount: 10
-      extended:
+      added:
         rowcount: 20
 sequences:
   test_dbt_empty: empty

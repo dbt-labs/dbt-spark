@@ -3,7 +3,8 @@ target:
   host: "{{ env_var('DBT_DATABRICKS_HOST_NAME') }}"
   cluster: "{{ env_var('DBT_DATABRICKS_CLUSTER_NAME') }}"
   token: "{{ env_var('DBT_DATABRICKS_TOKEN') }}"
-  method: http
+  method: odbc
+  driver: "{{ env_var('ODBC_DRIVER') }}"
   port: 443
   schema: "analytics_{{ var('_dbt_random_suffix') }}"
   connect_retries: 5
@@ -17,7 +18,7 @@ projects:
     facts:
       base:
         rowcount: 10
-      extended:
+      added:
         rowcount: 20
   - overrides: snapshot_strategy_check_cols
     dbt_project_yml: &file_format_delta
@@ -40,4 +41,3 @@ sequences:
   test_dbt_data_test: data_test
   test_dbt_ephemeral_data_tests: data_test_ephemeral_models
   test_dbt_schema_test: schema_test
-

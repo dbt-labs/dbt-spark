@@ -35,11 +35,6 @@ class SparkConnectionMethod(StrEnum):
     ODBC = 'odbc'
 
 
-class SparkClusterType(StrEnum):
-    ALL_PURPOSE = "all-purpose"
-    VIRTUAL = "virtual"
-
-
 @dataclass
 class SparkCredentials(Credentials):
     host: str
@@ -47,8 +42,8 @@ class SparkCredentials(Credentials):
     schema: str
     database: Optional[str]
     driver: Optional[str] = None
-    cluster_type: Optional[SparkClusterType] = SparkClusterType.ALL_PURPOSE
     cluster: Optional[str] = None
+    endpoint: Optional[str] = None
     token: Optional[str] = None
     user: Optional[str] = None
     port: int = 443
@@ -78,7 +73,7 @@ class SparkCredentials(Credentials):
 
     def _connection_keys(self):
         return ('host', 'port', 'cluster',
-                'cluster_type', 'schema', 'organization')
+                'endpoint', 'schema', 'organization')
 
 
 class PyhiveConnectionWrapper(object):
@@ -198,13 +193,12 @@ class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
     def execute(self, sql, bindings=None):
         if sql.strip().endswith(";"):
             sql = sql.strip()[:-1]
-
-        query = sqlparams.SQLParams('format', 'qmark')
         # pyodbc does not handle a None type binding!
         if bindings is None:
-            sql, bindings = query.format(sql, [])
             self._cursor.execute(sql)
         else:
+            # pyodbc only supports `qmark` sql params!
+            query = sqlparams.SQLParams('format', 'qmark')
             sql, bindings = query.format(sql, bindings)
             self._cursor.execute(sql, *bindings)
 
@@ -213,7 +207,7 @@ class SparkConnectionManager(SQLConnectionManager):
     TYPE = 'spark'
 
     SPARK_CLUSTER_HTTP_PATH = "sql/protocolv1/o/{organization}/{cluster}"
-    SPARK_VIRTUAL_CLUSTER_HTTP_PATH = "/sql/1.0/endpoints/{cluster}"
+    SPARK_SQL_ENDPOINT_HTTP_PATH = "/sql/1.0/endpoints/{endpoint}"
     SPARK_CONNECTION_URL = (
         "https://{host}:{port}/" + SPARK_CLUSTER_HTTP_PATH
     )
@@ -277,7 +271,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
         for i in range(1 + creds.connect_retries):
             try:
-                if creds.method == 'http':
+                if creds.method == SparkConnectionMethod.HTTP:
                     cls.validate_creds(creds, ['token', 'host', 'port',
                                                'cluster', 'organization'])
 
@@ -300,7 +294,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     conn = hive.connect(thrift_transport=transport)
                     handle = PyhiveConnectionWrapper(conn)
-                elif creds.method == 'thrift':
+                elif creds.method == SparkConnectionMethod.THRIFT:
                     cls.validate_creds(creds,
                                        ['host', 'port', 'user', 'schema'])
 
@@ -310,30 +304,38 @@ class SparkConnectionManager(SQLConnectionManager):
                                         auth=creds.auth,
                                         kerberos_service_name=creds.kerberos_service_name)  # noqa
                     handle = PyhiveConnectionWrapper(conn)
-                elif creds.method == 'odbc':
-                    required_fields = ['driver', 'host', 'port', 'token',
-                                       'organization', 'cluster', 'cluster_type']  # noqa
-                    cls.validate_creds(creds, required_fields)
-
+                elif creds.method == SparkConnectionMethod.ODBC:
                     http_path = None
-
-                    if creds.cluster_type == SparkClusterType.ALL_PURPOSE:
+                    if creds.cluster and creds.endpoint:
+                        raise dbt.exceptions.DbtProfileError(
+                            "`cluster` and `endpoint` cannot both be set when"
+                            " using the odbc method to connect to Spark"
+                        )
+                    elif creds.cluster is not None:
+                        required_fields = ['driver', 'host', 'port', 'token',
+                                           'organization', 'cluster']
                         http_path = cls.SPARK_CLUSTER_HTTP_PATH.format(
                             organization=creds.organization,
                             cluster=creds.cluster
                         )
-                    elif creds.cluster_type == SparkClusterType.VIRTUAL:
-                        http_path = cls.SPARK_VIRTUAL_CLUSTER_HTTP_PATH.format(
-                            cluster=creds.cluster
+                    elif creds.endpoint is not None:
+                        required_fields = ['driver', 'host', 'port', 'token',
+                                           'endpoint']
+                        http_path = cls.SPARK_SQL_ENDPOINT_HTTP_PATH.format(
+                            endpoint=creds.endpoint
                         )
                     else:
                         raise dbt.exceptions.DbtProfileError(
-                            f"invalid custer type: {creds.cluster_type}"
+                            "Either `cluster` or `endpoint` must set when"
+                            " using the odbc method to connect to Spark"
                         )
+
+                    cls.validate_creds(creds, required_fields)
 
                     dbt_spark_version = __version__.version
                     user_agent_entry = f"fishtown-analytics-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
 
+                    # https://www.simba.com/products/Spark/doc/v2/ODBC_InstallGuide/unix/content/odbc/options/driver.htm
                     connection_str = _build_odbc_connnection_string(
                         DRIVER=creds.driver,
                         HOST=creds.host,
@@ -342,6 +344,7 @@ class SparkConnectionManager(SQLConnectionManager):
                         PWD=creds.token,
                         HTTPPath=http_path,
                         AuthMech=3,
+                        SparkServerType=3,
                         ThriftTransport=2,
                         SSL=1,
                         UserAgentEntry=user_agent_entry,
