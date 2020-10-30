@@ -5,7 +5,7 @@ jobs:
     environment:
       DBT_INVOCATION_ENV: circle
     docker:
-      - image: fishtownanalytics/test-container:9
+      - image: fishtownanalytics/test-container:10
     steps:
       - checkout
       - run: tox -e flake8,unit
@@ -14,7 +14,7 @@ jobs:
     environment:
       DBT_INVOCATION_ENV: circle
     docker:
-      - image: fishtownanalytics/test-container:9
+      - image: fishtownanalytics/test-container:10
       - image: godatadriven/spark:2
         environment:
           WAIT_FOR: localhost:5432
@@ -46,11 +46,11 @@ jobs:
       - store_artifacts:
           path: ./logs
 
-  integration-spark-databricks:
+  integration-spark-databricks-http:
     environment:
       DBT_INVOCATION_ENV: circle
     docker:
-      - image: fishtownanalytics/test-container:9
+      - image: fishtownanalytics/test-container:10
     steps:
       - checkout
       - run:
@@ -60,19 +60,28 @@ jobs:
       - store_artifacts:
           path: ./logs
 
-  # integration-spark-databricks-odbc:
-  #   environment:
-  #     DBT_INVOCATION_ENV: circle
-  #   docker:
-  #     - image: kwigley/spark-test-container:1
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Run integration tests
-  #         command: ODBC_DRIVER=Simba tox -e integration-spark-databricks-odbc-cluster,integration-spark-databricks-odbc-sql-endpoint
-  #         no_output_timeout: 1h
-  #     - store_artifacts:
-  #         path: ./logs
+  integration-spark-databricks-odbc:
+    environment:
+      DBT_INVOCATION_ENV: circle
+      ODBC_DRIVER: Simba
+      ODBC_DRIVER_URL: https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip
+    docker:
+      - image: fishtownanalytics/test-container:10
+        command: |
+          curl -L $ODBC_DRIVER_URL > /tmp/simba_odbc.zip
+          unzip /tmp/simba_odbc.zip -d /tmp/
+          dpkg -i /tmp/SimbaSparkODBC-*/*.deb
+          echo "[$ODBC_DRIVER]\nDriver = /opt/simba/spark/lib/64/libsparkodbc_sb64.so" >> /etc/odbcinst.ini
+          rm /tmp/simba_odbc.zip
+          rm -rf /tmp/SimbaSparkODBC*
+    steps:
+      - checkout
+      - run:
+          name: Run integration tests
+          command: tox -e integration-spark-databricks-odbc-cluster,integration-spark-databricks-odbc-sql-endpoint
+          no_output_timeout: 1h
+      - store_artifacts:
+          path: ./logs
 
 workflows:
   version: 2
@@ -82,9 +91,9 @@ workflows:
       - integration-spark-thrift:
           requires:
             - unit
-      - integration-spark-databricks:
+      - integration-spark-databricks-http:
           requires:
             - unit
-      # - integration-spark-databricks-odbc:
-      #     requires:
-      #       - unit
+      - integration-spark-databricks-odbc:
+          requires:
+            - unit

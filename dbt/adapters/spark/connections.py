@@ -11,7 +11,10 @@ from dbt.adapters.spark import __version__
 from TCLIService.ttypes import TOperationState as ThriftState
 from thrift.transport import THttpClient
 from pyhive import hive
-import pyodbc
+try:
+    import pyodbc
+except ImportError:
+    pyodbc = None
 from datetime import datetime
 import sqlparams
 
@@ -66,6 +69,14 @@ class SparkCredentials(Credentials):
                 f' schema.'
             )
         self.database = None
+
+        if self.method == SparkConnectionMethod.ODBC and pyodbc is None:
+            raise dbt.exceptions.RuntimeException(
+                f"{self.method} connection method requires "
+                "additional dependencies. \n"
+                "Install the additional required dependencies with "
+                "`pip install dbt-spark[ODBC]`"
+            )
 
     @property
     def type(self):
