@@ -97,12 +97,11 @@
 
   {% if strategy == 'merge' %}
     {%- set unique_key = config.require('unique_key') -%}
+    {% call statement() %}
+      set spark.sql.sources.partitionOverwriteMode = DYNAMIC
+    {% endcall %}
     {% do dbt_spark_validate_merge(file_format) %}
   {% endif %}
-
-  {% call statement() %}
-    set spark.sql.sources.partitionOverwriteMode = DYNAMIC
-  {% endcall %}
 
   {% call statement() %}
     set spark.sql.hive.convertMetastoreParquet = false
