@@ -63,17 +63,12 @@ jobs:
   integration-spark-databricks-odbc:
     environment:
       DBT_INVOCATION_ENV: circle
-      ODBC_DRIVER: Simba
-      ODBC_DRIVER_URL: https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip
+      ODBC_DRIVER: Simba # TODO: move to env var to test image
     docker:
-      - image: fishtownanalytics/test-container:10
-        command: |
-          curl -L $ODBC_DRIVER_URL > /tmp/simba_odbc.zip
-          unzip /tmp/simba_odbc.zip -d /tmp/
-          dpkg -i /tmp/SimbaSparkODBC-*/*.deb
-          echo "[$ODBC_DRIVER]\nDriver = /opt/simba/spark/lib/64/libsparkodbc_sb64.so" >> /etc/odbcinst.ini
-          rm /tmp/simba_odbc.zip
-          rm -rf /tmp/SimbaSparkODBC*
+      - image: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest
+        aws_auth:
+          aws_access_key_id: $AWS_ACCESS_KEY_ID_STAGING
+          aws_secret_access_key: $AWS_SECRET_ACCESS_KEY_STAGING
     steps:
       - checkout
       - run:

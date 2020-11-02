@@ -78,6 +78,16 @@ class SparkCredentials(Credentials):
                 "`pip install dbt-spark[ODBC]`"
             )
 
+        if (
+            self.method == SparkConnectionMethod.ODBC and
+            self.cluster and
+            self.endpoint
+        ):
+            raise dbt.exceptions.RuntimeException(
+                "`cluster` and `endpoint` cannot both be set when"
+                f" using {self.method} method to connect to Spark"
+            )
+
     @property
     def type(self):
         return 'spark'
@@ -217,10 +227,10 @@ class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
 class SparkConnectionManager(SQLConnectionManager):
     TYPE = 'spark'
 
-    SPARK_CLUSTER_HTTP_PATH = "sql/protocolv1/o/{organization}/{cluster}"
+    SPARK_CLUSTER_HTTP_PATH = "/sql/protocolv1/o/{organization}/{cluster}"
     SPARK_SQL_ENDPOINT_HTTP_PATH = "/sql/1.0/endpoints/{endpoint}"
     SPARK_CONNECTION_URL = (
-        "https://{host}:{port}/" + SPARK_CLUSTER_HTTP_PATH
+        "https://{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
     )
 
     @contextmanager
@@ -317,12 +327,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
                     http_path = None
-                    if creds.cluster and creds.endpoint:
-                        raise dbt.exceptions.DbtProfileError(
-                            "`cluster` and `endpoint` cannot both be set when"
-                            " using the odbc method to connect to Spark"
-                        )
-                    elif creds.cluster is not None:
+                    if creds.cluster is not None:
                         required_fields = ['driver', 'host', 'port', 'token',
                                            'organization', 'cluster']
                         http_path = cls.SPARK_CLUSTER_HTTP_PATH.format(

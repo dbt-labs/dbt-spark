@@ -73,6 +73,42 @@ class TestSparkAdapter(unittest.TestCase):
             },
             'target': 'test'
         })
+
+    def _get_target_odbc_cluster(self, project):
+        return config_from_parts_or_dicts(project, {
+            'outputs': {
+                'test': {
+                    'type': 'spark',
+                    'method': 'odbc',
+                    'schema': 'analytics',
+                    'host': 'myorg.sparkhost.com',
+                    'port': 443,
+                    'token': 'abc123',
+                    'organization': '0123456789',
+                    'cluster': '01234-23423-coffeetime',
+                    'driver': 'Simba',
+                }
+            },
+            'target': 'test'
+        })
+
+    def _get_target_odbc_sql_endpoint(self, project):
+        return config_from_parts_or_dicts(project, {
+            'outputs': {
+                'test': {
+                    'type': 'spark',
+                    'method': 'odbc',
+                    'schema': 'analytics',
+                    'host': 'myorg.sparkhost.com',
+                    'port': 443,
+                    'token': 'abc123',
+                    'endpoint': '012342342393920a',
+                    'driver': 'Simba',
+                }
+            },
+            'target': 'test'
+        })
+
     def test_http_connection(self):
         config = self._get_target_http(self.project_cfg)
         adapter = SparkAdapter(config)
@@ -81,7 +117,8 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(thrift_transport.scheme, 'https')
             self.assertEqual(thrift_transport.port, 443)
             self.assertEqual(thrift_transport.host, 'myorg.sparkhost.com')
-            self.assertEqual(thrift_transport.path, '/sql/protocolv1/o/0123456789/01234-23423-coffeetime')
+            self.assertEqual(
+                thrift_transport.path, '/sql/protocolv1/o/0123456789/01234-23423-coffeetime')
 
         # with mock.patch.object(hive, 'connect', new=hive_http_connect):
         with mock.patch('dbt.adapters.spark.connections.hive.connect', new=hive_http_connect):
@@ -90,7 +127,8 @@ class TestSparkAdapter(unittest.TestCase):
 
             self.assertEqual(connection.state, 'open')
             self.assertIsNotNone(connection.handle)
-            self.assertEqual(connection.credentials.cluster, '01234-23423-coffeetime')
+            self.assertEqual(connection.credentials.cluster,
+                             '01234-23423-coffeetime')
             self.assertEqual(connection.credentials.token, 'abc123')
             self.assertEqual(connection.credentials.schema, 'analytics')
             self.assertIsNone(connection.credentials.database)
@@ -135,6 +173,56 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(connection.credentials.schema, 'analytics')
             self.assertIsNone(connection.credentials.database)
 
+    def test_odbc_cluster_connection(self):
+        config = self._get_target_odbc_cluster(self.project_cfg)
+        adapter = SparkAdapter(config)
+
+        def pyodbc_connect(connection_str, autocommit):
+            self.assertTrue(autocommit)
+            self.assertIn('driver=simba;', connection_str.lower())
+            self.assertIn('port=443;', connection_str.lower())
+            self.assertIn('host=myorg.sparkhost.com;',
+                          connection_str.lower())
+            self.assertIn(
+                'httppath=/sql/protocolv1/o/0123456789/01234-23423-coffeetime;', connection_str.lower())  # noqa
+
+        with mock.patch('dbt.adapters.spark.connections.pyodbc.connect', new=pyodbc_connect):  # noqa
+            connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
+
+            self.assertEqual(connection.state, 'open')
+            self.assertIsNotNone(connection.handle)
+            self.assertEqual(connection.credentials.cluster,
+                             '01234-23423-coffeetime')
+            self.assertEqual(connection.credentials.token, 'abc123')
+            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertIsNone(connection.credentials.database)
+
+    def test_odbc_endpoint_connection(self):
+        config = self._get_target_odbc_sql_endpoint(self.project_cfg)
+        adapter = SparkAdapter(config)
+
+        def pyodbc_connect(connection_str, autocommit):
+            self.assertTrue(autocommit)
+            self.assertIn('driver=simba;', connection_str.lower())
+            self.assertIn('port=443;', connection_str.lower())
+            self.assertIn('host=myorg.sparkhost.com;',
+                          connection_str.lower())
+            self.assertIn(
+                'httppath=/sql/1.0/endpoints/012342342393920a;', connection_str.lower())  # noqa
+
+        with mock.patch('dbt.adapters.spark.connections.pyodbc.connect', new=pyodbc_connect):  # noqa
+            connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
+
+            self.assertEqual(connection.state, 'open')
+            self.assertIsNotNone(connection.handle)
+            self.assertEqual(connection.credentials.endpoint,
+                             '012342342393920a')
+            self.assertEqual(connection.credentials.token, 'abc123')
+            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertIsNone(connection.credentials.database)
+
     def test_parse_relation(self):
         self.maxDiff = None
         rel_type = SparkRelation.get_relation_type.Table
@@ -169,10 +257,12 @@ class TestSparkAdapter(unittest.TestCase):
             ('Partition Provider', 'Catalog')
         ]
 
-        input_cols = [Row(keys=['col_name', 'data_type'], values=r) for r in plain_rows]
+        input_cols = [Row(keys=['col_name', 'data_type'], values=r)
+                      for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
+        rows = SparkAdapter(config).parse_describe_extended(
+            relation, input_cols)
         self.assertEqual(len(rows), 3)
         self.assertEqual(rows[0].to_dict(omit_none=False), {
             'table_database': None,
@@ -247,10 +337,12 @@ class TestSparkAdapter(unittest.TestCase):
             ('Partition Provider', 'Catalog')
         ]
 
-        input_cols = [Row(keys=['col_name', 'data_type'], values=r) for r in plain_rows]
+        input_cols = [Row(keys=['col_name', 'data_type'], values=r)
+                      for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
+        rows = SparkAdapter(config).parse_describe_extended(
+            relation, input_cols)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].to_dict(omit_none=False), {
             'table_database': None,
@@ -283,7 +375,8 @@ class TestSparkAdapter(unittest.TestCase):
         adapter.Relation.create(schema='different', identifier='table')
         with self.assertRaises(RuntimeException):
             # not fine - database set
-            adapter.Relation.create(database='something', schema='different', identifier='table')
+            adapter.Relation.create(
+                database='something', schema='different', identifier='table')
 
     def test_profile_with_database(self):
         profile = {
@@ -299,6 +392,26 @@ class TestSparkAdapter(unittest.TestCase):
                     'token': 'abc123',
                     'organization': '0123456789',
                     'cluster': '01234-23423-coffeetime',
+                }
+            },
+            'target': 'test'
+        }
+        with self.assertRaises(RuntimeException):
+            config_from_parts_or_dicts(self.project_cfg, profile)
+
+    def test_profile_with_cluster_and_sql_endpoint(self):
+        profile = {
+            'outputs': {
+                'test': {
+                    'type': 'spark',
+                    'method': 'odbc',
+                    'schema': 'analytics',
+                    'host': 'myorg.sparkhost.com',
+                    'port': 443,
+                    'token': 'abc123',
+                    'organization': '0123456789',
+                    'cluster': '01234-23423-coffeetime',
+                    'endpoint': '0123412341234e',
                 }
             },
             'target': 'test'
