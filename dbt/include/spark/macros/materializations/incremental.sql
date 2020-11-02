@@ -101,7 +101,7 @@
     {% do dbt_spark_validate_merge(file_format) %}
   {% endif %}
 
-  {% if unique_key or config.get('partition_by') %}
+  {% if config.get('partition_by') %}
     {% call statement() %}
       set spark.sql.sources.partitionOverwriteMode = DYNAMIC
     {% endcall %}
