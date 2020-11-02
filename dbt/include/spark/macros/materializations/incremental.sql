@@ -62,6 +62,7 @@
 
 
 {% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
+  
   {# ignore dest_columns - we will just use `*` #}
     merge into {{ target }} as DBT_INTERNAL_DEST
       using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
@@ -97,10 +98,13 @@
 
   {% if strategy == 'merge' %}
     {%- set unique_key = config.require('unique_key') -%}
+    {% do dbt_spark_validate_merge(file_format) %}
+  {% endif %}
+
+  {% if unique_key or config.get('partition_by') %}
     {% call statement() %}
       set spark.sql.sources.partitionOverwriteMode = DYNAMIC
     {% endcall %}
-    {% do dbt_spark_validate_merge(file_format) %}
   {% endif %}
 
   {% call statement() %}
