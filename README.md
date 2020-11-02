@@ -27,10 +27,20 @@ For more information on using Spark with dbt, consult the dbt documentation:
 ### Installation
 This plugin can be installed via pip:
 
-```
+```bash
 # Install dbt-spark from PyPi:
 $ pip install dbt-spark
 ```
+
+dbt-spark also supports connections via ODBC driver, but it requires [`pyodbc`](https://github.com/mkleehammer/pyodbc). You can install it seperately or via pip as well:
+
+```bash
+# Install dbt-spark from PyPi:
+$ pip install "dbt-spark[ODBC]"
+```
+
+See https://github.com/mkleehammer/pyodbc/wiki/Install for more info about installing `pyodbc`.
+
 
 ### Configuring your profile
 
@@ -40,18 +50,20 @@ Connections can be made to Spark in two different modes. The `http` mode is used
 
 A dbt profile can be configured to run against Spark using the following configuration:
 
-| Option  | Description                                        | Required?               | Example                  |
-|---------|----------------------------------------------------|-------------------------|--------------------------|
-| method    | Specify the connection method (`thrift` or `http`)   | Required   | `http`   |
-| schema  | Specify the schema (database) to build models into | Required                | `analytics`              |
-| host    | The hostname to connect to                         | Required                | `yourorg.sparkhost.com`  |
-| port    | The port to connect to the host on                 | Optional (default: 443 for `http`, 10001 for `thrift`) | `443`                    |
-| token   | The token to use for authenticating to the cluster | Required for `http`                | `abc123`                 |
-| organization | The id of the Azure Databricks workspace being used; only for  Azure Databricks | See Databricks Note | `1234567891234567` |
-| cluster | The name of the cluster to connect to              | Required for `http`               | `01234-23423-coffeetime` |
-| user    | The username to use to connect to the cluster  | Optional  | `hadoop`  |
-| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10) | `60` |
-| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up   | Optional (default: 0)  | `5` |
+| Option          | Description                                                                         | Required?                                                          | Example                                        |
+| --------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------- |
+| method          | Specify the connection method (`thrift` or `http` or `odbc`)                        | Required                                                           | `http`                                         |
+| schema          | Specify the schema (database) to build models into                                  | Required                                                           | `analytics`                                    |
+| host            | The hostname to connect to                                                          | Required                                                           | `yourorg.sparkhost.com`                        |
+| port            | The port to connect to the host on                                                  | Optional (default: 443 for `http` and `odbc`, 10001 for `thrift`)  | `443`                                          |
+| token           | The token to use for authenticating to the cluster                                  | Required for `http` and `odbc`                                     | `abc123`                                       |
+| organization    | The id of the Azure Databricks workspace being used; only for Azure Databricks      | See Databricks Note                                                | `1234567891234567`                             |
+| cluster         | The name of the cluster to connect to                                               | Required for `http` and `odbc` if connecting to a specific cluster | `01234-23423-coffeetime`                       |
+| endpoint        | The ID of the SQL endpoint to connect to                                            | Required for `odbc` if connecting to SQL endpoint                  | `1234567891234a`                               |
+| driver          | Path of ODBC driver installed or name of ODBC DSN configured                        | Required for `odbc`                                                | `/opt/simba/spark/lib/64/libsparkodbc_sb64.so` |
+| user            | The username to use to connect to the cluster                                       | Optional                                                           | `hadoop`                                       |
+| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10)                                             | `60`                                           |
+| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up   | Optional (default: 0)                                              | `5`                                            |
 
 **Databricks Note**
 
@@ -104,6 +116,24 @@ your_profile_name:
       connect_timeout: 60
 ```
 
+**ODBC connection**
+```
+your_profile_name:
+  target: dev
+  outputs:
+    dev:
+      method: odbc
+      type: spark
+      schema: analytics
+      host: yourorg.sparkhost.com
+      organization: 1234567891234567    # Azure Databricks ONLY
+      port: 443
+      token: abc123
+      cluster: 01234-23423-coffeetime
+      driver: path/to/driver
+      connect_retries: 5
+      connect_timeout: 60
+```
 
 
 ### Usage Notes
@@ -113,15 +143,15 @@ your_profile_name:
 The following configurations can be supplied to models run with the dbt-spark plugin:
 
 
-| Option  | Description                                        | Required?               | Example                  |
-|---------|----------------------------------------------------|-------------------------|--------------------------|
-| file_format | The file format to use when creating tables (`parquet`, `delta`, `csv`, `json`, `text`, `jdbc`, `orc`, `hive` or `libsvm`). | Optional | `parquet`|
-| location_root  | The created table uses the specified directory to store its data. The table alias is appended to it. | Optional                | `/mnt/root`              |
-| partition_by  | Partition the created table by the specified columns. A directory is created for each partition. | Optional                | `partition_1`              |
-| clustered_by  | Each partition in the created table will be split into a fixed number of buckets by the specified columns. | Optional               | `cluster_1`              |
-| buckets  | The number of buckets to create while clustering | Required if `clustered_by` is specified                | `8`              |
-| incremental_strategy | The strategy to use for incremental models (`insert_overwrite` or `merge`). Note `merge` requires `file_format` = `delta` and `unique_key` to be specified. | Optional (default: `insert_overwrite`) | `merge` |
-| persist_docs | Whether dbt should include the model description as a table `comment` | Optional | `{'relation': true}` |
+| Option               | Description                                                                                                                                                 | Required?                               | Example              |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- | -------------------- |
+| file_format          | The file format to use when creating tables (`parquet`, `delta`, `csv`, `json`, `text`, `jdbc`, `orc`, `hive` or `libsvm`).                                 | Optional                                | `parquet`            |
+| location_root        | The created table uses the specified directory to store its data. The table alias is appended to it.                                                        | Optional                                | `/mnt/root`          |
+| partition_by         | Partition the created table by the specified columns. A directory is created for each partition.                                                            | Optional                                | `partition_1`        |
+| clustered_by         | Each partition in the created table will be split into a fixed number of buckets by the specified columns.                                                  | Optional                                | `cluster_1`          |
+| buckets              | The number of buckets to create while clustering                                                                                                            | Required if `clustered_by` is specified | `8`                  |
+| incremental_strategy | The strategy to use for incremental models (`insert_overwrite` or `merge`). Note `merge` requires `file_format` = `delta` and `unique_key` to be specified. | Optional (default: `insert_overwrite`)  | `merge`              |
+| persist_docs         | Whether dbt should include the model description as a table `comment`                                                                                       | Optional                                | `{'relation': true}` |
 
 
 **Incremental Models**
