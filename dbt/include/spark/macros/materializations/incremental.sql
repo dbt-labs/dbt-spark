@@ -62,7 +62,6 @@
 
 
 {% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
-  
   {# ignore dest_columns - we will just use `*` #}
     merge into {{ target }} as DBT_INTERNAL_DEST
       using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
