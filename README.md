@@ -35,7 +35,7 @@ $ pip install dbt-spark
 dbt-spark also supports connections via ODBC driver, but it requires [`pyodbc`](https://github.com/mkleehammer/pyodbc). You can install it seperately or via pip as well:
 
 ```bash
-# Install dbt-spark from PyPi:
+# Install dbt-spark w/ pyodbc from PyPi:
 $ pip install "dbt-spark[ODBC]"
 ```
 
