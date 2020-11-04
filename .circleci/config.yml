@@ -63,7 +63,7 @@ jobs:
   integration-spark-databricks-odbc:
     environment:
       DBT_INVOCATION_ENV: circle
-      ODBC_DRIVER: Simba # TODO: move to env var to test image
+      ODBC_DRIVER: Simba # TODO: move env var to Docker image
     docker:
       # image based on `fishtownanalytics/test-container` w/ Simba ODBC Spark driver installed
       - image: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest
