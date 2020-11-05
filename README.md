@@ -129,10 +129,14 @@ your_profile_name:
       organization: 1234567891234567    # Azure Databricks ONLY
       port: 443
       token: abc123
+
+      # one of:
       cluster: 01234-23423-coffeetime
+      endpoint: coffee01234time
+
       driver: path/to/driver
-      connect_retries: 5
-      connect_timeout: 60
+      connect_retries: 5    # cluster only
+      connect_timeout: 60   # cluster only
 ```
 
 
