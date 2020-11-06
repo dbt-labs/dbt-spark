@@ -6,11 +6,17 @@ from dbt.adapters.sql import SQLConnectionManager
 from dbt.contracts.connection import ConnectionState
 from dbt.logger import GLOBAL_LOGGER as logger
 from dbt.utils import DECIMALS
+from dbt.adapters.spark import __version__
 
 from TCLIService.ttypes import TOperationState as ThriftState
 from thrift.transport import THttpClient
 from pyhive import hive
+try:
+    import pyodbc
+except ImportError:
+    pyodbc = None
 from datetime import datetime
+import sqlparams
 
 from hologram.helpers import StrEnum
 from dataclasses import dataclass
@@ -22,9 +28,14 @@ import time
 NUMBERS = DECIMALS + (int, float)
 
 
+def _build_odbc_connnection_string(**kwargs) -> str:
+    return ";".join([f"{k}={v}" for k, v in kwargs.items()])
+
+
 class SparkConnectionMethod(StrEnum):
     THRIFT = 'thrift'
     HTTP = 'http'
+    ODBC = 'odbc'
 
 
 @dataclass
@@ -33,7 +44,9 @@ class SparkCredentials(Credentials):
     method: SparkConnectionMethod
     schema: str
     database: Optional[str]
+    driver: Optional[str] = None
     cluster: Optional[str] = None
+    endpoint: Optional[str] = None
     token: Optional[str] = None
     user: Optional[str] = None
     port: int = 443
@@ -57,15 +70,34 @@ class SparkCredentials(Credentials):
             )
         self.database = None
 
+        if self.method == SparkConnectionMethod.ODBC and pyodbc is None:
+            raise dbt.exceptions.RuntimeException(
+                f"{self.method} connection method requires "
+                "additional dependencies. \n"
+                "Install the additional required dependencies with "
+                "`pip install dbt-spark[ODBC]`"
+            )
+
+        if (
+            self.method == SparkConnectionMethod.ODBC and
+            self.cluster and
+            self.endpoint
+        ):
+            raise dbt.exceptions.RuntimeException(
+                "`cluster` and `endpoint` cannot both be set when"
+                f" using {self.method} method to connect to Spark"
+            )
+
     @property
     def type(self):
         return 'spark'
 
     def _connection_keys(self):
-        return 'host', 'port', 'cluster', 'schema', 'organization'
+        return ('host', 'port', 'cluster',
+                'endpoint', 'schema', 'organization')
 
 
-class ConnectionWrapper(object):
+class PyhiveConnectionWrapper(object):
     """Wrap a Spark connection in a way that no-ops transactions"""
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html  # noqa
 
@@ -177,11 +209,28 @@ class ConnectionWrapper(object):
         return self._cursor.description
 
 
+class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
+
+    def execute(self, sql, bindings=None):
+        if sql.strip().endswith(";"):
+            sql = sql.strip()[:-1]
+        # pyodbc does not handle a None type binding!
+        if bindings is None:
+            self._cursor.execute(sql)
+        else:
+            # pyodbc only supports `qmark` sql params!
+            query = sqlparams.SQLParams('format', 'qmark')
+            sql, bindings = query.format(sql, bindings)
+            self._cursor.execute(sql, *bindings)
+
+
 class SparkConnectionManager(SQLConnectionManager):
     TYPE = 'spark'
 
+    SPARK_CLUSTER_HTTP_PATH = "/sql/protocolv1/o/{organization}/{cluster}"
+    SPARK_SQL_ENDPOINT_HTTP_PATH = "/sql/1.0/endpoints/{endpoint}"
     SPARK_CONNECTION_URL = (
-        "https://{host}:{port}/sql/protocolv1/o/{organization}/{cluster}"
+        "https://{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
     )
 
     @contextmanager
@@ -243,7 +292,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
         for i in range(1 + creds.connect_retries):
             try:
-                if creds.method == 'http':
+                if creds.method == SparkConnectionMethod.HTTP:
                     cls.validate_creds(creds, ['token', 'host', 'port',
                                                'cluster', 'organization'])
 
@@ -265,7 +314,8 @@ class SparkConnectionManager(SQLConnectionManager):
                     })
 
                     conn = hive.connect(thrift_transport=transport)
-                elif creds.method == 'thrift':
+                    handle = PyhiveConnectionWrapper(conn)
+                elif creds.method == SparkConnectionMethod.THRIFT:
                     cls.validate_creds(creds,
                                        ['host', 'port', 'user', 'schema'])
 
@@ -274,6 +324,50 @@ class SparkConnectionManager(SQLConnectionManager):
                                         username=creds.user,
                                         auth=creds.auth,
                                         kerberos_service_name=creds.kerberos_service_name)  # noqa
+                    handle = PyhiveConnectionWrapper(conn)
+                elif creds.method == SparkConnectionMethod.ODBC:
+                    http_path = None
+                    if creds.cluster is not None:
+                        required_fields = ['driver', 'host', 'port', 'token',
+                                           'organization', 'cluster']
+                        http_path = cls.SPARK_CLUSTER_HTTP_PATH.format(
+                            organization=creds.organization,
+                            cluster=creds.cluster
+                        )
+                    elif creds.endpoint is not None:
+                        required_fields = ['driver', 'host', 'port', 'token',
+                                           'endpoint']
+                        http_path = cls.SPARK_SQL_ENDPOINT_HTTP_PATH.format(
+                            endpoint=creds.endpoint
+                        )
+                    else:
+                        raise dbt.exceptions.DbtProfileError(
+                            "Either `cluster` or `endpoint` must set when"
+                            " using the odbc method to connect to Spark"
+                        )
+
+                    cls.validate_creds(creds, required_fields)
+
+                    dbt_spark_version = __version__.version
+                    user_agent_entry = f"fishtown-analytics-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
+
+                    # https://www.simba.com/products/Spark/doc/v2/ODBC_InstallGuide/unix/content/odbc/options/driver.htm
+                    connection_str = _build_odbc_connnection_string(
+                        DRIVER=creds.driver,
+                        HOST=creds.host,
+                        PORT=creds.port,
+                        UID="token",
+                        PWD=creds.token,
+                        HTTPPath=http_path,
+                        AuthMech=3,
+                        SparkServerType=3,
+                        ThriftTransport=2,
+                        SSL=1,
+                        UserAgentEntry=user_agent_entry,
+                    )
+
+                    conn = pyodbc.connect(connection_str, autocommit=True)
+                    handle = PyodbcConnectionWrapper(conn)
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
@@ -304,7 +398,6 @@ class SparkConnectionManager(SQLConnectionManager):
         else:
             raise exc
 
-        handle = ConnectionWrapper(conn)
         connection.handle = handle
         connection.state = ConnectionState.OPEN
         return connection
