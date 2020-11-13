@@ -65,7 +65,7 @@ setup(
         'sqlparams>=3.0.0',
         'thrift>=0.11.0,<0.12.0'
     ],
-    extra_requires={
+    extras_require={
         "ODBC":  ['pyodbc>=4.0.30'],
     }
 )
