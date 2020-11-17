@@ -3,6 +3,11 @@
 ### Under the hood
 - Add changelog, issue templates ([#119](https://github.com/fishtown-analytics/dbt-spark/pull/119), [#120](https://github.com/fishtown-analytics/dbt-spark/pull/120))
 
+## dbt-spark 0.18.1.1 (November 13, 2020)
+
+### Fixes
+- Fix `extras_require` typo to enable `pip install dbt-spark[ODBC]` (([#121](https://github.com/fishtown-analytics/dbt-spark/pull/121)), ([#122](https://github.com/fishtown-analytics/dbt-spark/pull/122)))
+
 ## dbt-spark 0.18.1 (November 6, 2020)
 
 ### Features
