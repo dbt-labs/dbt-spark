@@ -55,7 +55,9 @@ class SparkColumn(Column):
                 table_stats[f'stats:{key}:include'] = True
         return table_stats
 
-    def to_dict(self, omit_none: bool = True, validate: bool = False) -> JsonDict:
+    def to_dict(
+            self, omit_none: bool = True, validate: bool = False
+    ) -> JsonDict:
         original_dict = super().to_dict(omit_none=omit_none)
         # If there are stats, merge them into the root of the dict
         original_stats = original_dict.pop('table_stats')

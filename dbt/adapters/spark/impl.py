@@ -132,7 +132,8 @@ class SparkAdapter(SQLAdapter):
                     f'got {len(row)} values, expected 4'
                 )
             _schema, name, _, information = row
-            rel_type = (RelationType.View if 'Type: VIEW' in information else RelationType.Table)
+            rel_type = RelationType.View \
+                if 'Type: VIEW' in information else RelationType.Table
             is_delta = 'Provider: delta' in information
             relation = self.Relation.create(
                 schema=_schema,
