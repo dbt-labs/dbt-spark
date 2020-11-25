@@ -61,11 +61,13 @@ setup(
     },
     install_requires=[
         f'dbt-core=={dbt_version}',
-        'PyHive[hive]>=0.6.0,<0.7.0',
         'sqlparams>=3.0.0',
-        'thrift>=0.11.0,<0.12.0'
     ],
     extras_require={
         "ODBC":  ['pyodbc>=4.0.30'],
+        "PyHive":  [
+            'PyHive[hive]>=0.6.0,<0.7.0',
+            'thrift>=0.11.0,<0.12.0',
+        ],
     }
 )
