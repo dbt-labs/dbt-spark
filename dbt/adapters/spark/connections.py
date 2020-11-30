@@ -8,9 +8,14 @@ from dbt.logger import GLOBAL_LOGGER as logger
 from dbt.utils import DECIMALS
 from dbt.adapters.spark import __version__
 
-from TCLIService.ttypes import TOperationState as ThriftState
-from thrift.transport import THttpClient
-from pyhive import hive
+try:
+    from TCLIService.ttypes import TOperationState as ThriftState
+    from thrift.transport import THttpClient
+    from pyhive import hive
+except ImportError:
+    ThriftState = None
+    THttpClient = None
+    hive = None
 try:
     import pyodbc
 except ImportError:
@@ -86,6 +91,19 @@ class SparkCredentials(Credentials):
             raise dbt.exceptions.RuntimeException(
                 "`cluster` and `endpoint` cannot both be set when"
                 f" using {self.method} method to connect to Spark"
+            )
+
+        if (
+            self.method == SparkConnectionMethod.HTTP or
+            self.method == SparkConnectionMethod.THRIFT
+        ) and not (
+            ThriftState and THttpClient and hive
+        ):
+            raise dbt.exceptions.RuntimeException(
+                f"{self.method} connection method requires "
+                "additional dependencies. \n"
+                "Install the additional required dependencies with "
+                "`pip install dbt-spark[PyHive]`"
             )
 
     @property
