@@ -12,12 +12,9 @@
 
 # dbt-spark
 
-This plugin ports [dbt](https://getdbt.com) functionality to Spark. It supports
-running dbt against Spark clusters that are hosted via Databricks (AWS + Azure),
-Amazon EMR, or Docker.
+This plugin ports [dbt](https://getdbt.com) functionality to Spark. It supports running dbt against Spark clusters that are hosted via Databricks (AWS + Azure), Amazon EMR, or Docker.
 
-We have not tested extensively against older versions of Apache Spark. The
-plugin uses syntax that requires version 2.2.0 or newer.
+We have not tested extensively against older versions of Apache Spark. The plugin uses syntax that requires version 2.2.0 or newer. Some features require Spark 3.0 and/or Delta Lake.
 
 ### Documentation
 For more information on using Spark with dbt, consult the dbt documentation:
@@ -25,7 +22,7 @@ For more information on using Spark with dbt, consult the dbt documentation:
 - [Spark specific configs](https://docs.getdbt.com/reference/resource-configs/spark-configs/)
 
 ### Installation
-This plugin can be installed via pip. Depending on your connection method, you need to specify an extra package.
+This plugin can be installed via pip. Depending on your connection method, you need to specify an extra requirement.
 
 If connecting to Databricks via ODBC driver, it requires [`pyodbc`](https://github.com/mkleehammer/pyodbc). Depending on your system<sup>1</sup>, you can install it seperately or via pip:
 
@@ -57,31 +54,29 @@ A dbt profile for Spark connections support the following configurations:
 
 **Key**:
 - ✅ Required
-- ❔ Optional
 - ❌ Not used
+- ❔ Optional (followed by `default value` in parentheses)
 
 | Option | Description | ODBC | Thrift | HTTP | Example |
 |-|-|-|-|-|-|
 | method | Specify the connection method (`odbc` or `thrift` or `http`) | ✅ | ✅ | ✅ | `odbc` |
 | schema | Specify the schema (database) to build models into | ✅ | ✅ | ✅ | `analytics` |
 | host | The hostname to connect to | ✅ | ✅ | ✅ | `yourorg.sparkhost.com` |
-| port | The port to connect to the host on | ❔ (default: 443) | ❔ (default: 443) | ❔ (default: 10001) | `443` |
+| port | The port to connect to the host on | ❔ (`443`) | ❔ (`443`) | ❔ (`10001`) | `443` |
 | token | The token to use for authenticating to the cluster | ✅ | ❌ | ✅ | `abc123` |
 | auth  | The value of `hive.server2.authentication`    | ❌ | ❔ | ❌ | `KERBEROS` |
 | kerberos_service_name  | Use with `auth='KERBEROS'`     | ❌ | ❔ | ❌ | `hive` |
-| organization | The id of the Azure Databricks workspace being used | See note | ❌ | See note | `1234567891234567` |
-| cluster | The name of the cluster to connect to | One of `cluster` or `endpoint` is ✅ | ❌ | ✅ | `01234-23423-coffeetime` |
-| endpoint | The ID of the SQL endpoint to connect to | One of `cluster` or `endpoint` is ✅ | ❌ | ❌ | `1234567891234a` |
+| organization | Azure Databricks workspace ID (see note) | ❔ | ❌ | ❔ | `1234567891234567` |
+| cluster | The name of the cluster to connect to | ✅ (unless `endpoint`) | ❌ | ✅ | `01234-23423-coffeetime` |
+| endpoint | The ID of the SQL endpoint to connect to | ✅ (unless `cluster`) | ❌ | ❌ | `1234567891234a` |
 | driver | Path of ODBC driver installed or name of ODBC DSN configured | ✅ | ❌ | ❌ | `/opt/simba/spark/lib/64/libsparkodbc_sb64.so` |
 | user | The username to use to connect to the cluster | ❔ | ❔ | ❔ | `hadoop` |
-| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | ❌ | ❔ (default: 10) | ❔ (default: 10) | `60` |
-| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up | ❌ | ❔ (default: 0) | ❔ (default: 0)  | `5` |
+| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | ❌ | ❔ (`10`) | ❔ (`10`) | `60` |
+| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up | ❌ | ❔ (`0`) | ❔ (`0`)  | `5` |
 
-**Databricks** connections differ based on the cloud provider, likely due to differences in how their URLs are generated between the two services.
+**Databricks** connections differ based on the cloud provider:
 
 - **Organization:** To connect to an Azure Databricks cluster, you will need to obtain your organization ID, which is a unique ID Azure Databricks generates for each customer workspace.  To find the organization ID, see https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#step-2-configure-connection-properties. This is a string field; if there is a leading zero, be sure to include it.
-
-- **Port:** Please ignore all references to port 15001 in the databricks-connect docs as that is specific to that tool; port 443 is used for dbt-spark's https connection.
 
 - **Host:** The host field for Databricks can be found at the start of your workspace or cluster url: `region.azuredatabricks.net` for Azure, or `account.cloud.databricks.com` for AWS. Do not include `https://`.
 
@@ -100,7 +95,7 @@ your_profile_name:
       method: odbc
       driver: path/to/driver
       host: yourorg.databricks.com
-      organization: 1234567891234567    # Azure Databricks ONLY
+      organization: 1234567891234567    # Azure Databricks only
       port: 443                         # default
       token: abc123
       schema: analytics
@@ -140,7 +135,7 @@ your_profile_name:
       type: spark
       method: http
       host: yourorg.sparkhost.com
-      organization: 1234567891234567    # Azure Databricks ONLY
+      organization: 1234567891234567    # Azure Databricks only
       port: 443                         # default
       token: abc123
       schema: analytics
@@ -221,19 +216,19 @@ A `docker-compose` environment starts a Spark Thrift server and a Postgres datab
 docker-compose up
 ```
 
-Your profile should look like this:
+Create a profile like this one:
 
 ```
-your_profile_name:
+spark-testing:
   target: local
   outputs:
     local:
-      method: thrift
       type: spark
-      schema: analytics
+      method: thrift
       host: 127.0.0.1
       port: 10000
       user: dbt
+      schema: analytics
       connect_retries: 5
       connect_timeout: 60
 ```
