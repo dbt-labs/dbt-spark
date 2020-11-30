@@ -55,20 +55,27 @@ Connections can be made to Spark in three different modes:
 
 A dbt profile for Spark connections support the following configurations:
 
-| Option          | Description                                                                         | Required?                                                          | Example                                        |
-| --------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------- |
-| method          | Specify the connection method (`odbc` or `thrift` or `http`)                        | Required                                                           | `odbc`                                         |
-| schema          | Specify the schema (database) to build models into                                  | Required                                                           | `analytics`                                    |
-| host            | The hostname to connect to                                                          | Required                                                           | `yourorg.sparkhost.com`                        |
-| port            | The port to connect to the host on                                                  | Optional (default: 443 for `http` and `odbc`, 10001 for `thrift`)  | `443`                                          |
-| token           | The token to use for authenticating to the cluster                                  | Required for `http` and `odbc`                                     | `abc123`                                       |
-| organization    | The id of the Azure Databricks workspace being used; only for Azure Databricks      | See Databricks Note                                                | `1234567891234567`                             |
-| cluster         | The name of the cluster to connect to                                               | Required for `http` and `odbc` if connecting to a specific cluster | `01234-23423-coffeetime`                       |
-| endpoint        | The ID of the SQL endpoint to connect to                                            | Required for `odbc` if connecting to SQL endpoint                  | `1234567891234a`                               |
-| driver          | Path of ODBC driver installed or name of ODBC DSN configured                        | Required for `odbc`                                                | `/opt/simba/spark/lib/64/libsparkodbc_sb64.so` |
-| user            | The username to use to connect to the cluster                                       | Optional                                                           | `hadoop`                                       |
-| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional, relevant for `thrift` + `http` (default: 10)                                             | `60`                                           |
-| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up   | Optional, relevant for `thrift` + `http` (default: 0)                                              | `5`                                            |
+**Key**:
+- ✅ Required
+- ❔ Optional
+- ❌ Not used
+
+| Option | Description | ODBC | Thrift | HTTP | Example |
+|-|-|-|-|-|-|
+| method | Specify the connection method (`odbc` or `thrift` or `http`) | ✅ | ✅ | ✅ | `odbc` |
+| schema | Specify the schema (database) to build models into | ✅ | ✅ | ✅ | `analytics` |
+| host | The hostname to connect to | ✅ | ✅ | ✅ | `yourorg.sparkhost.com` |
+| port | The port to connect to the host on | ❔ (default: 443) | ❔ (default: 443) | ❔ (default: 10001) | `443` |
+| token | The token to use for authenticating to the cluster | ✅ | ❌ | ✅ | `abc123` |
+| auth  | The value of `hive.server2.authentication`    | ❌ | ❔ | ❌ | `KERBEROS` |
+| kerberos_service_name  | Use with `auth='KERBEROS'`     | ❌ | ❔ | ❌ | `hive` |
+| organization | The id of the Azure Databricks workspace being used | See note | ❌ | See note | `1234567891234567` |
+| cluster | The name of the cluster to connect to | One of `cluster` or `endpoint` is ✅ | ❌ | ✅ | `01234-23423-coffeetime` |
+| endpoint | The ID of the SQL endpoint to connect to | One of `cluster` or `endpoint` is ✅ | ❌ | ❌ | `1234567891234a` |
+| driver | Path of ODBC driver installed or name of ODBC DSN configured | ✅ | ❌ | ❌ | `/opt/simba/spark/lib/64/libsparkodbc_sb64.so` |
+| user | The username to use to connect to the cluster | ❔ | ❔ | ❔ | `hadoop` |
+| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | ❌ | ❔ (default: 10) | ❔ (default: 10) | `60` |
+| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up | ❌ | ❔ (default: 0) | ❔ (default: 0)  | `5` |
 
 **Databricks** connections differ based on the cloud provider, likely due to differences in how their URLs are generated between the two services.
 
@@ -83,7 +90,7 @@ A dbt profile for Spark connections support the following configurations:
 
 **Example profiles.yml entries:**
 
-**odbc**
+**ODBC**
 ```
 your_profile_name:
   target: dev
@@ -94,7 +101,7 @@ your_profile_name:
       driver: path/to/driver
       host: yourorg.databricks.com
       organization: 1234567891234567    # Azure Databricks ONLY
-      port: 443
+      port: 443                         # default
       token: abc123
       schema: analytics
 
@@ -103,37 +110,43 @@ your_profile_name:
       endpoint: coffee01234time
 ```
 
-**thrift**
+**Thrift**
 ```
 your_profile_name:
   target: dev
   outputs:
     dev:
-      method: thrift
       type: spark
-      schema: analytics
+      method: thrift
       host: 127.0.0.1
-      port: 10001
+      port: 10001                         # default
+      schema: analytics
+      
+      # optional
       user: hadoop
+      auth: KERBEROS
+      kerberos_service_name: hive
       connect_retries: 5
       connect_timeout: 60
 ```
 
 
-**http**
+**HTTP**
 ```
 your_profile_name:
   target: dev
   outputs:
     dev:
-      method: http
       type: spark
-      schema: analytics
+      method: http
       host: yourorg.sparkhost.com
       organization: 1234567891234567    # Azure Databricks ONLY
-      port: 443
+      port: 443                         # default
       token: abc123
+      schema: analytics
       cluster: 01234-23423-coffeetime
+
+      # optional
       connect_retries: 5
       connect_timeout: 60
 ```
