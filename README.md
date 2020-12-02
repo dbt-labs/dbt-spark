@@ -12,12 +12,9 @@
 
 # dbt-spark
 
-This plugin ports [dbt](https://getdbt.com) functionality to Spark. It supports
-running dbt against Spark clusters that are hosted via Databricks (AWS + Azure),
-Amazon EMR, or Docker.
+This plugin ports [dbt](https://getdbt.com) functionality to Spark. It supports running dbt against Spark clusters that are hosted via Databricks (AWS + Azure), Amazon EMR, or Docker.
 
-We have not tested extensively against older versions of Apache Spark. The
-plugin uses syntax that requires version 2.2.0 or newer.
+We have not tested extensively against older versions of Apache Spark. The plugin uses syntax that requires version 2.2.0 or newer. Some features require Spark 3.0 and/or Delta Lake.
 
 ### Documentation
 For more information on using Spark with dbt, consult the dbt documentation:
@@ -25,118 +22,128 @@ For more information on using Spark with dbt, consult the dbt documentation:
 - [Spark specific configs](https://docs.getdbt.com/reference/resource-configs/spark-configs/)
 
 ### Installation
-This plugin can be installed via pip:
+This plugin can be installed via pip. Depending on your connection method, you need to specify an extra requirement.
+
+If connecting to Databricks via ODBC driver, it requires [`pyodbc`](https://github.com/mkleehammer/pyodbc). Depending on your system<sup>1</sup>, you can install it seperately or via pip:
 
 ```bash
-# Install dbt-spark from PyPi:
-$ pip install dbt-spark
-```
-
-dbt-spark also supports connections via ODBC driver, but it requires [`pyodbc`](https://github.com/mkleehammer/pyodbc). You can install it seperately or via pip as well:
-
-```bash
-# Install dbt-spark w/ pyodbc from PyPi:
+# Install dbt-spark from PyPi for odbc connections:
 $ pip install "dbt-spark[ODBC]"
 ```
 
-See https://github.com/mkleehammer/pyodbc/wiki/Install for more info about installing `pyodbc`.
+If connecting to a Spark cluster via the generic `thrift` or `http` methods, it requires [`PyHive`](https://github.com/dropbox/PyHive):
+
+```bash
+# Install dbt-spark from PyPi for thrift or http connections:
+$ pip install "dbt-spark[PyHive]"
+```
+
+<sup>1</sup>See the [`pyodbc` wiki](https://github.com/mkleehammer/pyodbc/wiki/Install) for OS-specific installation details.
 
 
 ### Configuring your profile
 
 **Connection Method**
 
-Connections can be made to Spark in two different modes. The `http` mode is used when connecting to a managed service such as Databricks, which provides an HTTP endpoint; the `thrift` mode is used to connect directly to the master node of a cluster (either on-premise or in the cloud).
+Connections can be made to Spark in three different modes:
+- `odbc` is the preferred mode when connecting to Databricks. It supports connecting to a SQL Endpoint or an all-purpose interactive cluster.
+- `http` is a more generic mode for connecting to a managed service that provides an HTTP endpoint. Currently, this includes connections to a Databricks interactive cluster.
+- `thrift` connects directly to the lead node of a cluster, either locally hosted / on premise or in the cloud (e.g. Amazon EMR).
 
-A dbt profile can be configured to run against Spark using the following configuration:
+A dbt profile for Spark connections support the following configurations:
 
-| Option          | Description                                                                         | Required?                                                          | Example                                        |
-| --------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------- |
-| method          | Specify the connection method (`thrift` or `http` or `odbc`)                        | Required                                                           | `http`                                         |
-| schema          | Specify the schema (database) to build models into                                  | Required                                                           | `analytics`                                    |
-| host            | The hostname to connect to                                                          | Required                                                           | `yourorg.sparkhost.com`                        |
-| port            | The port to connect to the host on                                                  | Optional (default: 443 for `http` and `odbc`, 10001 for `thrift`)  | `443`                                          |
-| token           | The token to use for authenticating to the cluster                                  | Required for `http` and `odbc`                                     | `abc123`                                       |
-| organization    | The id of the Azure Databricks workspace being used; only for Azure Databricks      | See Databricks Note                                                | `1234567891234567`                             |
-| cluster         | The name of the cluster to connect to                                               | Required for `http` and `odbc` if connecting to a specific cluster | `01234-23423-coffeetime`                       |
-| endpoint        | The ID of the SQL endpoint to connect to                                            | Required for `odbc` if connecting to SQL endpoint                  | `1234567891234a`                               |
-| driver          | Path of ODBC driver installed or name of ODBC DSN configured                        | Required for `odbc`                                                | `/opt/simba/spark/lib/64/libsparkodbc_sb64.so` |
-| user            | The username to use to connect to the cluster                                       | Optional                                                           | `hadoop`                                       |
-| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | Optional (default: 10)                                             | `60`                                           |
-| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up   | Optional (default: 0)                                              | `5`                                            |
+**Key**:
+- ✅ Required
+- ❌ Not used
+- ❔ Optional (followed by `default value` in parentheses)
 
-**Databricks Note**
+| Option | Description | ODBC | Thrift | HTTP | Example |
+|-|-|-|-|-|-|
+| method | Specify the connection method (`odbc` or `thrift` or `http`) | ✅ | ✅ | ✅ | `odbc` |
+| schema | Specify the schema (database) to build models into | ✅ | ✅ | ✅ | `analytics` |
+| host | The hostname to connect to | ✅ | ✅ | ✅ | `yourorg.sparkhost.com` |
+| port | The port to connect to the host on | ❔ (`443`) | ❔ (`443`) | ❔ (`10001`) | `443` |
+| token | The token to use for authenticating to the cluster | ✅ | ❌ | ✅ | `abc123` |
+| auth  | The value of `hive.server2.authentication`    | ❌ | ❔ | ❌ | `KERBEROS` |
+| kerberos_service_name  | Use with `auth='KERBEROS'`     | ❌ | ❔ | ❌ | `hive` |
+| organization | Azure Databricks workspace ID (see note) | ❔ | ❌ | ❔ | `1234567891234567` |
+| cluster | The name of the cluster to connect to | ✅ (unless `endpoint`) | ❌ | ✅ | `01234-23423-coffeetime` |
+| endpoint | The ID of the SQL endpoint to connect to | ✅ (unless `cluster`) | ❌ | ❌ | `1234567891234a` |
+| driver | Path of ODBC driver installed or name of ODBC DSN configured | ✅ | ❌ | ❌ | `/opt/simba/spark/lib/64/libsparkodbc_sb64.so` |
+| user | The username to use to connect to the cluster | ❔ | ❔ | ❔ | `hadoop` |
+| connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | ❌ | ❔ (`10`) | ❔ (`10`) | `60` |
+| connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up | ❌ | ❔ (`0`) | ❔ (`0`)  | `5` |
 
-AWS and Azure Databricks have differences in their connections, likely due to differences in how their URLs are generated between the two services.
+**Databricks** connections differ based on the cloud provider:
 
-**Organization:** To connect to an Azure Databricks cluster, you will need to obtain your organization ID, which is a unique ID Azure Databricks generates for each customer workspace.  To find the organization ID, see https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#step-2-configure-connection-properties. This is a string field; if there is a leading zero, be sure to include it.
+- **Organization:** To connect to an Azure Databricks cluster, you will need to obtain your organization ID, which is a unique ID Azure Databricks generates for each customer workspace.  To find the organization ID, see https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#step-2-configure-connection-properties. This is a string field; if there is a leading zero, be sure to include it.
 
-**Port:** Please ignore all references to port 15001 in the databricks-connect docs as that is specific to that tool; port 443 is used for dbt-spark's https connection.
+- **Host:** The host field for Databricks can be found at the start of your workspace or cluster url: `region.azuredatabricks.net` for Azure, or `account.cloud.databricks.com` for AWS. Do not include `https://`.
 
-**Host:** The host field for Databricks can be found at the start of your workspace or cluster url: `region.azuredatabricks.net` for Azure, or `account.cloud.databricks.com` for AWS. Do not include `https://`.
-
-**Usage with Amazon EMR**
-
-To connect to Spark running on an Amazon EMR cluster, you will need to run `sudo /usr/lib/spark/sbin/start-thriftserver.sh` on the master node of the cluster to start the Thrift server (see https://aws.amazon.com/premiumsupport/knowledge-center/jdbc-connection-emr/ for further context). You will also need to connect to port `10001`, which will connect to the Spark backend Thrift server; port `10000` will instead connect to a Hive backend, which will not work correctly with dbt.
+**Amazon EMR**: To connect to Spark running on an Amazon EMR cluster, you will need to run `sudo /usr/lib/spark/sbin/start-thriftserver.sh` on the master node of the cluster to start the Thrift server (see https://aws.amazon.com/premiumsupport/knowledge-center/jdbc-connection-emr/ for further context). You will also need to connect to port `10001`, which will connect to the Spark backend Thrift server; port `10000` will instead connect to a Hive backend, which will not work correctly with dbt.
 
 
 **Example profiles.yml entries:**
 
-**http, e.g. Databricks**
+**ODBC**
 ```
 your_profile_name:
   target: dev
   outputs:
     dev:
-      method: http
       type: spark
-      schema: analytics
-      host: yourorg.sparkhost.com
-      organization: 1234567891234567    # Azure Databricks ONLY
-      port: 443
-      token: abc123
-      cluster: 01234-23423-coffeetime
-      connect_retries: 5
-      connect_timeout: 60
-```
-
-**Thrift connection**
-```
-your_profile_name:
-  target: dev
-  outputs:
-    dev:
-      method: thrift
-      type: spark
-      schema: analytics
-      host: 127.0.0.1
-      port: 10001
-      user: hadoop
-      connect_retries: 5
-      connect_timeout: 60
-```
-
-**ODBC connection**
-```
-your_profile_name:
-  target: dev
-  outputs:
-    dev:
       method: odbc
-      type: spark
-      schema: analytics
-      host: yourorg.sparkhost.com
-      organization: 1234567891234567    # Azure Databricks ONLY
-      port: 443
+      driver: path/to/driver
+      host: yourorg.databricks.com
+      organization: 1234567891234567    # Azure Databricks only
+      port: 443                         # default
       token: abc123
+      schema: analytics
 
       # one of:
       cluster: 01234-23423-coffeetime
       endpoint: coffee01234time
+```
 
-      driver: path/to/driver
-      connect_retries: 5    # cluster only
-      connect_timeout: 60   # cluster only
+**Thrift**
+```
+your_profile_name:
+  target: dev
+  outputs:
+    dev:
+      type: spark
+      method: thrift
+      host: 127.0.0.1
+      port: 10001                         # default
+      schema: analytics
+      
+      # optional
+      user: hadoop
+      auth: KERBEROS
+      kerberos_service_name: hive
+      connect_retries: 5
+      connect_timeout: 60
+```
+
+
+**HTTP**
+```
+your_profile_name:
+  target: dev
+  outputs:
+    dev:
+      type: spark
+      method: http
+      host: yourorg.sparkhost.com
+      organization: 1234567891234567    # Azure Databricks only
+      port: 443                         # default
+      token: abc123
+      schema: analytics
+      cluster: 01234-23423-coffeetime
+
+      # optional
+      connect_retries: 5
+      connect_timeout: 60
 ```
 
 
@@ -209,19 +216,19 @@ A `docker-compose` environment starts a Spark Thrift server and a Postgres datab
 docker-compose up
 ```
 
-Your profile should look like this:
+Create a profile like this one:
 
 ```
-your_profile_name:
+spark-testing:
   target: local
   outputs:
     local:
-      method: thrift
       type: spark
-      schema: analytics
+      method: thrift
       host: 127.0.0.1
       port: 10000
       user: dbt
+      schema: analytics
       connect_retries: 5
       connect_timeout: 60
 ```
