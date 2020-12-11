@@ -80,20 +80,20 @@
     Invalid file format: {{ file_format }}
     Snapshot functionality requires file_format be set to 'delta'
   {%- endset %}
-  
-  {%- if file_format != 'delta' -%}
-    {% do exceptions.raise_compiler_error(invalid_format_msg) %}
-  {% endif %}
-
-  {% if not adapter.check_schema_exists(model.database, model.schema) %}
-    {% do create_schema(model.database, model.schema) %}
-  {% endif %}
 
   {% set target_relation_exists, target_relation = get_or_create_relation(
           database=none,
           schema=model.schema,
           identifier=target_table,
           type='table') -%}
+  
+  {%- if not target_relation_exists.is_delta -%}
+    {% do exceptions.raise_compiler_error(invalid_format_msg) %}
+  {% endif %}
+
+  {% if not adapter.check_schema_exists(model.database, model.schema) %}
+    {% do create_schema(model.database, model.schema) %}
+  {% endif %}
 
   {%- if not target_relation.is_table -%}
     {% do exceptions.relation_wrong_type(target_relation, 'table') %}

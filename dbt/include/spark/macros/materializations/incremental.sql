@@ -24,7 +24,7 @@
   {% do return(file_format) %}
 {% endmacro %}
 
-{% macro dbt_spark_validate_get_incremental_strategy(file_format) %}
+{% macro dbt_spark_validate_get_incremental_strategy(relation) %}
   {#-- Find and validate the incremental strategy #}
   {%- set strategy = config.get("incremental_strategy", default="insert_overwrite") -%}
 
@@ -41,7 +41,7 @@
   {% if strategy not in ['merge', 'insert_overwrite'] %}
     {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
   {%-else %}
-    {% if strategy == 'merge' and file_format != 'delta' %}
+    {% if strategy == 'merge' and not relation.is_delta %}
       {% do exceptions.raise_compiler_error(invalid_merge_msg) %}
     {% endif %}
   {% endif %}
@@ -49,15 +49,14 @@
   {% do return(strategy) %}
 {% endmacro %}
 
-{% macro dbt_spark_validate_merge(file_format) %}
+{% macro dbt_spark_validate_merge(relation) %}
   {% set invalid_file_format_msg -%}
     You can only choose the 'merge' incremental_strategy when file_format is set to 'delta'
   {%- endset %}
 
-  {% if file_format != 'delta' %}
+  {% if not relation.is_delta %}
     {% do exceptions.raise_compiler_error(invalid_file_format_msg) %}
   {% endif %}
-
 {% endmacro %}
 
 
@@ -84,20 +83,20 @@
 
 
 {% materialization incremental, adapter='spark' -%}
-  {#-- Validate early so we don't run SQL if the file_format is invalid --#}
-  {% set file_format = dbt_spark_validate_get_file_format() -%}
-  {#-- Validate early so we don't run SQL if the strategy is invalid --#}
-  {% set strategy = dbt_spark_validate_get_incremental_strategy(file_format) -%}
-
-  {%- set full_refresh_mode = (flags.FULL_REFRESH == True) -%}
-
   {% set target_relation = this %}
   {% set existing_relation = load_relation(this) %}
   {% set tmp_relation = make_temp_relation(this) %}
 
+  {#-- Validate early so we don't run SQL if the file_format is invalid --#}
+  {% set file_format = dbt_spark_validate_get_file_format() -%}
+  {#-- Validate early so we don't run SQL if the strategy is invalid --#}
+  {% set strategy = dbt_spark_validate_get_incremental_strategy(target_relation) -%}
+
+  {%- set full_refresh_mode = (flags.FULL_REFRESH == True) -%}
+
   {% if strategy == 'merge' %}
     {%- set unique_key = config.require('unique_key') -%}
-    {% do dbt_spark_validate_merge(file_format) %}
+    {% do dbt_spark_validate_merge(target_relation) %}
   {% endif %}
 
   {% if config.get('partition_by') %}
