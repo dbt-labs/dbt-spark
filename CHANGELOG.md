@@ -6,6 +6,12 @@
 ### Under the hood
 - Add changelog, issue templates ([#119](https://github.com/fishtown-analytics/dbt-spark/pull/119), [#120](https://github.com/fishtown-analytics/dbt-spark/pull/120))
 
+### Fixes
+- Handle case of 0 retries better for HTTP Spark Connections ([#132](https://github.com/fishtown-analytics/dbt-spark/pull/132))
+
+### Contributors
+- [@danielvdende](https://github.com/danielvdende) ([#132](https://github.com/fishtown-analytics/dbt-spark/pull/132))
+
 ## dbt-spark 0.18.1.1 (November 13, 2020)
 
 ### Fixes
