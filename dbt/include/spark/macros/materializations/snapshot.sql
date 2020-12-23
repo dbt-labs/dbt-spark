@@ -75,23 +75,28 @@
   {%- set strategy_name = config.get('strategy') -%}
   {%- set unique_key = config.get('unique_key') %}
   {%- set file_format = config.get('file_format', 'parquet') -%}
-  
-  {% set invalid_format_msg -%}
-    Invalid file format: {{ file_format }}
-    Snapshot functionality requires file_format be set to 'delta'
-  {%- endset %}
 
   {% set target_relation_exists, target_relation = get_or_create_relation(
           database=none,
           schema=model.schema,
           identifier=target_table,
           type='table') -%}
-  
-{%- if not (target_relation.is_delta or (
-    not target_relation_exists and
-    config.get('file_format', validator=validation.any[basestring]) == 'delta'
-)) -%}
+
+  {%- if file_format != 'delta' -%}
+    {% set invalid_format_msg -%}
+      Invalid file format: {{ file_format }}
+      Snapshot functionality requires file_format be set to 'delta'
+    {%- endset %}
     {% do exceptions.raise_compiler_error(invalid_format_msg) %}
+  {% endif %}
+
+  {%- if target_relation_exists -%}
+    {%- if not target_relation.is_delta -%}
+      {% set invalid_format_msg -%}
+        The existing table {{ model.schema }}.{{ target_table }} is in another format than 'delta'
+      {%- endset %}
+      {% do exceptions.raise_compiler_error(invalid_format_msg) %}
+    {% endif %}
   {% endif %}
 
   {% if not adapter.check_schema_exists(model.database, model.schema) %}
