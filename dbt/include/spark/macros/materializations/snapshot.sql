@@ -87,7 +87,10 @@
           identifier=target_table,
           type='table') -%}
   
-  {%- if not target_relation_exists.is_delta -%}
+{%- if not (target_relation.is_delta or (
+    not target_relation_exists and
+    config.get('file_format', validator=validation.any[basestring]) == 'delta'
+)) -%}
     {% do exceptions.raise_compiler_error(invalid_format_msg) %}
   {% endif %}
 
