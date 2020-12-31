@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dataclasses import dataclass
 
 from dbt.adapters.base.relation import BaseRelation, Policy
@@ -23,6 +25,7 @@ class SparkRelation(BaseRelation):
     quote_policy: SparkQuotePolicy = SparkQuotePolicy()
     include_policy: SparkIncludePolicy = SparkIncludePolicy()
     quote_character: str = '`'
+    is_delta: Optional[bool] = None
 
     def __post_init__(self):
         if self.database != self.schema and self.database:

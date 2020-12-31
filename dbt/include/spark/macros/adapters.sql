@@ -77,7 +77,11 @@
   {% if temporary -%}
     {{ create_temporary_view(relation, sql) }}
   {%- else -%}
-    create table {{ relation }}
+    {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
+      create or replace table {{ relation }}
+    {% else %}
+      create table {{ relation }}
+    {% endif %}
     {{ file_format_clause() }}
     {{ partition_cols(label="partitioned by") }}
     {{ clustered_cols(label="clustered by") }}

@@ -2,6 +2,7 @@ from concurrent.futures import Future
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Union, Iterable
 import agate
+from dbt.contracts.relation import RelationType
 
 import dbt
 import dbt.exceptions
@@ -131,11 +132,14 @@ class SparkAdapter(SQLAdapter):
                     f'got {len(row)} values, expected 4'
                 )
             _schema, name, _, information = row
-            rel_type = ('view' if 'Type: VIEW' in information else 'table')
+            rel_type = RelationType.View \
+                if 'Type: VIEW' in information else RelationType.Table
+            is_delta = 'Provider: delta' in information
             relation = self.Relation.create(
                 schema=_schema,
                 identifier=name,
-                type=rel_type
+                type=rel_type,
+                is_delta=is_delta
             )
             relations.append(relation)
 
