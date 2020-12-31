@@ -33,7 +33,8 @@ projects:
     dbt_project_yml: *file_format_delta
 sequences:
   test_dbt_empty: empty
-  test_dbt_base: base
+  # The SQL Endpoint no longer supports `set` ??
+  # test_dbt_base: base
   test_dbt_ephemeral: ephemeral
   # The SQL Endpoint does not support `create temporary view`
   # test_dbt_incremental: incremental
