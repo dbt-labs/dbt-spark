@@ -401,7 +401,7 @@ class SparkConnectionManager(SQLConnectionManager):
                         msg += ', is your token valid?'
                     raise dbt.exceptions.FailedToConnectException(msg) from e
                 retryable_message = _is_retryable_error(e)
-                if retryable_message:
+                if retryable_message and creds.connect_retries > 0:
                     msg = (
                         f"Warning: {retryable_message}\n\tRetrying in "
                         f"{creds.connect_timeout} seconds "
