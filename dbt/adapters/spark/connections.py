@@ -273,7 +273,7 @@ class SparkConnectionManager(SQLConnectionManager):
         connection.handle.cancel()
 
     @classmethod
-    def get_status(cls, cursor):
+    def get_response(cls, cursor):
         return 'OK'
 
     # No transactions on Spark....

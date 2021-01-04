@@ -22,7 +22,8 @@ class TestSparkAdapter(unittest.TestCase):
             'quoting': {
                 'identifier': False,
                 'schema': False,
-            }
+            },
+            'config-version': 2
         }
 
     def _get_target_http(self, project):
