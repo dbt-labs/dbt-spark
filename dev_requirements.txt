@@ -10,6 +10,6 @@ pytest-xdist>=2.1.0,<3
 flaky>=3.5.3,<4
 
 # Test requirements
-pytest-dbt-adapter==0.3.0
+pytest-dbt-adapter==0.4.0
 sasl==0.2.1
 thrift_sasl==0.4.1
