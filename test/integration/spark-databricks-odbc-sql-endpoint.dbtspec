@@ -10,16 +10,18 @@ target:
   connect_retries: 5
   connect_timeout: 60
 projects:
-  - overrides: incremental
-    paths:
-      "models/incremental.sql":
-        materialized: incremental
-        body: "select * from {{ source('raw', 'seed') }}"
-    facts:
-      base:
-        rowcount: 10
-      added:
-        rowcount: 20
+#  - overrides: incremental
+#    paths:
+#      "models/incremental.sql":
+#        materialized: incremental
+#        file_format: delta
+#        incremental_strategy: merge
+#        body: "select * from {{ source('raw', 'seed') }}"
+#    facts:
+#      base:
+#        rowcount: 10
+#      added:
+#        rowcount: 20
   - overrides: snapshot_strategy_check_cols
     dbt_project_yml: &file_format_delta
       # we're going to UPDATE the seed tables as part of testing, so we must make them delta format
@@ -33,10 +35,10 @@ projects:
     dbt_project_yml: *file_format_delta
 sequences:
   test_dbt_empty: empty
-  # The SQL Endpoint no longer supports `set` ??
-  # test_dbt_base: base
   test_dbt_ephemeral: ephemeral
-  # The SQL Endpoint does not support `create temporary view`
+  # The SQL Endpoint does not yet support `create temporary view`
+  # As such, incremental models are currently unsupported
+  # test_dbt_base: base
   # test_dbt_incremental: incremental
   test_dbt_snapshot_strategy_timestamp: snapshot_strategy_timestamp
   test_dbt_snapshot_strategy_check_cols: snapshot_strategy_check_cols

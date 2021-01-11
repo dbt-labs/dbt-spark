@@ -37,12 +37,21 @@
     Invalid incremental strategy provided: {{ strategy }}
     You can only choose this strategy when file_format is set to 'delta'
   {%- endset %}
+  
+  {% set invalid_insert_overwrite_msg -%}
+    Invalid incremental strategy provided: {{ strategy }}
+    You cannot use this strategy when connecting to a SQL Endpoint
+    Use `merge` with a `unique_key` and file_format = `delta` instead
+  {%- endset %}
 
   {% if strategy not in ['merge', 'insert_overwrite'] %}
     {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
   {%-else %}
     {% if strategy == 'merge' and file_format != 'delta' %}
       {% do exceptions.raise_compiler_error(invalid_merge_msg) %}
+    {% endif %}
+    {% if strategy == 'insert_overwrite' and target.endpoint %}
+      {% do exceptions.raise_compiler_error(invalid_insert_overwrite_msg) %}
     {% endif %}
   {% endif %}
 
@@ -100,15 +109,19 @@
     {% do dbt_spark_validate_merge(file_format) %}
   {% endif %}
 
-  {% if config.get('partition_by') %}
-    {% call statement() %}
-      set spark.sql.sources.partitionOverwriteMode = DYNAMIC
-    {% endcall %}
-  {% endif %}
+  {%- if strategy == 'insert_overwrite' -%}
 
-  {% call statement() %}
-    set spark.sql.hive.convertMetastoreParquet = false
-  {% endcall %}
+    {% if config.get('partition_by') %}
+      {% call statement() %}
+        set spark.sql.sources.partitionOverwriteMode = DYNAMIC
+      {% endcall %}
+    {% endif %}
+  
+    {% call statement() %}
+      set spark.sql.hive.convertMetastoreParquet = false
+    {% endcall %}
+  
+  {%- endif -%}
 
   {{ run_hooks(pre_hooks) }}
 
