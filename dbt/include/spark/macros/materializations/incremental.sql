@@ -109,7 +109,8 @@
     {% do dbt_spark_validate_merge(file_format) %}
   {% endif %}
 
-  {%- if strategy == 'insert_overwrite' -%}
+  {%- if strategy == 'insert_overwrite' and file_format != 'delta' -%}
+  {# these should only be necessary for `insert overwrite` on non-delta formats #}
 
     {% if config.get('partition_by') %}
       {% call statement() %}
