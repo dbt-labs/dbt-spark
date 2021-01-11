@@ -1,14 +1,19 @@
 ## dbt-spark 0.19.0 (Release TBD)
 
+### Under the hood
+- Disable `incremental_strategy: insert_overwrite` when connecting to Databricks SQL Endpoint, as it does not support `set` statements for Spark configs ([#133](https://github.com/fishtown-analytics/dbt-spark/pull/133), [#138](https://github.com/fishtown-analytics/dbt-spark/pull/138))
+
+## dbt-spark 0.19.0-rc1 (January 8, 2021)
+
 ### Breaking changes
 - Users of the `http` and `thrift` connection methods need to install extra requirements: `pip install dbt-spark[PyHive]` ([#109](https://github.com/fishtown-analytics/dbt-spark/pull/109), [#126](https://github.com/fishtown-analytics/dbt-spark/pull/126))
 
 ### Under the hood
-- Enable `CREATE OR REPLACE` support when using Delta. Instead of dropping and recreating the table, it will keep the existing table, and add a new version as supported by Delta. This will ensure that the table stays available when running the pipeline, and you can track the history.
-- Add changelog, issue templates ([#119](https://github.com/fishtown-analytics/dbt-spark/pull/119), [#120](https://github.com/fishtown-analytics/dbt-spark/pull/120))
+- Enable `CREATE OR REPLACE` support when using Delta. Instead of dropping and recreating the table, it will keep the existing table, and add a new version as supported by Delta. This will ensure that the table stays available when running the pipeline, and you can track the history ([#124](https://github.com/fishtown-analytics/dbt-spark/pull/124), [#125](https://github.com/fishtown-analytics/dbt-spark/pull/120))
+- Add changelog, issue templates ([#125](https://github.com/fishtown-analytics/dbt-spark/pull/119), [#120](https://github.com/fishtown-analytics/dbt-spark/pull/120))
 
 ### Fixes
-- Handle case of 0 retries better for HTTP Spark Connections ([#132](https://github.com/fishtown-analytics/dbt-spark/pull/132))
+- Handle case of 0 retries better for HTTP Spark Connections ([#131](https://github.com/fishtown-analytics/dbt-spark/pull/131), [#132](https://github.com/fishtown-analytics/dbt-spark/pull/132))
 
 ### Contributors
 - [@danielvdende](https://github.com/danielvdende) ([#132](https://github.com/fishtown-analytics/dbt-spark/pull/132))
