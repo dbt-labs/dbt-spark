@@ -40,8 +40,8 @@
   
   {% set invalid_insert_overwrite_msg -%}
     Invalid incremental strategy provided: {{ strategy }}
-    You cannot use this strategy when connecting to a SQL Endpoint
-    Use `merge` with a `unique_key` and file_format = `delta` instead
+    You can only choose this strategy when file_format is set to 'delta'
+    if connecting to a SQL Endpoint 
   {%- endset %}
 
   {% if strategy not in ['merge', 'insert_overwrite'] %}
@@ -50,7 +50,7 @@
     {% if strategy == 'merge' and file_format != 'delta' %}
       {% do exceptions.raise_compiler_error(invalid_merge_msg) %}
     {% endif %}
-    {% if strategy == 'insert_overwrite' and target.endpoint %}
+    {% if strategy == 'insert_overwrite' and file_format != 'delta' and target.endpoint %}
       {% do exceptions.raise_compiler_error(invalid_insert_overwrite_msg) %}
     {% endif %}
   {% endif %}
