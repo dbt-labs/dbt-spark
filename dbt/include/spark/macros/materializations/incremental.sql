@@ -100,15 +100,9 @@
     {% do dbt_spark_validate_merge(file_format) %}
   {% endif %}
 
-  {% if config.get('partition_by') %}
-    {% call statement() %}
-      set spark.sql.sources.partitionOverwriteMode = DYNAMIC
-    {% endcall %}
+  {% if strategy == 'insert_overwrite' and config.get('partition_by') %}
+    set spark.sql.sources.partitionOverwriteMode = DYNAMIC
   {% endif %}
-
-  {% call statement() %}
-    set spark.sql.hive.convertMetastoreParquet = false
-  {% endcall %}
 
   {{ run_hooks(pre_hooks) }}
 
