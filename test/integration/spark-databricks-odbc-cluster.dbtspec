@@ -10,16 +10,6 @@ target:
   connect_retries: 5
   connect_timeout: 60
 projects:
-  - overrides: incremental
-    paths:
-      "models/incremental.sql":
-        materialized: incremental
-        body: "select * from {{ source('raw', 'seed') }}"
-    facts:
-      base:
-        rowcount: 10
-      added:
-        rowcount: 20
   - overrides: snapshot_strategy_check_cols
     dbt_project_yml: &file_format_delta
       # we're going to UPDATE the seed tables as part of testing, so we must make them delta format
