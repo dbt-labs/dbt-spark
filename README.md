@@ -168,7 +168,8 @@ The following configurations can be supplied to models run with the dbt-spark pl
 **Incremental Models**
 
 To use incremental models, specify a `partition_by` clause in your model config. The default incremental strategy used is `insert_overwrite`, which will overwrite the partitions included in your query. Be sure to re-select _all_ of the relevant
-data for a partition when using the `insert_overwrite` strategy. If a `partition_by` config is not specified, dbt will overwrite the entire table as an atomic operation, replacing it with new data of the same schema. This is analogous to `truncate` + `insert`.
+data for a partition when using the `insert_overwrite` strategy. If a `partition_by` config is not specified, dbt will simply
+append new data to the model, without overwriting any existing data.
 
 ```
 {{ config(

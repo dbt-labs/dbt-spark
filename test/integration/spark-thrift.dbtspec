@@ -7,17 +7,6 @@ target:
   connect_retries: 5
   connect_timeout: 60
   schema: "analytics_{{ var('_dbt_random_suffix') }}"
-projects:
-  - overrides: incremental
-    paths:
-      "models/incremental.sql":
-        materialized: incremental
-        body: "select * from {{ source('raw', 'seed') }}"
-    facts:
-      base:
-        rowcount: 10
-      added:
-        rowcount: 20
 sequences:
   test_dbt_empty: empty
   test_dbt_base: base
