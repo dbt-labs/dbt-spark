@@ -37,12 +37,30 @@
     Invalid incremental strategy provided: {{ strategy }}
     You can only choose this strategy when file_format is set to 'delta'
   {%- endset %}
+  
+  {% set invalid_insert_overwrite_delta_msg -%}
+    Invalid incremental strategy provided: {{ strategy }}
+    You cannot use this strategy when file_format is set to 'delta'
+    Use the `merge` strategy instead
+  {%- endset %}
+  
+  {% set invalid_insert_overwrite_endpoint_msg -%}
+    Invalid incremental strategy provided: {{ strategy }}
+    You cannot use this strategy when connecting via endpoint
+    Use `incremental_strategy: merge` with `file_format: delta` instead
+  {%- endset %}
 
   {% if strategy not in ['merge', 'insert_overwrite'] %}
     {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
   {%-else %}
     {% if strategy == 'merge' and file_format != 'delta' %}
       {% do exceptions.raise_compiler_error(invalid_merge_msg) %}
+    {% endif %}
+    {% if strategy == 'insert_overwrite' and file_format == 'delta' %}
+      {% do exceptions.raise_compiler_error(invalid_insert_overwrite_delta_msg) %}
+    {% endif %}
+    {% if strategy == 'insert_overwrite' and target.endpoint %}
+      {% do exceptions.raise_compiler_error(invalid_insert_overwrite_endpoint_msg) %}
     {% endif %}
   {% endif %}
 
