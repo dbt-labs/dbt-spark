@@ -161,50 +161,67 @@ The following configurations can be supplied to models run with the dbt-spark pl
 | partition_by         | Partition the created table by the specified columns. A directory is created for each partition.                                                            | Optional                                | `partition_1`        |
 | clustered_by         | Each partition in the created table will be split into a fixed number of buckets by the specified columns.                                                  | Optional                                | `cluster_1`          |
 | buckets              | The number of buckets to create while clustering                                                                                                            | Required if `clustered_by` is specified | `8`                  |
-| incremental_strategy | The strategy to use for incremental models (`insert_overwrite` or `merge`). Note `merge` requires `file_format` = `delta` and `unique_key` to be specified. | Optional (default: `insert_overwrite`)  | `merge`              |
+| incremental_strategy | The strategy to use for incremental models (`append`, `insert_overwrite`, or `merge`). | Optional (default: `append`)  | `merge`              |
 | persist_docs         | Whether dbt should include the model description as a table `comment`                                                                                       | Optional                                | `{'relation': true}` |
 
 
 **Incremental Models**
 
-To use incremental models, specify a `partition_by` clause in your model config. The default incremental strategy used is `insert_overwrite`, which will overwrite the partitions included in your query. Be sure to re-select _all_ of the relevant
-data for a partition when using the `insert_overwrite` strategy. If a `partition_by` config is not specified, dbt will simply
-append new data to the model, without overwriting any existing data.
+dbt has a number of ways to build models incrementally, called "incremental strategies." Some strategies depend on certain file formats, connection types, and other model configurations:
+- `append` (default): Insert new records without updating or overwriting any existing data.
+- `insert_overwrite`: If `partition_by` is specified, overwrite partitions in the table with new data. (Be sure to re-select _all_ of the relevant data for a partition.) If no `partition_by` is specified, overwrite the entire table with new data.  [Cannot be used with `file_format: delta`. Not available on Databricks SQL Endpoints. For atomic replacement of Delta tables, use the `table` materialization.]
+- `merge`: Match records based on a `unique_key`; update old records, insert new ones. (If no `unique_key` is specified, all new data is inserted, similar to `append`.) [Requires `file_format: delta`. Available only on Databricks Runtime.]
 
-```
+Examples:
+
+```sql
 {{ config(
     materialized='incremental',
+    incremental_strategy='append'
+) }}
+
+
+--  All rows returned by this query will be appended to the existing table
+
+select * from {{ ref('events') }}
+{% if is_incremental() %}
+  where event_ts > (select max(event_ts) from {{ this }})
+{% endif %}
+```
+
+```sql
+{{ config(
+    materialized='incremental',
+    incremental_strategy='merge',
     partition_by=['date_day'],
     file_format='parquet'
 ) }}
 
-/*
-  Every partition returned by this query will be overwritten
-  when this model runs
-*/
+-- Every partition returned by this query will overwrite existing partitions
 
 select
     date_day,
     count(*) as users
 
 from {{ ref('events') }}
-where date_day::date >= '2019-01-01'
+{% if is_incremental() %}
+  where date_day > (select max(date_day) from {{ this }})
+{% endif %}
 group by 1
 ```
 
-The `merge` strategy is only supported when using file_format `delta` (supported in Databricks). If a `unique key` is specified, the statement will match existing records and overwrite them with new values. If a `unique key` config is not specified, dbt will simply
-append new data to the model, without overwriting any existing data. (For atomic replacement of an entire Delta table, use the `'table'` materialization instead.)
-
-```
+```sql
 {{ config(
     materialized='incremental',
     incremental_strategy='merge',
-    partition_by=['date_day'],
+    unique_key='event_id',
     file_format='delta'
 ) }}
 
-select *
-from {{ ref('events') }}
+-- Existing events, matched on `event_id`, will be updated
+-- New events will be appended
+
+select * from {{ ref('events') }}
 {% if is_incremental() %}
   where date_day > (select max(date_day) from {{ this }})
 {% endif %}

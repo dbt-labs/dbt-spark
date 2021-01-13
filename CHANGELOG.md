@@ -2,6 +2,10 @@
 
 ### Breaking changes
 - Users of the `http` and `thrift` connection methods need to install extra requirements: `pip install dbt-spark[PyHive]` ([#109](https://github.com/fishtown-analytics/dbt-spark/pull/109), [#126](https://github.com/fishtown-analytics/dbt-spark/pull/126))
+- Incremental models have `incremental_strategy: append` by default. This strategy adds new records
+without updating or overwriting existing records. For that, use `merge` or `insert_overwrite` instead, depending
+on the file format, connection method, and attributes of your underlying data. dbt will try to raise a helpful error
+if you configure a strategy that is not supported for a given file format or connection. ([#140](https://github.com/fishtown-analytics/dbt-spark/pull/140), [#141](https://github.com/fishtown-analytics/dbt-spark/pull/141))
 
 ### Under the hood
 - Enable `CREATE OR REPLACE` support when using Delta. Instead of dropping and recreating the table, it will keep the existing table, and add a new version as supported by Delta. This will ensure that the table stays available when running the pipeline, and you can track the history.

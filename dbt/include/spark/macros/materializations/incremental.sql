@@ -8,6 +8,17 @@
 
 {% endmacro %}
 
+
+{% macro get_insert_into_sql(source_relation, target_relation) %}
+
+    {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
+    {%- set dest_cols_csv = dest_columns | map(attribute='quoted') | join(', ') -%}
+    insert into table {{ target_relation }}
+    select {{dest_cols_csv}} from {{ source_relation.include(database=false, schema=false) }}
+
+{% endmacro %}
+
+
 {% macro dbt_spark_validate_get_file_format() %}
   {#-- Find and validate the file format #}
   {%- set file_format = config.get("file_format", default="parquet") -%}
@@ -24,13 +35,14 @@
   {% do return(file_format) %}
 {% endmacro %}
 
+
 {% macro dbt_spark_validate_get_incremental_strategy(file_format) %}
   {#-- Find and validate the incremental strategy #}
-  {%- set strategy = config.get("incremental_strategy", default="insert_overwrite") -%}
+  {%- set strategy = config.get("incremental_strategy", default="append") -%}
 
   {% set invalid_strategy_msg -%}
     Invalid incremental strategy provided: {{ strategy }}
-    Expected one of: 'merge', 'insert_overwrite'
+    Expected one of: 'append', 'merge', 'insert_overwrite'
   {%- endset %}
 
   {% set invalid_merge_msg -%}
@@ -41,16 +53,16 @@
   {% set invalid_insert_overwrite_delta_msg -%}
     Invalid incremental strategy provided: {{ strategy }}
     You cannot use this strategy when file_format is set to 'delta'
-    Use the `merge` strategy instead
+    Use the 'append' or 'merge' strategy instead
   {%- endset %}
   
   {% set invalid_insert_overwrite_endpoint_msg -%}
     Invalid incremental strategy provided: {{ strategy }}
     You cannot use this strategy when connecting via endpoint
-    Use `incremental_strategy: merge` with `file_format: delta` instead
+    Use the 'append' or 'merge' strategy instead
   {%- endset %}
 
-  {% if strategy not in ['merge', 'insert_overwrite'] %}
+  {% if strategy not in ['append', 'merge', 'insert_overwrite'] %}
     {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
   {%-else %}
     {% if strategy == 'merge' and file_format != 'delta' %}
@@ -88,11 +100,14 @@
 
 
 {% macro dbt_spark_get_incremental_sql(strategy, source, target, unique_key) %}
-  {%- if strategy == 'insert_overwrite' -%}
+  {%- if strategy == 'append' -%}
+    {#-- insert new records into existing table, without updating or overwriting #}
+    {{ get_insert_into_sql(source, target) }}
+  {%- elif strategy == 'insert_overwrite' -%}
     {#-- insert statements don't like CTEs, so support them via a temp view #}
     {{ get_insert_overwrite_sql(source, target) }}
-  {%- else -%}
-    {#-- merge all columns with databricks delta - schema changes are handled for us #}
+  {%- elif strategy == 'merge' -%}
+  {#-- merge all columns with databricks delta - schema changes are handled for us #}
     {{ get_merge_sql(target, source, unique_key, dest_columns=none, predicates=none) }}
   {%- endif -%}
 
