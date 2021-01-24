@@ -39,4 +39,8 @@
         <value>dbt</value>
     </property>
 
+    <property>
+        <name>datanucleus.schema.autoCreateAll</name>
+        <value>true</value>
+    </property>
 </configuration>

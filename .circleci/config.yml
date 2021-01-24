@@ -11,11 +11,14 @@ jobs:
       - run: tox -e flake8,unit
 
   integration-spark-thrift:
+    parameters:
+      spark-version:
+        type: string
     environment:
       DBT_INVOCATION_ENV: circle
     docker:
       - image: fishtownanalytics/test-container:10
-      - image: godatadriven/spark:2
+      - image: godatadriven/spark:<<parameters.spark-version>>
         environment:
           WAIT_FOR: localhost:5432
         command: >
@@ -25,6 +28,8 @@ jobs:
           --conf spark.hadoop.javax.jdo.option.ConnectionUserName=dbt
           --conf spark.hadoop.javax.jdo.option.ConnectionPassword=dbt
           --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+          -hiveconf "datanucleus.schema.autoCreateAll=true"
+          -hiveconf "hive.metastore.schema.verification=false"
 
       - image: postgres:9.6.17-alpine
         environment:
@@ -85,6 +90,9 @@ workflows:
     jobs:
       - unit
       - integration-spark-thrift:
+          matrix:
+            parameters:
+              spark-version: ["2", "3.0.0"]
           requires:
             - unit
       - integration-spark-databricks-http:
