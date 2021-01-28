@@ -69,7 +69,7 @@ A dbt profile for Spark connections support the following configurations:
 | organization | Azure Databricks workspace ID (see note) | ❔ | ❌ | ❔ | `1234567891234567` |
 | cluster | The name of the cluster to connect to | ✅ (unless `endpoint`) | ❌ | ✅ | `01234-23423-coffeetime` |
 | endpoint | The ID of the SQL endpoint to connect to | ✅ (unless `cluster`) | ❌ | ❌ | `1234567891234a` |
-| driver | Path of ODBC driver installed or name of ODBC DSN configured | ✅ | ❌ | ❌ | `/opt/simba/spark/lib/64/libsparkodbc_sb64.so` |
+| driver | Path of ODBC driver installed or name of the ODBC driver configured | ✅ | ❌ | ❌ | `/opt/simba/spark/lib/64/libsparkodbc_sb64.so` |
 | user | The username to use to connect to the cluster | ❔ | ❔ | ❔ | `hadoop` |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | ❌ | ❔ (`10`) | ❔ (`10`) | `60` |
 | connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up | ❌ | ❔ (`0`) | ❔ (`0`)  | `5` |
