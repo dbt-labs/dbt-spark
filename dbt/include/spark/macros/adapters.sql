@@ -4,6 +4,17 @@
     using {{ file_format }}
   {%- endif %}
 {%- endmacro -%}
+                                                                           
+{% macro options_clause() -%}
+  {%- set options = config.get('options') -%}
+  {%- if options is not none %}
+    OPTIONS (
+      {%- for option in options -%}
+        {{ option }}{% if not loop.last %},{% endif %}
+      {%- endfor %}
+    )
+  {%- endif %}
+{%- endmacro -%}                                                                           
 
 {% macro location_clause() %}
   {%- set location_root = config.get('location_root', validator=validation.any[basestring]) -%}
@@ -83,6 +94,7 @@
       create table {{ relation }}
     {% endif %}
     {{ file_format_clause() }}
+    {{ options_clause() }}
     {{ partition_cols(label="partitioned by") }}
     {{ clustered_cols(label="clustered by") }}
     {{ location_clause() }}
