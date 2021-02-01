@@ -1,5 +1,8 @@
 ## dbt-spark 0.19.0 (Release TBD)
 
+### Features
+- Allow setting table `OPTIONS` using `config` ([#148](https://github.com/fishtown-analytics/dbt-spark/pull/148))
+
 ### Breaking changes
 - Users of the `http` and `thrift` connection methods need to install extra requirements: `pip install dbt-spark[PyHive]` ([#109](https://github.com/fishtown-analytics/dbt-spark/pull/109), [#126](https://github.com/fishtown-analytics/dbt-spark/pull/126))
 
@@ -12,6 +15,7 @@
 
 ### Contributors
 - [@danielvdende](https://github.com/danielvdende) ([#132](https://github.com/fishtown-analytics/dbt-spark/pull/132))
+- [@friendofasquid](https://github.com/friendofasquid) ([#148](https://github.com/fishtown-analytics/dbt-spark/pull/148))
 - [@Fokko](https://github.com/Fokko) ([#125](https://github.com/fishtown-analytics/dbt-spark/pull/125))
 
 ## dbt-spark 0.18.1.1 (November 13, 2020)
