@@ -1,5 +1,10 @@
 ## dbt-spark 0.19.0 (Release TBD)
 
+### Fixes
+- Capture hard-deleted records in snapshot merge, when `invalidate_hard_deletes` config is set ([#109](https://github.com/fishtown-analytics/dbt-spark/pull/143), [#126](https://github.com/fishtown-analytics/dbt-spark/pull/144))
+
+## dbt-spark 0.19.0rc1 (January 8, 2021)
+
 ### Breaking changes
 - Users of the `http` and `thrift` connection methods need to install extra requirements: `pip install dbt-spark[PyHive]` ([#109](https://github.com/fishtown-analytics/dbt-spark/pull/109), [#126](https://github.com/fishtown-analytics/dbt-spark/pull/126))
 
