@@ -6,14 +6,14 @@
 
 {% if not is_incremental() %}
 
-select 1 as id, 'hello' as msg
+select cast(1 as bigint) as id, 'hello' as msg
 union all
-select 2 as id, 'goodbye' as msg
+select cast(2 as bigint) as id, 'goodbye' as msg
 
 {% else %}
 
-select 2 as id, 'yo' as msg
+select cast(2 as bigint) as id, 'yo' as msg
 union all
-select 3 as id, 'anyway' as msg
+select cast(3 as bigint) as id, 'anyway' as msg
 
 {% endif %}

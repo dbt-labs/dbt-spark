@@ -2,6 +2,7 @@ import pytest
 from functools import wraps
 import os
 from dbt_adapter_tests import DBTIntegrationTestBase
+import pyodbc
 
 
 class DBTSparkIntegrationTest(DBTIntegrationTestBase):
@@ -55,6 +56,10 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
                 else:
                     # we have to fetch.
                     cursor.fetchall()
+            except pyodbc.ProgrammingError as e:
+                # hacks for dropping schema
+                if "No results.  Previous SQL was not a query." not in str(e):
+                    raise e
             except Exception as e:
                 conn.handle.rollback()
                 conn.transaction_open = False
@@ -99,6 +104,7 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
                         'host': os.getenv('DBT_DATABRICKS_HOST_NAME'),
                         'cluster': os.getenv('DBT_DATABRICKS_CLUSTER_NAME'),
                         'token': os.getenv('DBT_DATABRICKS_TOKEN'),
+                        'driver': os.getenv('ODBC_DRIVER'),
                         'port': 443,
                         'schema': self.unique_schema()
                     },
@@ -120,6 +126,7 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
                         'host': os.getenv('DBT_DATABRICKS_HOST_NAME'),
                         'endpoint': os.getenv('DBT_DATABRICKS_ENDPOINT'),
                         'token': os.getenv('DBT_DATABRICKS_TOKEN'),
+                        'driver': os.getenv('ODBC_DRIVER'),
                         'port': 443,
                         'schema': self.unique_schema()
                     },

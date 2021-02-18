@@ -1,3 +1,4 @@
+from cProfile import run
 from test.custom.base import DBTSparkIntegrationTest, use_profile
 import dbt.exceptions
 
@@ -11,13 +12,20 @@ class TestIncrementalStrategies(DBTSparkIntegrationTest):
     def models(self):
         return "models"
 
+    @property
+    def project_config(self):
+        return {
+            'seeds': {
+                'quote_columns': False,
+            },
+        }
+
     def run_and_test(self):
         self.run_dbt(["seed"])
         self.run_dbt(["run"])
+        self.run_dbt(["run"])
         self.assertTablesEqual("default_append", "expected_append")
 
-
-class TestDefaultAppend(TestIncrementalStrategies):
     @use_profile("apache_spark")
     def test_default_append_apache_spark(self):
         self.run_and_test()
@@ -27,18 +35,31 @@ class TestDefaultAppend(TestIncrementalStrategies):
         self.run_and_test()
 
 
-class TestInsertOverwrite(TestIncrementalStrategies):
+class TestInsertOverwrite(DBTSparkIntegrationTest):
+    @property
+    def schema(self):
+        return "incremental_strategies"
+
     @property
     def models(self):
         return "models_insert_overwrite"
 
+    @property
+    def project_config(self):
+        return {
+            'seeds': {
+                'quote_columns': False,
+            },
+        }
+
     def run_and_test(self):
         self.run_dbt(["seed"])
+        self.run_dbt(["run"])
         self.run_dbt(["run"])
         self.assertTablesEqual(
             "insert_overwrite_no_partitions", "expected_overwrite")
         self.assertTablesEqual(
-            "insert_overwrite_partitions", "expected_upsert")
+            "insert_overwrite_partitions", "expected_overwrite")
 
     @use_profile("apache_spark")
     def test_insert_overwrite_apache_spark(self):
@@ -49,13 +70,26 @@ class TestInsertOverwrite(TestIncrementalStrategies):
         self.run_and_test()
 
 
-class TestDeltaStrategies(TestIncrementalStrategies):
+class TestDeltaStrategies(DBTSparkIntegrationTest):
+    @property
+    def schema(self):
+        return "incremental_strategies"
+
     @property
     def models(self):
         return "models_delta"
 
+    @property
+    def project_config(self):
+        return {
+            'seeds': {
+                'quote_columns': False,
+            },
+        }
+
     def run_and_test(self):
         self.run_dbt(["seed"])
+        self.run_dbt(["run"])
         self.run_dbt(["run"])
         self.assertTablesEqual("append_delta", "expected_append")
         self.assertTablesEqual("merge_no_key", "expected_append")
@@ -66,17 +100,30 @@ class TestDeltaStrategies(TestIncrementalStrategies):
         self.run_and_test()
 
 
-class TestBadStrategies(TestIncrementalStrategies):
+class TestBadStrategies(DBTSparkIntegrationTest):
+    @property
+    def schema(self):
+        return "incremental_strategies"
+
+    @property
+    def project_config(self):
+        return {
+            'seeds': {
+                'quote_columns': False,
+            },
+        }
+
     @property
     def models(self):
-        return "models_insert_overwrite"
+        return "models_bad"
 
     def run_and_test(self):
-        with self.assertRaises(dbt.exceptions.Exception) as exc:
-            self.run_dbt(["compile"])
-        message = str(exc.exception)
-        self.assertIn("Invalid file format provided", message)
-        self.assertIn("Invalid incremental strategy provided", message)
+        self.run_dbt(["seed"])
+        results = self.run_dbt(["run"], expect_pass=False)
+        # assert all models fail with co
+        for result in results:
+            self.assertEqual("error", result.status)
+            self.assertIn("Compilation Error in model", result.message)
 
     @use_profile("apache_spark")
     def test_bad_strategies_apache_spark(self):
@@ -86,11 +133,6 @@ class TestBadStrategies(TestIncrementalStrategies):
     def test_bad_strategies_databricks_cluster(self):
         self.run_and_test()
 
-
-class TestBadStrategyWithEndpoint(TestInsertOverwrite):
     @use_profile("databricks_sql_endpoint")
     def test_bad_strategies_databricks_sql_endpoint(self):
-        with self.assertRaises(dbt.exceptions.Exception) as exc:
-            self.run_dbt(["compile"], "--target", "odbc-sql-endpoint")
-        message = str(exc.exception)
-        self.assertIn("Invalid incremental strategy provided", message)
+        self.run_and_test()

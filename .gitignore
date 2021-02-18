@@ -12,3 +12,4 @@ dbt-integration-tests
 test/integration/.user.yml
 .DS_Store
 .vscode
+*.log
