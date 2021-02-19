@@ -100,13 +100,10 @@ workflows:
             - unit
       - integration-spark-databricks-http:
           requires:
-            - unit
             - integration-spark-thrift
       - integration-spark-databricks-odbc-cluster:
           requires:
-            - unit
             - integration-spark-thrift
       - integration-spark-databricks-odbc-endpoint:
           requires:
-            - unit
             - integration-spark-thrift

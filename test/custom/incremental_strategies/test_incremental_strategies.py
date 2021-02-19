@@ -20,7 +20,8 @@ class TestIncrementalStrategies(DBTSparkIntegrationTest):
         self.run_dbt(["seed"])
         self.run_dbt(["run"])
         self.run_dbt(["run"])
-        
+
+
 class TestDefaultAppend(TestIncrementalStrategies):
     @property
     def models(self):
