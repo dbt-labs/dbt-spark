@@ -60,7 +60,7 @@ jobs:
       - store_artifacts:
           path: ./logs
 
-  integration-spark-databricks-odbc:
+  integration-spark-databricks-odbc-cluster: &databricks-odbc
     environment:
       DBT_INVOCATION_ENV: circle
       ODBC_DRIVER: Simba # TODO: move env var to Docker image
@@ -74,7 +74,18 @@ jobs:
       - checkout
       - run:
           name: Run integration tests
-          command: tox -e integration-spark-databricks-odbc-cluster,integration-spark-databricks-odbc-sql-endpoint
+          command: tox -e integration-spark-databricks-odbc-cluster
+          no_output_timeout: 1h
+      - store_artifacts:
+          path: ./logs
+          
+  integration-spark-databricks-odbc-endpoint:
+    <<: *databricks-odbc
+    steps:
+      - checkout
+      - run:
+          name: Run integration tests
+          command: tox -e integration-spark-databricks-odbc-sql-endpoint
           no_output_timeout: 1h
       - store_artifacts:
           path: ./logs
@@ -89,7 +100,10 @@ workflows:
             - unit
       - integration-spark-databricks-http:
           requires:
-            - unit
-      - integration-spark-databricks-odbc:
+            - integration-spark-thrift
+      - integration-spark-databricks-odbc-cluster:
           requires:
-            - unit
+            - integration-spark-thrift
+      - integration-spark-databricks-odbc-endpoint:
+          requires:
+            - integration-spark-thrift
