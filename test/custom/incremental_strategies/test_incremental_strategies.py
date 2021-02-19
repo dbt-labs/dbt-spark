@@ -59,7 +59,7 @@ class TestInsertOverwrite(DBTSparkIntegrationTest):
         self.assertTablesEqual(
             "insert_overwrite_no_partitions", "expected_overwrite")
         self.assertTablesEqual(
-            "insert_overwrite_partitions", "expected_overwrite")
+            "insert_overwrite_partitions", "expected_upsert")
 
     @use_profile("apache_spark")
     def test_insert_overwrite_apache_spark(self):
@@ -120,7 +120,7 @@ class TestBadStrategies(DBTSparkIntegrationTest):
     def run_and_test(self):
         self.run_dbt(["seed"])
         results = self.run_dbt(["run"], expect_pass=False)
-        # assert all models fail with co
+        # assert all models fail with compilation errors
         for result in results:
             self.assertEqual("error", result.status)
             self.assertIn("Compilation Error in model", result.message)
