@@ -9,10 +9,6 @@ class TestIncrementalStrategies(DBTSparkIntegrationTest):
         return "incremental_strategies"
 
     @property
-    def models(self):
-        return "models"
-
-    @property
     def project_config(self):
         return {
             'seeds': {
@@ -20,10 +16,18 @@ class TestIncrementalStrategies(DBTSparkIntegrationTest):
             },
         }
 
-    def run_and_test(self):
+    def seed_and_run_twice(self):
         self.run_dbt(["seed"])
         self.run_dbt(["run"])
         self.run_dbt(["run"])
+        
+class TestDefaultAppend(TestIncrementalStrategies):
+    @property
+    def models(self):
+        return "models"
+        
+    def run_and_test(self):
+        self.seed_and_run_twice()
         self.assertTablesEqual("default_append", "expected_append")
 
     @use_profile("apache_spark")
@@ -35,27 +39,13 @@ class TestIncrementalStrategies(DBTSparkIntegrationTest):
         self.run_and_test()
 
 
-class TestInsertOverwrite(DBTSparkIntegrationTest):
-    @property
-    def schema(self):
-        return "incremental_strategies"
-
+class TestInsertOverwrite(TestIncrementalStrategies):
     @property
     def models(self):
         return "models_insert_overwrite"
 
-    @property
-    def project_config(self):
-        return {
-            'seeds': {
-                'quote_columns': False,
-            },
-        }
-
     def run_and_test(self):
-        self.run_dbt(["seed"])
-        self.run_dbt(["run"])
-        self.run_dbt(["run"])
+        self.seed_and_run_twice()
         self.assertTablesEqual(
             "insert_overwrite_no_partitions", "expected_overwrite")
         self.assertTablesEqual(
@@ -70,27 +60,13 @@ class TestInsertOverwrite(DBTSparkIntegrationTest):
         self.run_and_test()
 
 
-class TestDeltaStrategies(DBTSparkIntegrationTest):
-    @property
-    def schema(self):
-        return "incremental_strategies"
-
+class TestDeltaStrategies(TestIncrementalStrategies):
     @property
     def models(self):
         return "models_delta"
 
-    @property
-    def project_config(self):
-        return {
-            'seeds': {
-                'quote_columns': False,
-            },
-        }
-
     def run_and_test(self):
-        self.run_dbt(["seed"])
-        self.run_dbt(["run"])
-        self.run_dbt(["run"])
+        self.seed_and_run_twice()
         self.assertTablesEqual("append_delta", "expected_append")
         self.assertTablesEqual("merge_no_key", "expected_append")
         self.assertTablesEqual("merge_unique_key", "expected_upsert")
@@ -100,25 +76,12 @@ class TestDeltaStrategies(DBTSparkIntegrationTest):
         self.run_and_test()
 
 
-class TestBadStrategies(DBTSparkIntegrationTest):
-    @property
-    def schema(self):
-        return "incremental_strategies"
-
-    @property
-    def project_config(self):
-        return {
-            'seeds': {
-                'quote_columns': False,
-            },
-        }
-
+class TestBadStrategies(TestIncrementalStrategies):
     @property
     def models(self):
         return "models_bad"
 
     def run_and_test(self):
-        self.run_dbt(["seed"])
         results = self.run_dbt(["run"], expect_pass=False)
         # assert all models fail with compilation errors
         for result in results:
