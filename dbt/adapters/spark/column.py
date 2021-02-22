@@ -2,13 +2,14 @@ from dataclasses import dataclass
 from typing import TypeVar, Optional, Dict, Any
 
 from dbt.adapters.base.column import Column
+from dbt.dataclass_schema import dbtClassMixin
 from hologram import JsonDict
 
 Self = TypeVar('Self', bound='SparkColumn')
 
 
 @dataclass
-class SparkColumn(Column):
+class SparkColumn(dbtClassMixin, Column):
     table_database: Optional[str] = None
     table_schema: Optional[str] = None
     table_name: Optional[str] = None
@@ -55,12 +56,12 @@ class SparkColumn(Column):
                 table_stats[f'stats:{key}:include'] = True
         return table_stats
 
-    def to_dict(
-            self, omit_none: bool = True, validate: bool = False
+    def to_column_dict(
+            self, keep_none: bool = False, validate: bool = False
     ) -> JsonDict:
-        original_dict = super().to_dict(omit_none=omit_none)
+        original_dict = self.to_dict(options={'keep_none': keep_none})
         # If there are stats, merge them into the root of the dict
-        original_stats = original_dict.pop('table_stats')
+        original_stats = original_dict.pop('table_stats', None)
         if original_stats:
             original_dict.update(original_stats)
         return original_dict

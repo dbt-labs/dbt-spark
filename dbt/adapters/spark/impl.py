@@ -211,7 +211,7 @@ class SparkAdapter(SQLAdapter):
             if owner:
                 column.table_owner = owner
             # convert SparkColumns into catalog dicts
-            as_dict = column.to_dict()
+            as_dict = column.to_column_dict()
             as_dict['column_name'] = as_dict.pop('column', None)
             as_dict['column_type'] = as_dict.pop('dtype')
             as_dict['table_database'] = None

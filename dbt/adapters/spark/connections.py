@@ -47,7 +47,6 @@ class SparkConnectionMethod(StrEnum):
 class SparkCredentials(Credentials):
     host: str
     method: SparkConnectionMethod
-    schema: str
     database: Optional[str]
     driver: Optional[str] = None
     cluster: Optional[str] = None
@@ -60,6 +59,13 @@ class SparkCredentials(Credentials):
     organization: str = '0'
     connect_retries: int = 0
     connect_timeout: int = 10
+
+    @classmethod
+    def __pre_deserialize__(cls, data, options=None):
+        data = super().__pre_deserialize__(data, options=options)
+        if 'database' not in data:
+            data['database'] = None
+        return data
 
     def __post_init__(self):
         # spark classifies database and schema as the same thing
