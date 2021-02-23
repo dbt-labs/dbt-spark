@@ -1,4 +1,10 @@
-## dbt-spark 0.19.0 (Release TBD)
+## dbt-spark 0.19.1b2 (Release TBD)
+
+### Under the hood
+- update serialization calls to use new API in dbt-core `0.19.1b2` ([#150](https://github.com/fishtown-analytics/dbt-spark/pull/150))
+
+
+## dbt-spark 0.19.0 (February 22, 2021)
 
 ### Breaking changes
 - Incremental models have `incremental_strategy: append` by default. This strategy adds new records without updating or overwriting existing records. For that, use `merge` or `insert_overwrite` instead, depending on the file format, connection method, and attributes of your underlying data. dbt will try to raise a helpful error if you configure a strategy that is not supported for a given file format or connection. ([#140](https://github.com/fishtown-analytics/dbt-spark/pull/140), [#141](https://github.com/fishtown-analytics/dbt-spark/pull/141))
