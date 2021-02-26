@@ -57,15 +57,7 @@ setup(
     url='https://github.com/fishtown-analytics/dbt-spark',
 
     packages=find_namespace_packages(include=['dbt', 'dbt.*']),
-    package_data={
-        'dbt': [
-            'include/spark/dbt_project.yml',
-            'include/spark/sample_profiles.yml',
-            'include/spark/macros/*.sql',
-            'include/spark/macros/*/*.sql',
-            'include/spark/macros/*/*/*.sql',
-        ]
-    },
+    include_package_data=True,
     install_requires=[
         f'dbt-core=={dbt_version}',
         'sqlparams>=3.0.0',
