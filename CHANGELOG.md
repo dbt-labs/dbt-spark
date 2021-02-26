@@ -1,4 +1,6 @@
-## dbt-spark 0.19.1b2 (Release TBD)
+## dbt-spark 0.19.1 (Release TBD)
+
+## dbt-spark 0.19.1b2 (February 26, 2021)
 
 ### Under the hood
 - update serialization calls to use new API in dbt-core `0.19.1b2` ([#150](https://github.com/fishtown-analytics/dbt-spark/pull/150))
