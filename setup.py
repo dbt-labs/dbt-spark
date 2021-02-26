@@ -37,6 +37,12 @@ if not package_version.startswith(dbt_version):
         f'dbt_version={dbt_version}'
     )
 
+odbc_extras = ['pyodbc>=4.0.30']
+pyhive_extras = [
+    'PyHive[hive]>=0.6.0,<0.7.0',
+    'thrift>=0.11.0,<0.12.0',
+]
+all_extras = odbc_extras + pyhive_extras
 
 setup(
     name=package_name,
@@ -56,7 +62,8 @@ setup(
             'include/spark/dbt_project.yml',
             'include/spark/sample_profiles.yml',
             'include/spark/macros/*.sql',
-            'include/spark/macros/**/*.sql',
+            'include/spark/macros/*/*.sql',
+            'include/spark/macros/*/*/*.sql',
         ]
     },
     install_requires=[
@@ -64,10 +71,8 @@ setup(
         'sqlparams>=3.0.0',
     ],
     extras_require={
-        "ODBC":  ['pyodbc>=4.0.30'],
-        "PyHive":  [
-            'PyHive[hive]>=0.6.0,<0.7.0',
-            'thrift>=0.11.0,<0.12.0',
-        ],
+        "ODBC": odbc_extras,
+        "PyHive":  pyhive_extras,
+        "all": all_extras
     }
 )
