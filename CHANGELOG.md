@@ -1,7 +1,7 @@
 ## dbt-spark 0.19.0.1 (Release TBD)
 
 ### Fixes
-- Fix package distribution to include incremental model materializations ([#151](https://github.com/fishtown-analytics/dbt-spark/pull/151))
+- Fix package distribution to include incremental model materializations ([#151](https://github.com/fishtown-analytics/dbt-spark/pull/151), [#152](https://github.com/fishtown-analytics/dbt-spark/issues/152))
 
 ## dbt-spark 0.19.0 (February 21, 2021)
 
