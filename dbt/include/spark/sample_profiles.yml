@@ -4,13 +4,20 @@ default:
     # Use this if connecting to a hosted spark (e.g. Databricks)
     dev:
       type: spark
-      method: http
-      schema: [dev_schema]
-      host: [host]
-      organization: [organization id]    # Azure Databricks ONLY
-      port: [port]
-      token: [token]
+      method: odbc
+      driver: [path/to/driver]
+      schema: [schema_name]
+      host: [yourorg.sparkhost.com]
+      organization: [organization id]    # Azure Databricks only
+      token: [abc123]
+      
+      # one of:
+      endpoint: [endpoint id]
       cluster: [cluster id]
+      
+      # optional
+      port: [port]              # default 443
+      user: [user]
 
     # Use this if connecting to Dockerized spark
     prod:
