@@ -57,9 +57,9 @@ class SparkColumn(dbtClassMixin, Column):
         return table_stats
 
     def to_column_dict(
-            self, keep_none: bool = False, validate: bool = False
+            self, omit_none: bool = True, validate: bool = False
     ) -> JsonDict:
-        original_dict = self.to_dict(options={'keep_none': keep_none})
+        original_dict = self.to_dict(omit_none=omit_none)
         # If there are stats, merge them into the root of the dict
         original_stats = original_dict.pop('table_stats', None)
         if original_stats:

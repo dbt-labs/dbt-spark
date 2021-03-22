@@ -61,8 +61,8 @@ class SparkCredentials(Credentials):
     connect_timeout: int = 10
 
     @classmethod
-    def __pre_deserialize__(cls, data, options=None):
-        data = super().__pre_deserialize__(data, options=options)
+    def __pre_deserialize__(cls, data):
+        data = super().__pre_deserialize__(data)
         if 'database' not in data:
             data['database'] = None
         return data

@@ -265,7 +265,7 @@ class TestSparkAdapter(unittest.TestCase):
         rows = SparkAdapter(config).parse_describe_extended(
             relation, input_cols)
         self.assertEqual(len(rows), 3)
-        self.assertEqual(rows[0].to_column_dict(keep_none=True), {
+        self.assertEqual(rows[0].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
             'table_name': relation.name,
@@ -279,7 +279,7 @@ class TestSparkAdapter(unittest.TestCase):
             'char_size': None
         })
 
-        self.assertEqual(rows[1].to_column_dict(keep_none=True), {
+        self.assertEqual(rows[1].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
             'table_name': relation.name,
@@ -293,7 +293,7 @@ class TestSparkAdapter(unittest.TestCase):
             'char_size': None
         })
 
-        self.assertEqual(rows[2].to_column_dict(keep_none=True), {
+        self.assertEqual(rows[2].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
             'table_name': relation.name,
@@ -345,7 +345,7 @@ class TestSparkAdapter(unittest.TestCase):
         rows = SparkAdapter(config).parse_describe_extended(
             relation, input_cols)
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0].to_column_dict(keep_none=True), {
+        self.assertEqual(rows[0].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
             'table_name': relation.name,
