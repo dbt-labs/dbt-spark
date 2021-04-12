@@ -1,3 +1,9 @@
+## dbt next
+
+### Fixes
+
+- Cast `table_owner` to string to avoid errors generating docs ([#159](https://github.com/fishtown-analytics/dbt-spark/pull/159))
+
 ## dbt-spark 0.19.1 (Release TBD)
 
 ## dbt-spark 0.19.1b2 (February 26, 2021)
