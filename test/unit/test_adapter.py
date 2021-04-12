@@ -332,9 +332,7 @@ class TestSparkAdapter(unittest.TestCase):
         rows = SparkAdapter(config).parse_describe_extended(
             relation, input_cols)
 
-        self.assertEqual(rows[0].to_column_dict()['table_owner'], '1234')
-        self.assertEqual(rows[1].to_column_dict()['table_owner'], '1234')
-        self.assertEqual(rows[2].to_column_dict()['table_owner'], '1234')
+        self.assertEqual(rows[0].to_column_dict().get('table_owner'), '1234')
 
     def test_parse_relation_with_statistics(self):
         self.maxDiff = None
