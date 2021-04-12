@@ -322,7 +322,7 @@ class TestSparkAdapter(unittest.TestCase):
         plain_rows = [
             ('col1', 'decimal(22,0)'),
             ('# Detailed Table Information', None),
-            ('Owner', 1234),
+            ('Owner', 1234)
         ]
 
         input_cols = [Row(keys=['col_name', 'data_type'], values=r)
