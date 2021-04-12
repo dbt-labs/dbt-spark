@@ -307,6 +307,35 @@ class TestSparkAdapter(unittest.TestCase):
             'char_size': None
         })
 
+    def test_parse_relation_with_integer_owner(self):
+        self.maxDiff = None
+        rel_type = SparkRelation.get_relation_type.Table
+
+        relation = SparkRelation.create(
+            schema='default_schema',
+            identifier='mytable',
+            type=rel_type
+        )
+        assert relation.database is None
+
+        # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
+        plain_rows = [
+            ('col1', 'decimal(22,0)'),
+            ('# Detailed Table Information', None),
+            ('Owner', 1234),
+        ]
+
+        input_cols = [Row(keys=['col_name', 'data_type'], values=r)
+                      for r in plain_rows]
+
+        config = self._get_target_http(self.project_cfg)
+        rows = SparkAdapter(config).parse_describe_extended(
+            relation, input_cols)
+
+        self.assertEqual(rows[0].to_column_dict()['table_owner'], '1234')
+        self.assertEqual(rows[1].to_column_dict()['table_owner'], '1234')
+        self.assertEqual(rows[2].to_column_dict()['table_owner'], '1234')
+
     def test_parse_relation_with_statistics(self):
         self.maxDiff = None
         rel_type = SparkRelation.get_relation_type.Table
