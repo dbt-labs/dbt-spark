@@ -2,7 +2,10 @@
 
 ### Fixes
 
-- Cast `table_owner` to string to avoid errors generating docs ([#159](https://github.com/fishtown-analytics/dbt-spark/pull/159))
+- Cast `table_owner` to string to avoid errors generating docs ([#158](https://github.com/fishtown-analytics/dbt-spark/pull/158), [#159](https://github.com/fishtown-analytics/dbt-spark/pull/159))
+
+### Contributors
+- [@friendofasquid](https://github.com/friendofasquid) ([#159](https://github.com/fishtown-analytics/dbt-spark/pull/159))
 
 ## dbt-spark 0.19.1 (Release TBD)
 
