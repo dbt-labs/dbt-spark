@@ -180,7 +180,7 @@ class SparkAdapter(SQLAdapter):
             table_schema=relation.schema,
             table_name=relation.name,
             table_type=relation.type,
-            table_owner=metadata.get(KEY_TABLE_OWNER),
+            table_owner=str(metadata.get(KEY_TABLE_OWNER)),
             table_stats=table_stats,
             column=column['col_name'],
             column_index=idx,
