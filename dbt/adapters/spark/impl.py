@@ -61,7 +61,8 @@ class SparkAdapter(SQLAdapter):
         'stats:rows:description',
         'stats:rows:include',
     )
-    INFORMATION_COLUMNS_REGEX = re.compile(r"\|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
+    INFORMATION_COLUMNS_REGEX = re.compile(
+        r"\|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
     INFORMATION_OWNER_REGEX = re.compile(r"^Owner: (.*)$", re.MULTILINE)
 
     Relation = SparkRelation
@@ -201,10 +202,12 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
-        cached_relations = self.cache.get_relations(relation.database, relation.schema)
+        cached_relations = self.cache.get_relations(
+            relation.database, relation.schema)
         cached_relation = next((cached_relation
                                 for cached_relation in cached_relations
-                                if str(cached_relation) == str(relation)), None)
+                                if str(cached_relation) == str(relation)),
+                               None)
         if cached_relations is None:
             rows: List[agate.Row] = super().get_columns_in_relation(relation)
             columns = self.parse_describe_extended(relation, rows)
@@ -212,10 +215,14 @@ class SparkAdapter(SQLAdapter):
             columns = self.get_columns_from_information(cached_relation)
         return columns
 
-    def get_columns_from_information(self, relation: SparkRelation) -> List[SparkColumn]:
-        owner_match = re.findall(self.INFORMATION_OWNER_REGEX, relation.information)
+    def get_columns_from_information(
+            self, relation: SparkRelation
+    ) -> List[SparkColumn]:
+        owner_match = re.findall(
+            self.INFORMATION_OWNER_REGEX, relation.information)
         owner = owner_match[0] if owner_match else None
-        matches = re.finditer(self.INFORMATION_COLUMNS_REGEX, relation.information)
+        matches = re.finditer(
+            self.INFORMATION_COLUMNS_REGEX, relation.information)
         columns = []
         for match_num, match in enumerate(matches, start=1):
             column_name, column_type, nullable = match.groups()
