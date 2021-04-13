@@ -242,11 +242,19 @@ class SparkAdapter(SQLAdapter):
     def _get_columns_for_catalog(
         self, relation: SparkRelation
     ) -> Iterable[Dict[str, Any]]:
-        columns = self.get_columns_from_information(relation)
+        if relation and relation.information is not None:
+            columns = self.get_columns_from_information(relation)
+            owner = None
+        else:
+            properties = self.get_properties(relation)
+            columns = self.get_columns_in_relation(relation)
+            owner = properties.get(KEY_TABLE_OWNER)
 
         for column in columns:
             # convert SparkColumns into catalog dicts
             as_dict = column.to_column_dict()
+            if owner:
+                column.table_owner = owner
             as_dict['column_name'] = as_dict.pop('column', None)
             as_dict['column_type'] = as_dict.pop('dtype')
             as_dict['table_database'] = None
