@@ -224,7 +224,7 @@ class SparkAdapter(SQLAdapter):
         matches = re.finditer(
             self.INFORMATION_COLUMNS_REGEX, relation.information)
         columns = []
-        for match_num, match in enumerate(matches, start=1):
+        for match_num, match in enumerate(matches):
             column_name, column_type, nullable = match.groups()
             column = SparkColumn(
                 table_database=None,
