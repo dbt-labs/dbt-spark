@@ -498,3 +498,62 @@ class TestSparkAdapter(unittest.TestCase):
             'char_size': None
         })
 
+    def test_parse_columns_from_information_with_view_type(self):
+        self.maxDiff = None
+        rel_type = SparkRelation.get_relation_type.View
+        information = (
+            "Database: default_schema\n"
+            "Table: myview\n"
+            "Owner: root\n"
+            "Created Time: Wed Feb 04 18:15:00 UTC 1815\n"
+            "Last Access: UNKNOWN\n"
+            "Created By: Spark 3.0.1\n"
+            "Type: VIEW\n"
+            "View Text: WITH base (\n"
+            "    SELECT * FROM source_table\n"
+            ")\n"
+            "SELECT col1, col2, dt FROM base\n"
+            "View Original Text: WITH base (\n"
+            "    SELECT * FROM source_table\n"
+            ")\n"
+            "SELECT col1, col2, dt FROM base\n"
+            "View Catalog and Namespace: spark_catalog.default\n"
+            "View Query Output Columns: [col1, col2, dt]\n"
+            "Table Properties: [view.query.out.col.1=col1, view.query.out.col.2=col2, "
+            "transient_lastDdlTime=1618324324, view.query.out.col.3=dt, "
+            "view.catalogAndNamespace.part.0=spark_catalog, "
+            "view.catalogAndNamespace.part.1=default]\n"
+            "Serde Library: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe\n"
+            "InputFormat: org.apache.hadoop.mapred.SequenceFileInputFormat\n"
+            "OutputFormat: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat\n"
+            "Storage Properties: [serialization.format=1]\n"
+            "Schema: root\n"
+            " |-- col1: decimal(22,0) (nullable = true)\n"
+            " |-- col2: string (nullable = true)\n"
+            " |-- dt: date (nullable = true)\n"
+        )
+        relation = SparkRelation.create(
+            schema='default_schema',
+            identifier='myview',
+            type=rel_type,
+            information=information
+        )
+
+        config = self._get_target_http(self.project_cfg)
+        columns = SparkAdapter(config).parse_columns_from_information(
+            relation)
+        self.assertEqual(len(columns), 3)
+        self.assertEqual(columns[1].to_column_dict(omit_none=False), {
+            'table_database': None,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'table_owner': 'root',
+            'column': 'col2',
+            'column_index': 1,
+            'dtype': 'string',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
+        })
+
