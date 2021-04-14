@@ -446,3 +446,55 @@ class TestSparkAdapter(unittest.TestCase):
         }
         with self.assertRaises(RuntimeException):
             config_from_parts_or_dicts(self.project_cfg, profile)
+
+    def test_parse_columns_from_information_with_table_type(self):
+        self.maxDiff = None
+        rel_type = SparkRelation.get_relation_type.Table
+
+        # Mimics the output of Spark in the information column
+        information = (
+            "Database: default_schema\n"
+            "Table: mytable\n"
+            "Owner: root\n"
+            "Created Time: Wed Feb 04 18:15:00 UTC 1815\n"
+            "Last Access: Wed May 20 19:25:00 UTC 1925\n"
+            "Created By: Spark 3.0.1\n"
+            "Type: MANAGED\n"
+            "Provider: delta\n"
+            "Statistics: 123456789 bytes\n"
+            "Location: /mnt/vo\n"
+            "Serde Library: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe\n"
+            "InputFormat: org.apache.hadoop.mapred.SequenceFileInputFormat\n"
+            "OutputFormat: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat\n"
+            "Partition Provider: Catalog\n"
+            "Partition Columns: [`dt`]\n"
+            "Schema: root\n"
+            " |-- col1: decimal(22,0) (nullable = true)\n"
+            " |-- col2: string (nullable = true)\n"
+            " |-- dt: date (nullable = true)\n"
+        )
+        relation = SparkRelation.create(
+            schema='default_schema',
+            identifier='mytable',
+            type=rel_type,
+            information=information
+        )
+
+        config = self._get_target_http(self.project_cfg)
+        columns = SparkAdapter(config).parse_columns_from_information(
+            relation)
+        self.assertEqual(len(columns), 3)
+        self.assertEqual(columns[0].to_column_dict(omit_none=False), {
+            'table_database': None,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'table_owner': 'root',
+            'column': 'col1',
+            'column_index': 0,
+            'dtype': 'decimal(22,0)',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
+        })
+

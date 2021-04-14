@@ -212,10 +212,10 @@ class SparkAdapter(SQLAdapter):
             rows: List[agate.Row] = super().get_columns_in_relation(relation)
             columns = self.parse_describe_extended(relation, rows)
         else:
-            columns = self.get_columns_from_information(cached_relation)
+            columns = self.parse_columns_from_information(cached_relation)
         return columns
 
-    def get_columns_from_information(
+    def parse_columns_from_information(
             self, relation: SparkRelation
     ) -> List[SparkColumn]:
         owner_match = re.findall(
@@ -242,7 +242,7 @@ class SparkAdapter(SQLAdapter):
     def _get_columns_for_catalog(
         self, relation: SparkRelation
     ) -> Iterable[Dict[str, Any]]:
-        columns = self.get_columns_from_information(relation)
+        columns = self.parse_columns_from_information(relation)
 
         for column in columns:
             # convert SparkColumns into catalog dicts
