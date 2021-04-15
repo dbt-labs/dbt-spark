@@ -64,6 +64,7 @@ class SparkAdapter(SQLAdapter):
     INFORMATION_COLUMNS_REGEX = re.compile(
         r"\|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
     INFORMATION_OWNER_REGEX = re.compile(r"^Owner: (.*)$", re.MULTILINE)
+    INFORMATION_STATISTICS_REGEX = re.compile(r"^Statistics: (.*)$", re.MULTILINE)
 
     Relation = SparkRelation
     Column = SparkColumn
@@ -224,6 +225,10 @@ class SparkAdapter(SQLAdapter):
         matches = re.finditer(
             self.INFORMATION_COLUMNS_REGEX, relation.information)
         columns = []
+        stats_match = re.findall(
+            self.INFORMATION_STATISTICS_REGEX, relation.information)
+        raw_table_stats = stats_match[0] if stats_match else None
+        table_stats = SparkColumn.convert_table_stats(raw_table_stats)
         for match_num, match in enumerate(matches):
             column_name, column_type, nullable = match.groups()
             column = SparkColumn(
@@ -234,7 +239,8 @@ class SparkAdapter(SQLAdapter):
                 column_index=match_num,
                 table_owner=owner,
                 column=column_name,
-                dtype=column_type
+                dtype=column_type,
+                table_stats=table_stats
             )
             columns.append(column)
         return columns

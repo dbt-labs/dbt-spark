@@ -447,7 +447,7 @@ class TestSparkAdapter(unittest.TestCase):
         with self.assertRaises(RuntimeException):
             config_from_parts_or_dicts(self.project_cfg, profile)
 
-    def test_parse_columns_from_information_with_table_type(self):
+    def test_parse_columns_from_information_with_table_type_and_delta_provider(self):
         self.maxDiff = None
         rel_type = SparkRelation.get_relation_type.Table
 
@@ -495,7 +495,12 @@ class TestSparkAdapter(unittest.TestCase):
             'dtype': 'decimal(22,0)',
             'numeric_scale': None,
             'numeric_precision': None,
-            'char_size': None
+            'char_size': None,
+
+            'stats:bytes:description': '',
+            'stats:bytes:include': True,
+            'stats:bytes:label': 'bytes',
+            'stats:bytes:value': 123456789,
         })
 
     def test_parse_columns_from_information_with_view_type(self):
@@ -555,5 +560,63 @@ class TestSparkAdapter(unittest.TestCase):
             'numeric_scale': None,
             'numeric_precision': None,
             'char_size': None
+        })
+
+    def test_parse_columns_from_information_with_table_type_and_parquet_provider(self):
+        self.maxDiff = None
+        rel_type = SparkRelation.get_relation_type.Table
+
+        information = (
+            "Database: default_schema\n"
+            "Table: mytable\n"
+            "Owner: root\n"
+            "Created Time: Wed Feb 04 18:15:00 UTC 1815\n"
+            "Last Access: Wed May 20 19:25:00 UTC 1925\n"
+            "Created By: Spark 3.0.1\n"
+            "Type: MANAGED\n"
+            "Provider: parquet\n"
+            "Statistics: 1234567890 bytes, 12345678 rows\n"
+            "Location: /mnt/vo\n"
+            "Serde Library: org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe\n"
+            "InputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat\n"
+            "OutputFormat: org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat\n"
+            "Schema: root\n"
+            " |-- col1: decimal(22,0) (nullable = true)\n"
+            " |-- col2: string (nullable = true)\n"
+            " |-- dt: date (nullable = true)\n"
+        )
+        relation = SparkRelation.create(
+            schema='default_schema',
+            identifier='mytable',
+            type=rel_type,
+            information=information
+        )
+
+        config = self._get_target_http(self.project_cfg)
+        columns = SparkAdapter(config).parse_columns_from_information(
+            relation)
+        self.assertEqual(len(columns), 3)
+        self.assertEqual(columns[2].to_column_dict(omit_none=False), {
+            'table_database': None,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'table_owner': 'root',
+            'column': 'dt',
+            'column_index': 2,
+            'dtype': 'date',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None,
+
+            'stats:bytes:description': '',
+            'stats:bytes:include': True,
+            'stats:bytes:label': 'bytes',
+            'stats:bytes:value': 1234567890,
+
+            'stats:rows:description': '',
+            'stats:rows:include': True,
+            'stats:rows:label': 'rows',
+            'stats:rows:value': 12345678
         })
 
