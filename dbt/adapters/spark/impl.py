@@ -1,3 +1,4 @@
+import re
 from concurrent.futures import Future
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Union, Iterable
@@ -60,6 +61,11 @@ class SparkAdapter(SQLAdapter):
         'stats:rows:description',
         'stats:rows:include',
     )
+    INFORMATION_COLUMNS_REGEX = re.compile(
+        r"\|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
+    INFORMATION_OWNER_REGEX = re.compile(r"^Owner: (.*)$", re.MULTILINE)
+    INFORMATION_STATISTICS_REGEX = re.compile(
+        r"^Statistics: (.*)$", re.MULTILINE)
 
     Relation = SparkRelation
     Column = SparkColumn
@@ -139,7 +145,8 @@ class SparkAdapter(SQLAdapter):
                 schema=_schema,
                 identifier=name,
                 type=rel_type,
-                is_delta=is_delta
+                information=information,
+                is_delta=is_delta,
             )
             relations.append(relation)
 
@@ -197,19 +204,54 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
-        rows: List[agate.Row] = super().get_columns_in_relation(relation)
-        return self.parse_describe_extended(relation, rows)
+        cached_relations = self.cache.get_relations(
+            relation.database, relation.schema)
+        cached_relation = next((cached_relation
+                                for cached_relation in cached_relations
+                                if str(cached_relation) == str(relation)),
+                               None)
+        if cached_relation is None:
+            rows: List[agate.Row] = super().get_columns_in_relation(relation)
+            columns = self.parse_describe_extended(relation, rows)
+        else:
+            columns = self.parse_columns_from_information(cached_relation)
+        return columns
+
+    def parse_columns_from_information(
+            self, relation: SparkRelation
+    ) -> List[SparkColumn]:
+        owner_match = re.findall(
+            self.INFORMATION_OWNER_REGEX, relation.information)
+        owner = owner_match[0] if owner_match else None
+        matches = re.finditer(
+            self.INFORMATION_COLUMNS_REGEX, relation.information)
+        columns = []
+        stats_match = re.findall(
+            self.INFORMATION_STATISTICS_REGEX, relation.information)
+        raw_table_stats = stats_match[0] if stats_match else None
+        table_stats = SparkColumn.convert_table_stats(raw_table_stats)
+        for match_num, match in enumerate(matches):
+            column_name, column_type, nullable = match.groups()
+            column = SparkColumn(
+                table_database=None,
+                table_schema=relation.schema,
+                table_name=relation.table,
+                table_type=relation.type,
+                column_index=match_num,
+                table_owner=owner,
+                column=column_name,
+                dtype=column_type,
+                table_stats=table_stats
+            )
+            columns.append(column)
+        return columns
 
     def _get_columns_for_catalog(
         self, relation: SparkRelation
     ) -> Iterable[Dict[str, Any]]:
-        properties = self.get_properties(relation)
-        columns = self.get_columns_in_relation(relation)
-        owner = properties.get(KEY_TABLE_OWNER)
+        columns = self.parse_columns_from_information(relation)
 
         for column in columns:
-            if owner:
-                column.table_owner = owner
             # convert SparkColumns into catalog dicts
             as_dict = column.to_column_dict()
             as_dict['column_name'] = as_dict.pop('column', None)
