@@ -1,0 +1,31 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: dbt-spark
+  description: Question matching batch job to run on Data Lake
+  links:
+    - title: Website
+      url: https://github.com/cultureamp/dbt-spark
+    - title: Monitoring Dashboard
+      url: https://app.datadoghq.com/apm/service/dbt-spark/http.request?env=production-us # If this link is broken feel free to link to another monitoring view. Alternatively leave as is and create the Datadog dashboard. 
+  #
+  # Tags are required and are based on:
+  # https://cultureamp.atlassian.net/wiki/spaces/CPlatform/pages/1720156463/Authentication+-+One+Platform+Technical+Canvas
+  # Please select values from the options provided
+  tags: 
+    - tier- # tier-1 | tier-2 | tier-3
+    - health- # health-good | health-moderate | health-poor
+    - users- # users-internal | users-account-admins | users-customer-facing | users-na
+    - camp- # e.g camp-platform | camp-perform | camp-example
+    - data- # data-confidential | data-restricted | data-internal-use-only | data-public | data-none
+  annotations:
+    github.com/project-slug: cultureamp/dbt-spark
+    github.com/team-slug: cultureamp/data-platform 
+    backstage.io/techdocs-ref: url:https://github.com/cultureamp/blob/master/dbt-spark
+    buildkite.com/project-slug: culture-amp/dbt-spark # Check Me! - this was guessed and may be incorrect
+    # pagerduty.com/integration-key: create an integration key and use its ID here - https://support.pagerduty.com/docs/services-and-integrations
+    # sentry.io/project-slug: dbt-spark # Uncomment this line if using Sentry
+spec:
+  type: # openapi | website | service | library
+  owner: data-platform # Backstage Teamname should be the same as the Github Team Name (these teams are synced between github and backstage)
+  lifecycle: production # experimental | development | production | deprecated | contained
