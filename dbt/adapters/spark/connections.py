@@ -254,7 +254,7 @@ class SparkConnectionManager(SQLConnectionManager):
     SPARK_CLUSTER_HTTP_PATH = "/sql/protocolv1/o/{organization}/{cluster}"
     SPARK_SQL_ENDPOINT_HTTP_PATH = "/sql/1.0/endpoints/{endpoint}"
     SPARK_CONNECTION_URL = (
-        "https://{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
+        "{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
     )
 
     @contextmanager
@@ -320,8 +320,13 @@ class SparkConnectionManager(SQLConnectionManager):
                     cls.validate_creds(creds, ['token', 'host', 'port',
                                                'cluster', 'organization'])
 
+                    # Prepend https:// if it is missing
+                    host = creds.host
+                    if not host.startswith('https://'):
+                        host = 'https://' + creds.host
+
                     conn_url = cls.SPARK_CONNECTION_URL.format(
-                        host=creds.host,
+                        host=host,
                         port=creds.port,
                         organization=creds.organization,
                         cluster=creds.cluster
@@ -350,7 +355,6 @@ class SparkConnectionManager(SQLConnectionManager):
                                         kerberos_service_name=creds.kerberos_service_name)  # noqa
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
-                    http_path = None
                     if creds.cluster is not None:
                         required_fields = ['driver', 'host', 'port', 'token',
                                            'organization', 'cluster']
