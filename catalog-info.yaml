@@ -1,0 +1,23 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: dbt-spark
+  description: Forked dbt integration to enable dbt to work with spark
+  links:
+    - title: Website
+      url: https://github.com/cultureamp/dbt-spark
+  tags: 
+    - tier-3
+    - health-good
+    - users-internal
+    - camp-culture-lab
+    - data-none
+  annotations:
+    github.com/project-slug: cultureamp/dbt-spark
+    github.com/team-slug: cultureamp/data-platform 
+    backstage.io/techdocs-ref: url:https://github.com/cultureamp/blob/master/dbt-spark
+    buildkite.com/project-slug: culture-amp/dbt-spark
+spec:
+  type: library
+  owner: data-platform
+  lifecycle: production
