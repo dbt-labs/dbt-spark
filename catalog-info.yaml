@@ -8,7 +8,6 @@ metadata:
       url: https://github.com/cultureamp/dbt-spark
   tags: 
     - tier-3
-    - health-good
     - users-internal
     - camp-culture-lab
     - data-none
