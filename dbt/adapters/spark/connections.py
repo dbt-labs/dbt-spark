@@ -6,6 +6,7 @@ from dbt.adapters.sql import SQLConnectionManager
 from dbt.contracts.connection import ConnectionState
 from dbt.logger import GLOBAL_LOGGER as logger
 from dbt.utils import DECIMALS
+
 from dbt.adapters.spark import __version__
 
 try:
@@ -59,6 +60,7 @@ class SparkCredentials(Credentials):
     organization: str = '0'
     connect_retries: int = 0
     connect_timeout: int = 10
+    use_ssl: bool = False
 
     @classmethod
     def __pre_deserialize__(cls, data):
@@ -347,12 +349,23 @@ class SparkConnectionManager(SQLConnectionManager):
                 elif creds.method == SparkConnectionMethod.THRIFT:
                     cls.validate_creds(creds,
                                        ['host', 'port', 'user', 'schema'])
-
-                    conn = hive.connect(host=creds.host,
-                                        port=creds.port,
-                                        username=creds.user,
-                                        auth=creds.auth,
-                                        kerberos_service_name=creds.kerberos_service_name)  # noqa
+                    if creds.use_ssl:
+                        import puretransport
+                        kwargs = {'kerberos_service_name': creds.kerberos_service_name,
+                                  'use_ssl': creds.use_ssl}
+                        transport = puretransport.transport_factory(host=creds.host,
+                                                                    port=creds.port,
+                                                                    username=creds.user,
+                                                                    password='dummy',
+                                                                    use_ssl=creds.use_ssl,
+                                                                    kerberos_service_name=creds.kerberos_service_name)
+                        conn = hive.connect(thrift_transport=transport)
+                    else:
+                        conn = hive.connect(host=creds.host,
+                                            port=creds.port,
+                                            username=creds.user,
+                                            auth=creds.auth,
+                                            kerberos_service_name=creds.kerberos_service_name)  # noqa
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
                     if creds.cluster is not None:
