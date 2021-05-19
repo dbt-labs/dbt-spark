@@ -58,6 +58,22 @@ class TestSparkAdapter(unittest.TestCase):
             'target': 'test'
         })
 
+    def _get_target_use_ssl_thrift(self, project):
+        return config_from_parts_or_dicts(project, {
+            'outputs': {
+                'test': {
+                    'type': 'spark',
+                    'method': 'thrift',
+                    'use_ssl': True,
+                    'schema': 'analytics',
+                    'host': 'myorg.sparkhost.com',
+                    'port': 10001,
+                    'user': 'dbt'
+                }
+            },
+            'target': 'test'
+        })
+
     def _get_target_thrift_kerberos(self, project):
         return config_from_parts_or_dicts(project, {
             'outputs': {
@@ -144,6 +160,24 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(username, 'dbt')
             self.assertIsNone(auth)
             self.assertIsNone(kerberos_service_name)
+
+        with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
+            connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
+
+            self.assertEqual(connection.state, 'open')
+            self.assertIsNotNone(connection.handle)
+            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertIsNone(connection.credentials.database)
+
+    def test_thrift_ssl_connection(self):
+        config = self._get_target_use_ssl_thrift(self.project_cfg)
+        adapter = SparkAdapter(config)
+
+        def hive_thrift_connect(thrift_transport):
+            client_factory = thrift_transport.sasl_client_factory()
+            self.assertIsNotNone(thrift_transport)
+            self.assertEqual(client_factory.host, 'myorg.sparkhost.com')
 
         with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
             connection = adapter.acquire_connection('dummy')
