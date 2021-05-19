@@ -351,8 +351,6 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     if creds.use_ssl:
                         import puretransport
-                        kwargs = {'kerberos_service_name': creds.kerberos_service_name,
-                                  'use_ssl': creds.use_ssl}
                         transport = puretransport.transport_factory(host=creds.host,
                                                                     port=creds.port,
                                                                     username=creds.user,
