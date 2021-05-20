@@ -175,7 +175,6 @@ class TestSparkAdapter(unittest.TestCase):
         adapter = SparkAdapter(config)
 
         def hive_thrift_connect(thrift_transport):
-            client_factory = thrift_transport.sasl_client_factory()
             self.assertIsNotNone(thrift_transport)
             transport = thrift_transport._trans
             self.assertEqual(transport.host, 'myorg.sparkhost.com')
