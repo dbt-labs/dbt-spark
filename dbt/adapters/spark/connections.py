@@ -353,11 +353,12 @@ class SparkConnectionManager(SQLConnectionManager):
                                        ['host', 'port', 'user', 'schema'])
 
                     if creds.use_ssl:
-                        transport = build_ssl_transport(host=creds.host,
-                                                        port=creds.port,
-                                                        username=creds.user,
-                                                        auth=creds.auth,
-                                                        kerberos_service_name=creds.kerberos_service_name)
+                        transport = build_ssl_transport(
+                            host=creds.host,
+                            port=creds.port,
+                            username=creds.user,
+                            auth=creds.auth,
+                            kerberos_service_name=creds.kerberos_service_name)
                         conn = hive.connect(thrift_transport=transport)
                     else:
                         conn = hive.connect(host=creds.host,
@@ -443,7 +444,8 @@ class SparkConnectionManager(SQLConnectionManager):
         return connection
 
 
-def build_ssl_transport(host, port, username, auth, kerberos_service_name, password = None):
+def build_ssl_transport(host, port, username, auth,
+                        kerberos_service_name, password=None):
     transport = None
     if port is None:
         port = 10000
@@ -451,7 +453,8 @@ def build_ssl_transport(host, port, username, auth, kerberos_service_name, passw
         auth = 'NONE'
     socket = TSSLSocket(host, port, cert_reqs=ssl.CERT_NONE)
     if auth == 'NOSASL':
-        # NOSASL corresponds to hive.server2.authentication=NOSASL in hive-site.xml
+        # NOSASL corresponds to hive.server2.authentication=NOSASL
+        # in hive-site.xml
         transport = thrift.transport.TTransport.TBufferedTransport(socket)
     elif auth in ('LDAP', 'KERBEROS', 'NONE', 'CUSTOM'):
         # Defer import so package dependency is optional
@@ -459,12 +462,14 @@ def build_ssl_transport(host, port, username, auth, kerberos_service_name, passw
         import thrift_sasl
 
         if auth == 'KERBEROS':
-            # KERBEROS mode in hive.server2.authentication is GSSAPI in sasl library
+            # KERBEROS mode in hive.server2.authentication is GSSAPI
+            # in sasl library
             sasl_auth = 'GSSAPI'
         else:
             sasl_auth = 'PLAIN'
             if password is None:
-                # Password doesn't matter in NONE mode, just needs to be nonempty.
+                # Password doesn't matter in NONE mode, just needs
+                # to be nonempty.
                 password = 'x'
 
         def sasl_factory():
@@ -480,7 +485,8 @@ def build_ssl_transport(host, port, username, auth, kerberos_service_name, passw
             sasl_client.init()
             return sasl_client
 
-        transport = thrift_sasl.TSaslClientTransport(sasl_factory, sasl_auth, socket)
+        transport = thrift_sasl.TSaslClientTransport(sasl_factory,
+                                                     sasl_auth, socket)
         return transport
 
 
