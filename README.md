@@ -162,7 +162,7 @@ The following configurations can be supplied to models run with the dbt-spark pl
 | clustered_by         | Each partition in the created table will be split into a fixed number of buckets by the specified columns.                                                  | Optional                                | `cluster_1`          |
 | buckets              | The number of buckets to create while clustering                                                                                                            | Required if `clustered_by` is specified | `8`                  |
 | incremental_strategy | The strategy to use for incremental models (`append`, `insert_overwrite`, or `merge`). | Optional (default: `append`)  | `merge`              |
-| persist_docs         | Whether dbt should include the model description as a table `comment`                                                                                       | Optional                                | `{'relation': true}` |
+| persist_docs         | Whether dbt should include the model description as a table or column `comment`                                                                                       | Optional                                | `{'relation': true, 'columns': true}` |
 
 
 **Incremental Models**
