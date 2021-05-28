@@ -13,6 +13,16 @@
   {%- endif %}
 {%- endmacro -%}
 
+{% macro options_clause() -%}
+  {%- set options = config.get('options') -%}
+  {%- if options is not none %}
+    OPTIONS (
+      {%- for option in options -%}
+      {{ option }} "{{ options[option] }}" {% if not loop.last %}, {% endif %}
+      {%- endfor %}
+    )
+  {%- endif %}
+{%- endmacro -%}
 
 {% macro comment_clause() %}
   {%- set raw_persist_docs = config.get('persist_docs', {}) -%}
