@@ -46,6 +46,7 @@ class TestSparkMacros(unittest.TestCase):
     def test_macros_create_table_as_options(self):
         template = self.__get_template('adapters.sql')
 
+        self.config['file_format'] = 'delta'
         self.config['options'] = {"compression": "gzip"}
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1').strip()
         self.assertEqual(sql, "create or replace table options (compression 'gzip') my_table using delta as select 1")
