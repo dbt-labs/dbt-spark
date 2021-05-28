@@ -16,7 +16,7 @@
 {% macro options_clause() -%}
   {%- set options = config.get('options') -%}
   {%- if options is not none %}
-    OPTIONS (
+    options (
       {%- for option in options -%}
       {{ option }} "{{ options[option] }}" {% if not loop.last %}, {% endif %}
       {%- endfor %}
