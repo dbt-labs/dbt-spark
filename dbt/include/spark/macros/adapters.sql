@@ -93,6 +93,7 @@
       create table {{ relation }}
     {% endif %}
     {{ file_format_clause() }}
+    {{ options_clause() }}
     {{ partition_cols(label="partitioned by") }}
     {{ clustered_cols(label="clustered by") }}
     {{ location_clause() }}
