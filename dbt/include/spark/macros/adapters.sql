@@ -168,7 +168,7 @@
     {% for column_name in column_dict %}
       {% set comment = column_dict[column_name]['description'] %}
       {% set comment_query %}
-        ALTER TABLE {{ relation }} ALTER COLUMN {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }} COMMENT '{{ comment }}';
+        alter table {{ relation }} change column {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }} comment '{{ comment }}';
       {% endset %}
       {% do run_query(comment_query) %}
     {% endfor %}
