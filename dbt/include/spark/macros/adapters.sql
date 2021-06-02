@@ -13,6 +13,16 @@
   {%- endif %}
 {%- endmacro -%}
 
+{% macro options_clause() -%}
+  {%- set options = config.get('options') -%}
+  {%- if options is not none %}
+    options (
+      {%- for option in options -%}
+      {{ option }} "{{ options[option] }}" {% if not loop.last %}, {% endif %}
+      {%- endfor %}
+    )
+  {%- endif %}
+{%- endmacro -%}
 
 {% macro comment_clause() %}
   {%- set raw_persist_docs = config.get('persist_docs', {}) -%}
@@ -83,6 +93,7 @@
       create table {{ relation }}
     {% endif %}
     {{ file_format_clause() }}
+    {{ options_clause() }}
     {{ partition_cols(label="partitioned by") }}
     {{ clustered_cols(label="clustered by") }}
     {{ location_clause() }}

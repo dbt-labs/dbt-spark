@@ -36,6 +36,7 @@ class SparkConfig(AdapterConfig):
     partition_by: Optional[Union[List[str], str]] = None
     clustered_by: Optional[Union[List[str], str]] = None
     buckets: Optional[int] = None
+    options: Optional[Dict[str, str]] = None
 
 
 class SparkAdapter(SQLAdapter):
