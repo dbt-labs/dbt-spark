@@ -1,7 +1,9 @@
 ## dbt next
 
 ### Features
+- Allow setting table `OPTIONS` using `config` ([#171](https://github.com/fishtown-analytics/dbt-spark/pull/171))
 - Add support for column comment ([#170](https://github.com/fishtown-analytics/dbt-spark/pull/170))
+
 
 ### Fixes
 
@@ -16,7 +18,9 @@
 - [@friendofasquid](https://github.com/friendofasquid) ([#159](https://github.com/fishtown-analytics/dbt-spark/pull/159))
 - [@franloza](https://github.com/franloza) ([#160](https://github.com/fishtown-analytics/dbt-spark/pull/160))
 - [@Fokko](https://github.com/Fokko) ([#165](https://github.com/fishtown-analytics/dbt-spark/pull/165))
+- [@JCZuurmond](https://github.com/JCZuurmond) ([#171](https://github.com/fishtown-analytics/dbt-spark/pull/171))
 - [@cristianoperez](https://github.com/cristianoperez) ([#170](https://github.com/fishtown-analytics/dbt-spark/pull/170))
+
 
 ## dbt-spark 0.19.1 (Release TBD)
 
