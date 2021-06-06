@@ -2,7 +2,7 @@
 
 ### Features
 
-Allow user to specify `use_ssl` [#169](https://github.com/fishtown-analytics/dbt-spark/pull/169)
+Allow user to specify `use_ssl` ([#169](https://github.com/fishtown-analytics/dbt-spark/pull/169))
 
 ### Fixes
 
