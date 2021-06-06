@@ -17,6 +17,7 @@ Allow user to specify `use_ssl` [#169](https://github.com/fishtown-analytics/dbt
 - [@friendofasquid](https://github.com/friendofasquid) ([#159](https://github.com/fishtown-analytics/dbt-spark/pull/159))
 - [@franloza](https://github.com/franloza) ([#160](https://github.com/fishtown-analytics/dbt-spark/pull/160))
 - [@Fokko](https://github.com/Fokko) ([#165](https://github.com/fishtown-analytics/dbt-spark/pull/165))
+- [@rahulgoyal2987](https://github.com/rahulgoyal2987) [#169](https://github.com/fishtown-analytics/dbt-spark/pull/169)
 
 ## dbt-spark 0.19.1 (Release TBD)
 
