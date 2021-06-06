@@ -173,3 +173,16 @@
 {% macro spark__generate_database_name(custom_database_name=none, node=none) -%}
   {% do return(None) %}
 {%- endmacro %}
+
+{% macro spark__alter_column_comment(relation, column_dict) %}
+  {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
+    {% for column_name in column_dict %}
+      {% set comment = column_dict[column_name]['description'] %}
+      {% set comment_query %}
+        alter table {{ relation }} change column {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }} comment '{{ comment }}';
+      {% endset %}
+      {% do run_query(comment_query) %}
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+
