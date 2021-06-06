@@ -26,9 +26,14 @@ import sqlparams
 from hologram.helpers import StrEnum
 from dataclasses import dataclass
 from typing import Optional
-from thrift.transport.TSSLSocket import TSSLSocket
-import thrift
-import ssl
+try:
+    from thrift.transport.TSSLSocket import TSSLSocket
+    import thrift
+    import ssl
+except ImportError:
+    TSSLSocket = None
+    thrift = None
+    ssl = None
 
 import base64
 import time
@@ -458,8 +463,12 @@ def build_ssl_transport(host, port, username, auth,
         transport = thrift.transport.TTransport.TBufferedTransport(socket)
     elif auth in ('LDAP', 'KERBEROS', 'NONE', 'CUSTOM'):
         # Defer import so package dependency is optional
-        import sasl
-        import thrift_sasl
+        try:
+            import sasl
+            import thrift_sasl
+        except ImportError:
+            sasl = None
+            thrift_sasl = None
 
         if auth == 'KERBEROS':
             # KERBEROS mode in hive.server2.authentication is GSSAPI
