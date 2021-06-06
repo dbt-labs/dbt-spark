@@ -73,7 +73,7 @@ A dbt profile for Spark connections support the following configurations:
 | user | The username to use to connect to the cluster | ❔ | ❔ | ❔ | `hadoop` |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | ❌ | ❔ (`10`) | ❔ (`10`) | `60` |
 | connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up | ❌ | ❔ (`0`) | ❔ (`0`)  | `5` |
-| use_ssl | The value of `hive.metastore.sasl.enabled` (`True` or `False`). Default store location (ssl.get_default_verify_paths()) is the valid location for SSL certificate | ❌ | ❔ | ❌ | `True` |
+| use_ssl | The value of `hive.metastore.sasl.enabled` (`True` or `False`). Default ssl store (ssl.get_default_verify_paths()) is the valid location for SSL certificate | ❌ | ❔ | ❌ | `True` |
 
 **Databricks** connections differ based on the cloud provider:
 
