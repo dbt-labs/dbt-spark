@@ -1,5 +1,9 @@
 ## dbt next
 
+### Features
+
+Allow user to specify `use_ssl` [#169](https://github.com/fishtown-analytics/dbt-spark/pull/169)
+
 ### Fixes
 
 - Cast `table_owner` to string to avoid errors generating docs ([#158](https://github.com/fishtown-analytics/dbt-spark/pull/158), [#159](https://github.com/fishtown-analytics/dbt-spark/pull/159))
