@@ -461,7 +461,6 @@ def build_ssl_transport(host, port, username, auth,
     if auth is None:
         auth = 'NONE'
     socket = TSSLSocket(host, port, cert_reqs=ssl.CERT_NONE)
-    transport = None
     if auth == 'NOSASL':
         # NOSASL corresponds to hive.server2.authentication=NOSASL
         # in hive-site.xml
