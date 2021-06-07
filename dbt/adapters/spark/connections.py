@@ -30,10 +30,14 @@ try:
     from thrift.transport.TSSLSocket import TSSLSocket
     import thrift
     import ssl
+    import sasl
+    import thrift_sasl
 except ImportError:
     TSSLSocket = None
     thrift = None
     ssl = None
+    sasl = None
+    thrift_sasl = None
 
 import base64
 import time
@@ -457,19 +461,13 @@ def build_ssl_transport(host, port, username, auth,
     if auth is None:
         auth = 'NONE'
     socket = TSSLSocket(host, port, cert_reqs=ssl.CERT_NONE)
+    transport = None
     if auth == 'NOSASL':
         # NOSASL corresponds to hive.server2.authentication=NOSASL
         # in hive-site.xml
         transport = thrift.transport.TTransport.TBufferedTransport(socket)
     elif auth in ('LDAP', 'KERBEROS', 'NONE', 'CUSTOM'):
         # Defer import so package dependency is optional
-        try:
-            import sasl
-            import thrift_sasl
-        except ImportError:
-            sasl = None
-            thrift_sasl = None
-
         if auth == 'KERBEROS':
             # KERBEROS mode in hive.server2.authentication is GSSAPI
             # in sasl library
@@ -496,7 +494,7 @@ def build_ssl_transport(host, port, username, auth,
 
         transport = thrift_sasl.TSaslClientTransport(sasl_factory,
                                                      sasl_auth, socket)
-        return transport
+    return transport
 
 
 def _is_retryable_error(exc: Exception) -> Optional[str]:
