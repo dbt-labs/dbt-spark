@@ -10,6 +10,6 @@ pytest-xdist>=2.1.0,<3
 flaky>=3.5.3,<4
 
 # Test requirements
-git+https://github.com/fishtown-analytics/dbt-adapter-tests.git@33872d1cc0f936677dae091c3e0b49771c280514
+pytest-dbt-adapter==0.5.1
 sasl==0.2.1
 thrift_sasl==0.4.1
