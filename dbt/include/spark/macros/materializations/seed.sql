@@ -81,10 +81,7 @@
   {%- set agate_table = load_agate_table() -%}
   {%- do store_result('agate_table', response='OK', agate_table=agate_table) -%}
 
-  {{ run_hooks(pre_hooks, inside_transaction=False) }}
-
-  -- `BEGIN` happens here:
-  {{ run_hooks(pre_hooks, inside_transaction=True) }}
+  {{ run_hooks(pre_hooks) }}
 
   -- build model
   {% set create_table_sql = reset_csv_table(model, full_refresh_mode, old_relation, agate_table) %}
@@ -98,10 +95,9 @@
     {{ sql }}
   {% endcall %}
 
-  {{ run_hooks(post_hooks, inside_transaction=True) }}
-  -- `COMMIT` happens here
-  {{ adapter.commit() }}
-  {{ run_hooks(post_hooks, inside_transaction=False) }}
+  {% do persist_docs(target_relation, model) %}
+
+  {{ run_hooks(post_hooks) }}
 
   {{ return({'relations': [target_relation]}) }}
 

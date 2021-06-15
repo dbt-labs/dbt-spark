@@ -76,7 +76,7 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
             },
             'test': {
                 'outputs': {
-                    'default2': {
+                    'thrift': {
                         'type': 'spark',
                         'host': 'localhost',
                         'user': 'dbt',
@@ -87,7 +87,7 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
                         'schema': self.unique_schema()
                     },
                 },
-                'target': 'default2'
+                'target': 'thrift'
             }
         }
 
@@ -98,7 +98,7 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
             },
             'test': {
                 'outputs': {
-                    'odbc': {
+                    'cluster': {
                         'type': 'spark',
                         'method': 'odbc',
                         'host': os.getenv('DBT_DATABRICKS_HOST_NAME'),
@@ -109,7 +109,7 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
                         'schema': self.unique_schema()
                     },
                 },
-                'target': 'odbc'
+                'target': 'cluster'
             }
         }
 
@@ -120,7 +120,7 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
             },
             'test': {
                 'outputs': {
-                    'default2': {
+                    'endpoint': {
                         'type': 'spark',
                         'method': 'odbc',
                         'host': os.getenv('DBT_DATABRICKS_HOST_NAME'),
@@ -131,7 +131,7 @@ class DBTSparkIntegrationTest(DBTIntegrationTestBase):
                         'schema': self.unique_schema()
                     },
                 },
-                'target': 'default2'
+                'target': 'endpoint'
             }
         }
 
