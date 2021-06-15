@@ -1,11 +1,16 @@
-## dbt next
+## dbt-spark 0.20.0 (Release TBD)
+
+### Fixes
+
+- Fix column-level `persist_docs` on Delta tables, add tests ([#180](https://github.com/fishtown-analytics/dbt-spark/pull/180))
+
+## dbt-spark 0.20.0rc1 (June 8, 2021)
 
 ### Features
 
 - Allow user to specify `use_ssl` ([#169](https://github.com/fishtown-analytics/dbt-spark/pull/169))
 - Allow setting table `OPTIONS` using `config` ([#171](https://github.com/fishtown-analytics/dbt-spark/pull/171))
-- Add support for column comment ([#170](https://github.com/fishtown-analytics/dbt-spark/pull/170))
-
+- Add support for column-level `persist_docs` on Delta tables ([#84](https://github.com/fishtown-analytics/dbt-spark/pull/84), [#170](https://github.com/fishtown-analytics/dbt-spark/pull/170))
 
 ### Fixes
 - Cast `table_owner` to string to avoid errors generating docs ([#158](https://github.com/fishtown-analytics/dbt-spark/pull/158), [#159](https://github.com/fishtown-analytics/dbt-spark/pull/159))
@@ -24,7 +29,7 @@
 - [@cristianoperez](https://github.com/cristianoperez) ([#170](https://github.com/fishtown-analytics/dbt-spark/pull/170))
 
 
-## dbt-spark 0.19.1 (Release TBD)
+## dbt-spark 0.19.1 (April 2, 2021)
 
 ## dbt-spark 0.19.1b2 (February 26, 2021)
 
