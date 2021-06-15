@@ -42,24 +42,20 @@ class TestPersistDocsDelta(DBTSparkIntegrationTest):
         self.run_dbt(['seed'])
         self.run_dbt(['run'])
         
-        for table in ['table_parquet_model', 'table_delta_model', 'seed']:
+        for table in ['table_delta_model', 'seed']:
             results = self.run_sql(
                 'describe extended {schema}.{table}'.format(schema=self.unique_schema(), table=table),
                 fetch='all'
             )
             
             for result in results:
-                # parquet model will have table-level comment only
                 if result[0] == 'Comment':
                     whatis = 'Seed' if table == 'seed' else 'Table'
                     assert result[1].startswith(f'{whatis} model description')
-                
-                # delta tables will have table-level and column-level comments
-                if table in ['table_delta_model', 'seed']:
-                    if result[0] == 'id':
-                        assert result[2].startswith('id Column description')
-                    if result[0] == 'name':
-                        assert result[2].startswith('Some stuff here and then a call to')
+                if result[0] == 'id':
+                    assert result[2].startswith('id Column description')
+                if result[0] == 'name':
+                    assert result[2].startswith('Some stuff here and then a call to')
 
     # runs on Spark v3.0
     @use_profile("databricks_cluster")
