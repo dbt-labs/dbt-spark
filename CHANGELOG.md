@@ -1,3 +1,15 @@
+## dbt-spark 0.20.1 (June 24, 2021)
+
+### Features
+
+### Fixes
+- Add Spark [insert overwrite](http://spark.apache.org/docs/latest/sql-ref-syntax-dml-insert-overwrite-table.html) to csv seeds command to overwrite the existing data in the seed tables. As explained in [issue 112](https://github.com/fishtown-analytics/dbt-spark/issues/112), the current seed command in dbt-spark is appending to existing seeded tables.
+
+### Under the hood
+
+### Contributors
+- [@mv1742](https://github.com/mv1742) ([#159](https://github.com/mv1742/)
+
 ## dbt-spark 0.20.0 (Release TBD)
 
 ### Fixes
