@@ -1,3 +1,13 @@
+## dbt-spark 0.20.1 (June 22, 2021)
+
+### Features
+
+### Fixes
+- dbt seed command fixed with expected behavior from dbt global project to [truncate table](https://spark.apache.org/docs/3.0.0-preview/sql-ref-syntax-ddl-truncate-table.html) in order remove all rows from the existing seed tables and replace values. As explained in [issue 112](https://github.com/fishtown-analytics/dbt-spark/issues/112), the current seed command in dbt-spark appends to existing seeded tables instead overwriting.
+
+### Contributors
+- [@mv1742](https://github.com/mv1742) ([#181](https://github.com/mv1742/)
+
 ## dbt-spark 0.20.0 (Release TBD)
 
 ### Fixes

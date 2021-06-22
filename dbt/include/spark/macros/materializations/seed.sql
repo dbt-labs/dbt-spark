@@ -1,7 +1,7 @@
 {% macro spark__load_csv_rows(model, agate_table) %}
     {% set batch_size = 1000 %}
     {% set column_override = model['config'].get('column_types', {}) %}
-    
+
     {% set statements = [] %}
 
     {% for chunk in agate_table.rows | batch(batch_size) %}
@@ -37,7 +37,9 @@
 
 {% macro spark__reset_csv_table(model, full_refresh, old_relation, agate_table) %}
     {% if old_relation %}
-        {{ adapter.drop_relation(old_relation) }}
+        {{ adapter.truncate_relation(old_relation) }}
+        {% set sql = "truncate table " ~ old_relation %}
+        {{ return(sql) }}
     {% endif %}
     {% set sql = create_csv_table(model, agate_table) %}
     {{ return(sql) }}
