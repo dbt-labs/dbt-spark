@@ -3,7 +3,7 @@
 ### Features
 
 ### Fixes
-- Add Spark [insert overwrite](http://spark.apache.org/docs/latest/sql-ref-syntax-dml-insert-overwrite-table.html) to csv seeds command to overwrite the existing data in the seed tables. As explained in [issue 112](https://github.com/fishtown-analytics/dbt-spark/issues/112), the current seed command in dbt-spark is appending to existing seeded tables.
+- dbt seed command fixed with expected behavior from dbt global project to [truncate table](https://spark.apache.org/docs/3.0.0-preview/sql-ref-syntax-ddl-truncate-table.html) in order remove all rows from the existing seed tables and replace values. As explained in [issue 112](https://github.com/fishtown-analytics/dbt-spark/issues/112), the current seed command in dbt-spark appends to existing seeded tables instead overwriting.
 
 ### Contributors
 - [@mv1742](https://github.com/mv1742) ([#159](https://github.com/mv1742/)
