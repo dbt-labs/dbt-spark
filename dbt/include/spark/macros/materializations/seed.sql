@@ -36,14 +36,12 @@
 {% endmacro %}
 
 {% macro spark__reset_csv_table(model, full_refresh, old_relation, agate_table) %}
-    {% set sql = "" %}
-    {% if full_refresh %}
-        {{ adapter.drop_relation(old_relation) }}
-        {% set sql = create_csv_table(model, agate_table) %}
-    {% else %}
+    {% if old_relation %}
         {{ adapter.truncate_relation(old_relation) }}
         {% set sql = "truncate table " ~ old_relation %}
+        {{ return(sql) }}
     {% endif %}
+    {% set sql = create_csv_table(model, agate_table) %}
     {{ return(sql) }}
 {% endmacro %}
 
@@ -84,7 +82,6 @@
                                                type='table') -%}
   {%- set agate_table = load_agate_table() -%}
   {%- do store_result('agate_table', response='OK', agate_table=agate_table) -%}
-
   {{ run_hooks(pre_hooks) }}
 
   -- build model
