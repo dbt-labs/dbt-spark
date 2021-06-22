@@ -1,7 +1,7 @@
 {% macro spark__load_csv_rows(model, agate_table) %}
     {% set batch_size = 1000 %}
     {% set column_override = model['config'].get('column_types', {}) %}
-    
+
     {% set statements = [] %}
 
     {% for chunk in agate_table.rows | batch(batch_size) %}
@@ -12,7 +12,7 @@
         {% endfor %}
 
         {% set sql %}
-            insert {{ "overwrite" if loop.first else "into" }} {{ this.render() }} values
+            insert overwrite {{ this.render() }} values
             {% for row in chunk -%}
                 ({%- for col_name in agate_table.column_names -%}
                     {%- set inferred_type = adapter.convert_type(agate_table, loop.index0) -%}
