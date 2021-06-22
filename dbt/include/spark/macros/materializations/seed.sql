@@ -82,6 +82,7 @@
                                                type='table') -%}
   {%- set agate_table = load_agate_table() -%}
   {%- do store_result('agate_table', response='OK', agate_table=agate_table) -%}
+
   {{ run_hooks(pre_hooks) }}
 
   -- build model
