@@ -12,7 +12,7 @@
         {% endfor %}
 
         {% set sql %}
-            insert overwrite {{ this.render() }} values
+            insert into {{ this.render() }} values
             {% for row in chunk -%}
                 ({%- for col_name in agate_table.column_names -%}
                     {%- set inferred_type = adapter.convert_type(agate_table, loop.index0) -%}
