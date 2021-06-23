@@ -1,5 +1,9 @@
 ## dbt-spark 0.20.0 (Release TBD)
 
+### Features
+
+- Add support for `merge_update_columns` config in `merge`-strategy incremental models ([#183](https://github.com/fishtown-analytics/dbt-spark/pull/183), ([#184](https://github.com/fishtown-analytics/dbt-spark/pull/184))
+
 ### Fixes
 
 - Fix column-level `persist_docs` on Delta tables, add tests ([#180](https://github.com/fishtown-analytics/dbt-spark/pull/180))
