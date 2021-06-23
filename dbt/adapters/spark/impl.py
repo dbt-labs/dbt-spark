@@ -37,6 +37,7 @@ class SparkConfig(AdapterConfig):
     clustered_by: Optional[Union[List[str], str]] = None
     buckets: Optional[int] = None
     options: Optional[Dict[str, str]] = None
+    merge_update_columns: Optional[str] = None
 
 
 class SparkAdapter(SQLAdapter):
