@@ -16,7 +16,7 @@
 {% endmacro %}
 
 
-{% macro dbt_spark_validate_get_incremental_strategy(raw_strategy, file_format) %}
+{% macro dbt_spark_validate_get_incremental_strategy(raw_strategy, file_format, partition_by, partitions) %}
   {#-- Validate the incremental strategy #}
 
   {% set invalid_strategy_msg -%}
@@ -35,6 +35,12 @@
     Use the 'append' or 'merge' strategy instead
   {%- endset %}
 
+  {% set invalid_insert_overwrite_delta_msg %}
+    Invalid incremental strategy provided: {{ raw_strategy }}
+    Delta does not support dynamic partition overwrite
+    Use 'partitions' to specify which ones should be replaced
+  {% endset %}
+
   {% if raw_strategy not in ['append', 'merge', 'insert_overwrite'] %}
     {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
   {%-else %}
@@ -43,6 +49,9 @@
     {% endif %}
     {% if raw_strategy == 'insert_overwrite' and target.endpoint %}
       {% do exceptions.raise_compiler_error(invalid_insert_overwrite_endpoint_msg) %}
+    {% endif %}
+    {% if raw_strategy == 'insert_overwrite' and file_format == 'delta' and partition_by and not partitions %}
+      {% do exceptions.raise_compiler_error(invalid_insert_overwrite_delta_msg) %}
     {% endif %}
   {% endif %}
 

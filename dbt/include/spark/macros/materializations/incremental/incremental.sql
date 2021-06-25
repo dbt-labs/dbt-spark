@@ -3,9 +3,11 @@
   {#-- Validate early so we don't run SQL if the file_format + strategy combo is invalid --#}
   {%- set raw_file_format = config.get('file_format', default='parquet') -%}
   {%- set raw_strategy = config.get('incremental_strategy', default='append') -%}
+  {%- set partition_by = config.get('partition_by', none) -%}
+  {%- set partitions = config.get('partitions', none) -%}
   
   {%- set file_format = dbt_spark_validate_get_file_format(raw_file_format) -%}
-  {%- set strategy = dbt_spark_validate_get_incremental_strategy(raw_strategy, file_format) -%}
+  {%- set strategy = dbt_spark_validate_get_incremental_strategy(raw_strategy, file_format, partition_by, partitions) -%}
   
   {%- set unique_key = config.get('unique_key', none) -%}
   {%- set partition_by = config.get('partition_by', none) -%}
