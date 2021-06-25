@@ -38,6 +38,7 @@ class SparkConfig(AdapterConfig):
     buckets: Optional[int] = None
     options: Optional[Dict[str, str]] = None
     merge_update_columns: Optional[str] = None
+    partitions: Optional[Dict[str, Any]] = None
 
 
 class SparkAdapter(SQLAdapter):
