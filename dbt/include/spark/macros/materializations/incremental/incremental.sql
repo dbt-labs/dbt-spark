@@ -10,7 +10,6 @@
   {%- set strategy = dbt_spark_validate_get_incremental_strategy(raw_strategy, file_format, partition_by, partitions) -%}
   
   {%- set unique_key = config.get('unique_key', none) -%}
-  {%- set partition_by = config.get('partition_by', none) -%}
 
   {%- set full_refresh_mode = (flags.FULL_REFRESH == True) -%}
 
@@ -19,9 +18,15 @@
   {% set tmp_relation = make_temp_relation(this) %}
 
   {% if strategy == 'insert_overwrite' and partition_by %}
-    {% call statement() %}
-      set spark.sql.sources.partitionOverwriteMode = DYNAMIC
-    {% endcall %}
+    {% if file_format == 'delta' %}
+      {% call statement() %}
+        set spark.sql.sources.partitionOverwriteMode = STATIC
+      {% endcall %}
+    {% else %}
+      {% call statement() %}
+        set spark.sql.sources.partitionOverwriteMode = DYNAMIC
+      {% endcall %}
+    {% endif %}
   {% endif %}
 
   {{ run_hooks(pre_hooks) }}
