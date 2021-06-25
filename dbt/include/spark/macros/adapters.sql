@@ -37,6 +37,32 @@
   {% endif %}
 {%- endmacro -%}
 
+{% macro partition_values(label) %}
+  {%- set cols = config.get('partition_by') -%}
+  {%- set partitions = config.get('partitions') -%}
+
+  {%- if cols is not none %}
+    {%- if cols is string -%}
+      {%- set cols = [cols] -%}
+    {%- endif -%}
+    {{ label }} (
+    {%- for item in cols -%}
+      {%- if partitions is none -%}
+        {{ item }}
+      {%- else -%}
+        {%- set value = partitions[item] -%}
+        {%- if value is string -%}
+          {{ item }} = '{{ value }}'
+        {%- else -%}
+          {{ item }} = {{ value }}
+        {%- endif -%}
+      {%- endif -%}
+      {%- if not loop.last -%},{%- endif -%}
+    {%- endfor -%}
+    )
+  {%- endif -%}
+{% endmacro %}
+
 {% macro partition_cols(label, required=false) %}
   {%- set cols = config.get('partition_by', validator=validation.any[list, basestring]) -%}
   {%- if cols is not none %}
