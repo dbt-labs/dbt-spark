@@ -23,6 +23,7 @@ jobs:
         run: |
           python3 -m venv env
           source env/bin/activate
+          sudo apt-get install libsasl2-dev
           pip install -r dev_requirements.txt
           pip install twine wheel setuptools
           python setup.py sdist bdist_wheel
