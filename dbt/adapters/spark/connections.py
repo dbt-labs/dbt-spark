@@ -102,7 +102,8 @@ class SparkCredentials(Credentials):
                     f"{self.method} connection method requires "
                     "additional dependencies. \n"
                     "Install the additional required dependencies with "
-                    "`pip install dbt-spark[ODBC]`"
+                    "`pip install dbt-spark[ODBC]`\n\n"
+                    f"ImportError({e.msg})"
                 ) from e
 
         if (
