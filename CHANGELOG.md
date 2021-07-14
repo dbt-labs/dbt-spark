@@ -3,6 +3,7 @@
 ### Features
 
 - Add support for `merge_update_columns` config in `merge`-strategy incremental models ([#183](https://github.com/fishtown-analytics/dbt-spark/pull/183), ([#184](https://github.com/fishtown-analytics/dbt-spark/pull/184))
+- Add pyodbc import error message to dbt.exceptions.RuntimeException to get more detailed information when running `dbt debug` ([#192](https://github.com/dbt-labs/dbt-spark/pull/192))
 
 ### Fixes
 
