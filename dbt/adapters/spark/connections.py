@@ -96,7 +96,7 @@ class SparkCredentials(Credentials):
 
         if self.method == SparkConnectionMethod.ODBC:
             try:
-                import pyodbc
+                import pyodbc    # noqa: F401
             except ImportError as e:
                 raise dbt.exceptions.RuntimeException(
                     f"{self.method} connection method requires "
