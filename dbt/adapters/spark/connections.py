@@ -16,10 +16,6 @@ except ImportError:
     ThriftState = None
     THttpClient = None
     hive = None
-try:
-    import pyodbc
-except ImportError:
-    pyodbc = None
 from datetime import datetime
 import sqlparams
 
@@ -95,12 +91,15 @@ class SparkCredentials(Credentials):
         self.database = None
 
         if self.method == SparkConnectionMethod.ODBC and pyodbc is None:
-            raise dbt.exceptions.RuntimeException(
-                f"{self.method} connection method requires "
-                "additional dependencies. \n"
-                "Install the additional required dependencies with "
-                "`pip install dbt-spark[ODBC]`"
-            )
+            try:
+                import pyodbc
+            except ImportError as e:
+                raise dbt.exceptions.RuntimeException(
+                    f"{self.method} connection method requires "
+                    "additional dependencies. \n"
+                    "Install the additional required dependencies with "
+                    "`pip install dbt-spark[ODBC]`"
+                ) from e
 
         if (
             self.method == SparkConnectionMethod.ODBC and
@@ -377,6 +376,8 @@ class SparkConnectionManager(SQLConnectionManager):
                                             kerberos_service_name=creds.kerberos_service_name)  # noqa
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
+                    import pyodbc
+
                     if creds.cluster is not None:
                         required_fields = ['driver', 'host', 'port', 'token',
                                            'organization', 'cluster']
