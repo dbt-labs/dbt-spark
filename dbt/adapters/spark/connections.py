@@ -16,6 +16,10 @@ except ImportError:
     ThriftState = None
     THttpClient = None
     hive = None
+try:
+    import pyodbc
+except ImportError:
+    pyodbc = None
 from datetime import datetime
 import sqlparams
 
@@ -376,8 +380,6 @@ class SparkConnectionManager(SQLConnectionManager):
                                             kerberos_service_name=creds.kerberos_service_name)  # noqa
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
-                    import pyodbc
-
                     if creds.cluster is not None:
                         required_fields = ['driver', 'host', 'port', 'token',
                                            'organization', 'cluster']
