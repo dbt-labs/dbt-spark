@@ -90,7 +90,7 @@ class SparkCredentials(Credentials):
             )
         self.database = None
 
-        if self.method == SparkConnectionMethod.ODBC and pyodbc is None:
+        if self.method == SparkConnectionMethod.ODBC:
             try:
                 import pyodbc
             except ImportError as e:
