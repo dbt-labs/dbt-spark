@@ -73,6 +73,7 @@ A dbt profile for Spark connections support the following configurations:
 | user | The username to use to connect to the cluster | ❔ | ❔ | ❔ | `hadoop` |
 | connect_timeout | The number of seconds to wait before retrying to connect to a Pending Spark cluster | ❌ | ❔ (`10`) | ❔ (`10`) | `60` |
 | connect_retries | The number of times to try connecting to a Pending Spark cluster before giving up | ❌ | ❔ (`0`) | ❔ (`0`)  | `5` |
+| retry_all | Whether to retry all failed connections, and not just 'retryable' ones | ❌ | ❔ (`false`) | ❔ (`false`)  | `false` |
 
 **Databricks** connections differ based on the cloud provider:
 
@@ -123,6 +124,7 @@ your_profile_name:
       kerberos_service_name: hive
       connect_retries: 5
       connect_timeout: 60
+      retry_all: true
 ```
 
 
@@ -144,6 +146,7 @@ your_profile_name:
       # optional
       connect_retries: 5
       connect_timeout: 60
+      retry_all: true
 ```
 
 
@@ -250,6 +253,7 @@ spark-testing:
       schema: analytics
       connect_retries: 5
       connect_timeout: 60
+      retry_all: true
 ```
 
 Connecting to the local spark instance:
