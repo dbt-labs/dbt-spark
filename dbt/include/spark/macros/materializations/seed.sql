@@ -1,6 +1,7 @@
 {% macro spark__load_csv_rows(model, agate_table) %}
     {% set batch_size = 1000 %}
-
+    {% set column_override = model['config'].get('column_types', {}) %}
+    
     {% set statements = [] %}
 
     {% for chunk in agate_table.rows | batch(batch_size) %}
@@ -13,12 +14,10 @@
         {% set sql %}
             insert into {{ this.render() }} values
             {% for row in chunk -%}
-                ({%- for column in agate_table.columns -%}
-                    {%- if 'ISODate' in (column.data_type | string) -%}
-                      cast(%s as timestamp)
-                    {%- else -%}
-                    %s
-                    {%- endif -%}
+                ({%- for col_name in agate_table.column_names -%}
+                    {%- set inferred_type = adapter.convert_type(agate_table, loop.index0) -%}
+                    {%- set type = column_override.get(col_name, inferred_type) -%}
+                      cast(%s as {{type}})
                     {%- if not loop.last%},{%- endif %}
                 {%- endfor -%})
                 {%- if not loop.last%},{%- endif %}
@@ -82,10 +81,7 @@
   {%- set agate_table = load_agate_table() -%}
   {%- do store_result('agate_table', response='OK', agate_table=agate_table) -%}
 
-  {{ run_hooks(pre_hooks, inside_transaction=False) }}
-
-  -- `BEGIN` happens here:
-  {{ run_hooks(pre_hooks, inside_transaction=True) }}
+  {{ run_hooks(pre_hooks) }}
 
   -- build model
   {% set create_table_sql = reset_csv_table(model, full_refresh_mode, old_relation, agate_table) %}
@@ -99,10 +95,9 @@
     {{ sql }}
   {% endcall %}
 
-  {{ run_hooks(post_hooks, inside_transaction=True) }}
-  -- `COMMIT` happens here
-  {{ adapter.commit() }}
-  {{ run_hooks(post_hooks, inside_transaction=False) }}
+  {% do persist_docs(target_relation, model) %}
+
+  {{ run_hooks(post_hooks) }}
 
   {{ return({'relations': [target_relation]}) }}
 

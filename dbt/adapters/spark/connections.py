@@ -26,6 +26,18 @@ import sqlparams
 from hologram.helpers import StrEnum
 from dataclasses import dataclass
 from typing import Optional
+try:
+    from thrift.transport.TSSLSocket import TSSLSocket
+    import thrift
+    import ssl
+    import sasl
+    import thrift_sasl
+except ImportError:
+    TSSLSocket = None
+    thrift = None
+    ssl = None
+    sasl = None
+    thrift_sasl = None
 
 import base64
 import time
@@ -59,6 +71,7 @@ class SparkCredentials(Credentials):
     organization: str = '0'
     connect_retries: int = 0
     connect_timeout: int = 10
+    use_ssl: bool = False
     retry_all: bool = False
 
     @classmethod
@@ -255,7 +268,7 @@ class SparkConnectionManager(SQLConnectionManager):
     SPARK_CLUSTER_HTTP_PATH = "/sql/protocolv1/o/{organization}/{cluster}"
     SPARK_SQL_ENDPOINT_HTTP_PATH = "/sql/1.0/endpoints/{endpoint}"
     SPARK_CONNECTION_URL = (
-        "https://{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
+        "{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
     )
 
     @contextmanager
@@ -321,8 +334,13 @@ class SparkConnectionManager(SQLConnectionManager):
                     cls.validate_creds(creds, ['token', 'host', 'port',
                                                'cluster', 'organization'])
 
+                    # Prepend https:// if it is missing
+                    host = creds.host
+                    if not host.startswith('https://'):
+                        host = 'https://' + creds.host
+
                     conn_url = cls.SPARK_CONNECTION_URL.format(
-                        host=creds.host,
+                        host=host,
                         port=creds.port,
                         organization=creds.organization,
                         cluster=creds.cluster
@@ -344,14 +362,22 @@ class SparkConnectionManager(SQLConnectionManager):
                     cls.validate_creds(creds,
                                        ['host', 'port', 'user', 'schema'])
 
-                    conn = hive.connect(host=creds.host,
-                                        port=creds.port,
-                                        username=creds.user,
-                                        auth=creds.auth,
-                                        kerberos_service_name=creds.kerberos_service_name)  # noqa
+                    if creds.use_ssl:
+                        transport = build_ssl_transport(
+                            host=creds.host,
+                            port=creds.port,
+                            username=creds.user,
+                            auth=creds.auth,
+                            kerberos_service_name=creds.kerberos_service_name)
+                        conn = hive.connect(thrift_transport=transport)
+                    else:
+                        conn = hive.connect(host=creds.host,
+                                            port=creds.port,
+                                            username=creds.user,
+                                            auth=creds.auth,
+                                            kerberos_service_name=creds.kerberos_service_name)  # noqa
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
-                    http_path = None
                     if creds.cluster is not None:
                         required_fields = ['driver', 'host', 'port', 'token',
                                            'organization', 'cluster']
@@ -436,6 +462,49 @@ class SparkConnectionManager(SQLConnectionManager):
         connection.handle = handle
         connection.state = ConnectionState.OPEN
         return connection
+
+
+def build_ssl_transport(host, port, username, auth,
+                        kerberos_service_name, password=None):
+    transport = None
+    if port is None:
+        port = 10000
+    if auth is None:
+        auth = 'NONE'
+    socket = TSSLSocket(host, port, cert_reqs=ssl.CERT_NONE)
+    if auth == 'NOSASL':
+        # NOSASL corresponds to hive.server2.authentication=NOSASL
+        # in hive-site.xml
+        transport = thrift.transport.TTransport.TBufferedTransport(socket)
+    elif auth in ('LDAP', 'KERBEROS', 'NONE', 'CUSTOM'):
+        # Defer import so package dependency is optional
+        if auth == 'KERBEROS':
+            # KERBEROS mode in hive.server2.authentication is GSSAPI
+            # in sasl library
+            sasl_auth = 'GSSAPI'
+        else:
+            sasl_auth = 'PLAIN'
+            if password is None:
+                # Password doesn't matter in NONE mode, just needs
+                # to be nonempty.
+                password = 'x'
+
+        def sasl_factory():
+            sasl_client = sasl.Client()
+            sasl_client.setAttr('host', host)
+            if sasl_auth == 'GSSAPI':
+                sasl_client.setAttr('service', kerberos_service_name)
+            elif sasl_auth == 'PLAIN':
+                sasl_client.setAttr('username', username)
+                sasl_client.setAttr('password', password)
+            else:
+                raise AssertionError
+            sasl_client.init()
+            return sasl_client
+
+        transport = thrift_sasl.TSaslClientTransport(sasl_factory,
+                                                     sasl_auth, socket)
+    return transport
 
 
 def _is_retryable_error(exc: Exception) -> Optional[str]:
