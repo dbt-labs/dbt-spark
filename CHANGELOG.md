@@ -3,6 +3,7 @@
 ### Features
 
 - Add support for `merge_update_columns` config in `merge`-strategy incremental models ([#183](https://github.com/fishtown-analytics/dbt-spark/pull/183), ([#184](https://github.com/fishtown-analytics/dbt-spark/pull/184))
+- Adds 'retry_all' configuration value to retry all connection issues, not just when the '_is_retryable_error' function determines ([#194](https://github.com/dbt-labs/dbt-spark/pull/194/))
 
 ### Fixes
 
@@ -34,11 +35,6 @@
 
 
 ## dbt-spark 0.19.1 (April 2, 2021)
-
-### Features
-- Adds 'retry_all' configuration value to retry all connection issues, not just when the '_is_retryable_error' function determines ([]())
-
-## dbt-spark 0.19.1b2 (February 26, 2021)
 
 ### Under the hood
 - Update serialization calls to use new API in dbt-core `0.19.1b2` ([#150](https://github.com/fishtown-analytics/dbt-spark/pull/150))
