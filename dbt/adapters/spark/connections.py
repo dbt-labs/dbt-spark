@@ -418,7 +418,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     time.sleep(creds.connect_timeout)
                 elif creds.retry_all and creds.connect_retries > 0:
                     msg = (
-                        f"Warning: {getattr(exc, 'message', None)}, "
+                        f"Warning: {getattr(exc, 'message', 'No message')}, "
                         f"retrying due to 'retry_all' configuration "
                         f"set to true.\n\tRetrying in "
                         f"{creds.connect_timeout} seconds "
