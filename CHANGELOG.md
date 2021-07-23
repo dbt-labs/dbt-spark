@@ -7,6 +7,7 @@
 ### Fixes
 
 - Fix column-level `persist_docs` on Delta tables, add tests ([#180](https://github.com/fishtown-analytics/dbt-spark/pull/180))
+- Fix `get_columns_in_relation` when called on models created in the same run ([#197](https://github.com/dbt-labs/dbt-spark/pull/197))
 
 ## dbt-spark 0.20.0rc1 (June 8, 2021)
 
