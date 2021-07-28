@@ -212,7 +212,7 @@ class SparkAdapter(SQLAdapter):
                                 for cached_relation in cached_relations
                                 if str(cached_relation) == str(relation)),
                                None)
-        if cached_relation is None:
+        if cached_relation is None or cached_relation.information is None:
             rows: List[agate.Row] = super().get_columns_in_relation(relation)
             columns = self.parse_describe_extended(relation, rows)
         else:
