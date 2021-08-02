@@ -28,9 +28,9 @@ def _dbt_spark_version():
 package_version = _dbt_spark_version()
 description = """The SparkSQL plugin for dbt (data build tool)"""
 
-dbt_version = '0.20.0'
+dbt_version = '0.20.1rc1'
 # the package version should be the dbt version, with maybe some things on the
-# ends of it. (0.20.0 vs 0.20.0a1, 0.20.0.1, ...)
+# ends of it. (0.20.1rc1 vs 0.20.1rc1a1, 0.20.1rc1.1, ...)
 if not package_version.startswith(dbt_version):
     raise ValueError(
         f'Invalid setup.py: package_version={package_version} must start with '
