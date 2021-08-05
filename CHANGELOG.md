@@ -2,9 +2,11 @@
 
 ### Fixes
 - Fix `get_columns_in_relation` when called on models created in the same run ([#196](https://github.com/dbt-labs/dbt-spark/pull/196), [#197](https://github.com/dbt-labs/dbt-spark/pull/197))
+- Add support for [sql_header](https://docs.getdbt.com/reference/resource-configs/sql_header) ([#200](https://github.com/dbt-labs/dbt-spark/pull/200))
 
 ### Contributors
 - [@ali-tny](https://github.com/ali-tny) ([#197](https://github.com/fishtown-analytics/dbt-spark/pull/197))
+- [@jethron](https://github.com/jethron) ([#200](https://github.com/dbt-labs/dbt-spark/pull/200))
 
 ## dbt-spark 0.20.0 (July 12, 2021)
 
