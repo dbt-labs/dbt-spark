@@ -1,7 +1,11 @@
 {% macro get_insert_overwrite_sql(source_relation, target_relation) %}
-    
+
     {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
     {%- set dest_cols_csv = dest_columns | map(attribute='quoted') | join(', ') -%}
+    {%- set sql_header = config.get('sql_header', none) -%}
+
+    {{ sql_header if sql_header is not none }}
+
     insert overwrite table {{ target_relation }}
     {{ partition_cols(label="partition") }}
     select {{dest_cols_csv}} from {{ source_relation.include(database=false, schema=false) }}
@@ -22,7 +26,8 @@
 {% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
   {# skip dest_columns, use merge_update_columns config if provided, otherwise use "*" #}
   {%- set update_columns = config.get("merge_update_columns") -%}
-  
+  {%- set sql_header = config.get('sql_header', none) -%}
+
   {% set merge_condition %}
     {% if unique_key %}
         on DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
@@ -30,7 +35,9 @@
         on false
     {% endif %}
   {% endset %}
-  
+
+    {{ sql_header if sql_header is not none }}
+
     merge into {{ target }} as DBT_INTERNAL_DEST
       using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
       

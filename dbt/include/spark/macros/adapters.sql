@@ -84,6 +84,9 @@
 {% endmacro %}
 
 {% macro spark__create_table_as(temporary, relation, sql) -%}
+  {%- set sql_header = config.get('sql_header', none) -%}
+  {{ sql_header if sql_header is not none }}
+
   {% if temporary -%}
     {{ create_temporary_view(relation, sql) }}
   {%- else -%}
@@ -105,6 +108,9 @@
 
 
 {% macro spark__create_view_as(relation, sql) -%}
+  {%- set sql_header = config.get('sql_header', none) -%}
+  {{ sql_header if sql_header is not none }}
+
   create or replace view {{ relation }}
   {{ comment_clause() }}
   as
