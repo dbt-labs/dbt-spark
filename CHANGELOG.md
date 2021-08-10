@@ -1,4 +1,6 @@
-## dbt-spark 0.20.1 (Release TBD)
+## dbt-spark 0.20.1 (August 2, 2021)
+
+## dbt-spark 0.20.1rc1 (August 2, 2021)
 
 ### Fixes
 - Fix `get_columns_in_relation` when called on models created in the same run ([#196](https://github.com/dbt-labs/dbt-spark/pull/196), [#197](https://github.com/dbt-labs/dbt-spark/pull/197))
@@ -8,9 +10,11 @@
 
 ## dbt-spark 0.20.0 (July 12, 2021)
 
+## dbt-spark 0.20.0rc2 (July 7, 2021)
+
 ### Features
 
-- Add support for `merge_update_columns` config in `merge`-strategy incremental models ([#183](https://github.com/fishtown-analytics/dbt-spark/pull/183), ([#184](https://github.com/fishtown-analytics/dbt-spark/pull/184))
+- Add support for `merge_update_columns` config in `merge`-strategy incremental models ([#183](https://github.com/fishtown-analytics/dbt-spark/pull/183), [#184](https://github.com/fishtown-analytics/dbt-spark/pull/184))
 
 ### Fixes
 
