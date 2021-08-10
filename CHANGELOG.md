@@ -8,7 +8,7 @@
 
 ## dbt-spark 0.21.0b1 (August 3, 2021)
 
-## dbt-spark 0.20.1 (Au gust 2, 2021)
+## dbt-spark 0.20.1 (August 2, 2021)
 
 ## dbt-spark 0.20.1rc1 (August 2, 2021)
 
