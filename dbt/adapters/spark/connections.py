@@ -94,13 +94,17 @@ class SparkCredentials(Credentials):
             )
         self.database = None
 
-        if self.method == SparkConnectionMethod.ODBC and pyodbc is None:
-            raise dbt.exceptions.RuntimeException(
-                f"{self.method} connection method requires "
-                "additional dependencies. \n"
-                "Install the additional required dependencies with "
-                "`pip install dbt-spark[ODBC]`"
-            )
+        if self.method == SparkConnectionMethod.ODBC:
+            try:
+                import pyodbc    # noqa: F401
+            except ImportError as e:
+                raise dbt.exceptions.RuntimeException(
+                    f"{self.method} connection method requires "
+                    "additional dependencies. \n"
+                    "Install the additional required dependencies with "
+                    "`pip install dbt-spark[ODBC]`\n\n"
+                    f"ImportError({e.msg})"
+                ) from e
 
         if (
             self.method == SparkConnectionMethod.ODBC and
