@@ -1,4 +1,4 @@
-## dbt-spark 0.20.1 (Release TBD)
+## dbt-spark 0.21.0 (Release TBD)
 
 ### Fixes
 - Add pyodbc import error message to dbt.exceptions.RuntimeException to get more detailed information when running `dbt debug` ([#192](https://github.com/dbt-labs/dbt-spark/pull/192))
