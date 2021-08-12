@@ -1,6 +1,7 @@
 ## dbt-spark 0.21.0 (Release TBD)
 
 ### Fixes
+- Parse properly columns when there are struct fields. 
 - Add pyodbc import error message to dbt.exceptions.RuntimeException to get more detailed information when running `dbt debug` ([#192](https://github.com/dbt-labs/dbt-spark/pull/192))
 - Add support for ODBC Server Side Parameters, allowing options that need to be set with the `SET` statement to be used ([#201](https://github.com/dbt-labs/dbt-spark/pull/201))
 
