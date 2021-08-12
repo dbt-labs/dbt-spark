@@ -1,9 +1,33 @@
-## dbt-spark 0.20.0 (Release TBD)
+## dbt-spark 0.21.0 (Release TBD)
+
+### Fixes
+- Add pyodbc import error message to dbt.exceptions.RuntimeException to get more detailed information when running `dbt debug` ([#192](https://github.com/dbt-labs/dbt-spark/pull/192))
+- Add support for ODBC Server Side Parameters, allowing options that need to be set with the `SET` statement to be used ([#201](https://github.com/dbt-labs/dbt-spark/pull/201))
+- Add `retry_all` configuration setting to retry all connection issues, not just when the `_is_retryable_error` function determines ([#194](https://github.com/dbt-labs/dbt-spark/pull/194/))
+
+### Contributors
+- [@JCZuurmond](https://github.com/JCZuurmond) ([#192](https://github.com/fishtown-analytics/dbt-spark/pull/192))
+- [@jethron](https://github.com/jethron) ([#201](https://github.com/fishtown-analytics/dbt-spark/pull/201))
+
+## dbt-spark 0.21.0b1 (August 3, 2021)
+
+## dbt-spark 0.20.1 (August 2, 2021)
+
+## dbt-spark 0.20.1rc1 (August 2, 2021)
+
+### Fixes
+- Fix `get_columns_in_relation` when called on models created in the same run ([#196](https://github.com/dbt-labs/dbt-spark/pull/196), [#197](https://github.com/dbt-labs/dbt-spark/pull/197))
+
+### Contributors
+- [@ali-tny](https://github.com/ali-tny) ([#197](https://github.com/fishtown-analytics/dbt-spark/pull/197))
+
+## dbt-spark 0.20.0 (July 12, 2021)
+
+## dbt-spark 0.20.0rc2 (July 7, 2021)
 
 ### Features
 
-- Add support for `merge_update_columns` config in `merge`-strategy incremental models ([#183](https://github.com/fishtown-analytics/dbt-spark/pull/183), ([#184](https://github.com/fishtown-analytics/dbt-spark/pull/184))
-- Adds 'retry_all' configuration value to retry all connection issues, not just when the '_is_retryable_error' function determines ([#194](https://github.com/dbt-labs/dbt-spark/pull/194/))
+- Add support for `merge_update_columns` config in `merge`-strategy incremental models ([#183](https://github.com/fishtown-analytics/dbt-spark/pull/183), [#184](https://github.com/fishtown-analytics/dbt-spark/pull/184))
 
 ### Fixes
 
