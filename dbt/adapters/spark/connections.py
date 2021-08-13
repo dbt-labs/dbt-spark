@@ -73,6 +73,7 @@ class SparkCredentials(Credentials):
     connect_timeout: int = 10
     use_ssl: bool = False
     server_side_parameters: Dict[str, Any] = field(default_factory=dict)
+    retry_all: bool = False
 
     @classmethod
     def __pre_deserialize__(cls, data):
@@ -449,6 +450,16 @@ class SparkConnectionManager(SQLConnectionManager):
                 if retryable_message and creds.connect_retries > 0:
                     msg = (
                         f"Warning: {retryable_message}\n\tRetrying in "
+                        f"{creds.connect_timeout} seconds "
+                        f"({i} of {creds.connect_retries})"
+                    )
+                    logger.warning(msg)
+                    time.sleep(creds.connect_timeout)
+                elif creds.retry_all and creds.connect_retries > 0:
+                    msg = (
+                        f"Warning: {getattr(exc, 'message', 'No message')}, "
+                        f"retrying due to 'retry_all' configuration "
+                        f"set to true.\n\tRetrying in "
                         f"{creds.connect_timeout} seconds "
                         f"({i} of {creds.connect_retries})"
                     )
