@@ -275,7 +275,7 @@ class TestSparkAdapter(unittest.TestCase):
             ('col1', 'decimal(22,0)'),
             ('col2', 'string',),
             ('dt', 'date'),
-            ('struct_col', 'struct<struct_inner_col:string>')
+            ('struct_col', 'struct<struct_inner_col:string>'),
             ('# Partition Information', 'data_type'),
             ('# col_name', 'data_type'),
             ('dt', 'date'),
