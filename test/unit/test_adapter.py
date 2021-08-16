@@ -646,12 +646,7 @@ class TestSparkAdapter(unittest.TestCase):
             'dtype': 'struct',
             'numeric_scale': None,
             'numeric_precision': None,
-            'char_size': None,
-
-            'stats:bytes:description': '',
-            'stats:bytes:include': True,
-            'stats:bytes:label': 'bytes',
-            'stats:bytes:value': 123456789,
+            'char_size': None
         })
 
     def test_parse_columns_from_information_with_table_type_and_parquet_provider(self):
