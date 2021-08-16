@@ -351,7 +351,7 @@ class TestSparkAdapter(unittest.TestCase):
             'table_owner': 'root',
             'column': 'struct_col',
             'column_index': 3,
-            'dtype': 'struct',
+            'dtype': 'struct<struct_inner_col:string>',
             'numeric_scale': None,
             'numeric_precision': None,
             'char_size': None
@@ -563,7 +563,7 @@ class TestSparkAdapter(unittest.TestCase):
             'table_owner': 'root',
             'column': 'struct_col',
             'column_index': 3,
-            'dtype': 'struct',
+            'dtype': 'struct<struct_inner_col:string>',
             'numeric_scale': None,
             'numeric_precision': None,
             'char_size': None,
