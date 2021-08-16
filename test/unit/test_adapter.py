@@ -300,7 +300,7 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_http(self.project_cfg)
         rows = SparkAdapter(config).parse_describe_extended(
             relation, input_cols)
-        self.assertEqual(len(rows), 3)
+        self.assertEqual(len(rows), 4)
         self.assertEqual(rows[0].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
