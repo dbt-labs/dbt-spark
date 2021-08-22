@@ -216,8 +216,9 @@ class SparkAdapter(SQLAdapter):
         if cached_relation and cached_relation.information:
             columns = self.parse_columns_from_information(cached_relation)
         if not columns:
-            # in open source delta 'show table extended' query output doesnt return relation's schema
-            # if columns are empty from cache, use get_columns_in_relation spark macro
+            # in open source delta 'show table extended' query output doesnt
+            # return relation's schema. if columns are empty from cache,
+            # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
             rows: List[agate.Row] = super().get_columns_in_relation(relation)
             columns = self.parse_describe_extended(relation, rows)
