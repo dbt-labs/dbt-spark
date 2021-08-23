@@ -64,7 +64,7 @@ class SparkAdapter(SQLAdapter):
         'stats:rows:include',
     )
     INFORMATION_COLUMNS_REGEX = re.compile(
-        r"\|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
+        r"^ \|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
     INFORMATION_OWNER_REGEX = re.compile(r"^Owner: (.*)$", re.MULTILINE)
     INFORMATION_STATISTICS_REGEX = re.compile(
         r"^Statistics: (.*)$", re.MULTILINE)
