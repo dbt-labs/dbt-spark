@@ -275,6 +275,7 @@ class TestSparkAdapter(unittest.TestCase):
             ('col1', 'decimal(22,0)'),
             ('col2', 'string',),
             ('dt', 'date'),
+            ('struct_col', 'struct<struct_inner_col:string>'),
             ('# Partition Information', 'data_type'),
             ('# col_name', 'data_type'),
             ('dt', 'date'),
@@ -299,7 +300,7 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_http(self.project_cfg)
         rows = SparkAdapter(config).parse_describe_extended(
             relation, input_cols)
-        self.assertEqual(len(rows), 3)
+        self.assertEqual(len(rows), 4)
         self.assertEqual(rows[0].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
@@ -337,6 +338,20 @@ class TestSparkAdapter(unittest.TestCase):
             'column': 'dt',
             'column_index': 2,
             'dtype': 'date',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
+        })
+
+        self.assertEqual(rows[3].to_column_dict(omit_none=False), {
+            'table_database': None,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'table_owner': 'root',
+            'column': 'struct_col',
+            'column_index': 3,
+            'dtype': 'struct<struct_inner_col:string>',
             'numeric_scale': None,
             'numeric_precision': None,
             'char_size': None
@@ -507,6 +522,8 @@ class TestSparkAdapter(unittest.TestCase):
             " |-- col1: decimal(22,0) (nullable = true)\n"
             " |-- col2: string (nullable = true)\n"
             " |-- dt: date (nullable = true)\n"
+            " |-- struct_col: struct (nullable = true)\n"
+            " |    |-- struct_inner_col: string (nullable = true)\n"
         )
         relation = SparkRelation.create(
             schema='default_schema',
@@ -518,7 +535,7 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_http(self.project_cfg)
         columns = SparkAdapter(config).parse_columns_from_information(
             relation)
-        self.assertEqual(len(columns), 3)
+        self.assertEqual(len(columns), 4)
         self.assertEqual(columns[0].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
@@ -528,6 +545,25 @@ class TestSparkAdapter(unittest.TestCase):
             'column': 'col1',
             'column_index': 0,
             'dtype': 'decimal(22,0)',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None,
+
+            'stats:bytes:description': '',
+            'stats:bytes:include': True,
+            'stats:bytes:label': 'bytes',
+            'stats:bytes:value': 123456789,
+        })
+
+        self.assertEqual(columns[3].to_column_dict(omit_none=False), {
+            'table_database': None,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'table_owner': 'root',
+            'column': 'struct_col',
+            'column_index': 3,
+            'dtype': 'struct',
             'numeric_scale': None,
             'numeric_precision': None,
             'char_size': None,
@@ -571,6 +607,8 @@ class TestSparkAdapter(unittest.TestCase):
             " |-- col1: decimal(22,0) (nullable = true)\n"
             " |-- col2: string (nullable = true)\n"
             " |-- dt: date (nullable = true)\n"
+            " |-- struct_col: struct (nullable = true)\n"
+            " |    |-- struct_inner_col: string (nullable = true)\n"
         )
         relation = SparkRelation.create(
             schema='default_schema',
@@ -582,7 +620,7 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_http(self.project_cfg)
         columns = SparkAdapter(config).parse_columns_from_information(
             relation)
-        self.assertEqual(len(columns), 3)
+        self.assertEqual(len(columns), 4)
         self.assertEqual(columns[1].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
@@ -592,6 +630,20 @@ class TestSparkAdapter(unittest.TestCase):
             'column': 'col2',
             'column_index': 1,
             'dtype': 'string',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None
+        })
+
+        self.assertEqual(columns[3].to_column_dict(omit_none=False), {
+            'table_database': None,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'table_owner': 'root',
+            'column': 'struct_col',
+            'column_index': 3,
+            'dtype': 'struct',
             'numeric_scale': None,
             'numeric_precision': None,
             'char_size': None
@@ -619,6 +671,8 @@ class TestSparkAdapter(unittest.TestCase):
             " |-- col1: decimal(22,0) (nullable = true)\n"
             " |-- col2: string (nullable = true)\n"
             " |-- dt: date (nullable = true)\n"
+            " |-- struct_col: struct (nullable = true)\n"
+            " |    |-- struct_inner_col: string (nullable = true)\n"
         )
         relation = SparkRelation.create(
             schema='default_schema',
@@ -630,7 +684,7 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_http(self.project_cfg)
         columns = SparkAdapter(config).parse_columns_from_information(
             relation)
-        self.assertEqual(len(columns), 3)
+        self.assertEqual(len(columns), 4)
         self.assertEqual(columns[2].to_column_dict(omit_none=False), {
             'table_database': None,
             'table_schema': relation.schema,
@@ -640,6 +694,30 @@ class TestSparkAdapter(unittest.TestCase):
             'column': 'dt',
             'column_index': 2,
             'dtype': 'date',
+            'numeric_scale': None,
+            'numeric_precision': None,
+            'char_size': None,
+
+            'stats:bytes:description': '',
+            'stats:bytes:include': True,
+            'stats:bytes:label': 'bytes',
+            'stats:bytes:value': 1234567890,
+
+            'stats:rows:description': '',
+            'stats:rows:include': True,
+            'stats:rows:label': 'rows',
+            'stats:rows:value': 12345678
+        })
+
+        self.assertEqual(columns[3].to_column_dict(omit_none=False), {
+            'table_database': None,
+            'table_schema': relation.schema,
+            'table_name': relation.name,
+            'table_type': rel_type,
+            'table_owner': 'root',
+            'column': 'struct_col',
+            'column_index': 3,
+            'dtype': 'struct',
             'numeric_scale': None,
             'numeric_precision': None,
             'char_size': None,
