@@ -20,6 +20,8 @@
 
 ### Contributors
 - [@ali-tny](https://github.com/ali-tny) ([#197](https://github.com/fishtown-analytics/dbt-spark/pull/197))
+- [@SCouto](https://github.com/Scouto) ([#204](https://github.com/dbt-labs/dbt-spark/pull/204))
+
 
 ## dbt-spark 0.20.0 (July 12, 2021)
 
