@@ -68,6 +68,13 @@ class SparkAdapter(SQLAdapter):
     INFORMATION_OWNER_REGEX = re.compile(r"^Owner: (.*)$", re.MULTILINE)
     INFORMATION_STATISTICS_REGEX = re.compile(
         r"^Statistics: (.*)$", re.MULTILINE)
+    HUDI_METADATA_COLUMNS = [
+        '_hoodie_commit_time',
+        '_hoodie_commit_seqno',
+        '_hoodie_record_key',
+        '_hoodie_partition_path',
+        '_hoodie_file_name'
+    ]
 
     Relation = SparkRelation
     Column = SparkColumn
@@ -222,6 +229,9 @@ class SparkAdapter(SQLAdapter):
             # which would execute 'describe extended tablename' query
             rows: List[agate.Row] = super().get_columns_in_relation(relation)
             columns = self.parse_describe_extended(relation, rows)
+
+        # strip hudi metadata columns.
+        columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
         return columns
 
     def parse_columns_from_information(

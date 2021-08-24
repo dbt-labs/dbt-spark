@@ -14,11 +14,13 @@ services:
     volumes:
       - ./.spark-warehouse/:/spark-warehouse/
       - ./docker/hive-site.xml:/usr/spark/conf/hive-site.xml
+      - ./docker/spark-defaults.conf:/usr/spark/conf/spark-defaults.conf
+      - ./docker/jars/hudi-spark3-bundle_2.12-0.9.0-SNAPSHOT.jar:/usr/spark/jars/hudi-spark3-bundle_2.12-0.9.0-SNAPSHOT.jar
     environment:
       - WAIT_FOR=dbt-hive-metastore:5432
 
   dbt-hive-metastore:
-    image: postgres:9.6.17-alpine
+    image: postgres:9.6.22-alpine
     volumes:
       - ./.hive-metastore/:/var/lib/postgresql/data
     environment:

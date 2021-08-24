@@ -1,7 +1,7 @@
 {% macro dbt_spark_validate_get_file_format(raw_file_format) %}
   {#-- Validate the file format #}
 
-  {% set accepted_formats = ['text', 'csv', 'json', 'jdbc', 'parquet', 'orc', 'hive', 'delta', 'libsvm'] %}
+  {% set accepted_formats = ['text', 'csv', 'json', 'jdbc', 'parquet', 'orc', 'hive', 'delta', 'libsvm', 'hudi'] %}
 
   {% set invalid_file_format_msg -%}
     Invalid file format provided: {{ raw_file_format }}
@@ -26,7 +26,7 @@
 
   {% set invalid_merge_msg -%}
     Invalid incremental strategy provided: {{ raw_strategy }}
-    You can only choose this strategy when file_format is set to 'delta'
+    You can only choose this strategy when file_format is set to 'delta' or 'hudi'
   {%- endset %}
   
   {% set invalid_insert_overwrite_delta_msg -%}
@@ -44,7 +44,7 @@
   {% if raw_strategy not in ['append', 'merge', 'insert_overwrite'] %}
     {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
   {%-else %}
-    {% if raw_strategy == 'merge' and file_format != 'delta' %}
+    {% if raw_strategy == 'merge' and file_format not in ['delta', 'hudi'] %}
       {% do exceptions.raise_compiler_error(invalid_merge_msg) %}
     {% endif %}
     {% if raw_strategy == 'insert_overwrite' and file_format == 'delta' %}
