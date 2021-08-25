@@ -78,6 +78,23 @@ class TestDeltaStrategies(TestIncrementalStrategies):
         self.run_and_test()
 
 
+class TestHudiStrategies(TestIncrementalStrategies):
+    @property
+    def models(self):
+        return "models_hudi"
+
+    def run_and_test(self):
+        self.seed_and_run_twice()
+        self.assertTablesEqual("append", "expected_append")
+        self.assertTablesEqual("merge_no_key", "expected_append")
+        self.assertTablesEqual("merge_unique_key", "expected_upsert")
+        self.assertTablesEqual("merge_update_columns", "expected_partial_upsert")
+
+    @use_profile("apache_spark")
+    def test_hudi_strategies_apache_spark(self):
+        self.run_and_test()
+
+
 class TestBadStrategies(TestIncrementalStrategies):
     @property
     def models(self):

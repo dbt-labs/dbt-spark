@@ -26,6 +26,7 @@ class SparkRelation(BaseRelation):
     include_policy: SparkIncludePolicy = SparkIncludePolicy()
     quote_character: str = '`'
     is_delta: Optional[bool] = None
+    is_hudi: Optional[bool] = None
     information: str = None
 
     def __post_init__(self):

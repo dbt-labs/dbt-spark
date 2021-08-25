@@ -1,0 +1,34 @@
+target:
+  type: spark
+  host: localhost
+  user: dbt
+  method: thrift
+  port: 10000
+  connect_retries: 5
+  connect_timeout: 60
+  schema: "analytics_{{ var('_dbt_random_suffix') }}"
+projects:
+  - overrides: snapshot_strategy_check_cols
+    dbt_project_yml: &file_format_hudi
+      # we're going to UPDATE the seed tables as part of testing, so we must make them hudi format
+      seeds:
+        dbt_test_project:
+          file_format: hudi
+      snapshots:
+        dbt_test_project:
+          file_format: hudi
+  - overrides: snapshot_strategy_timestamp
+    dbt_project_yml: *file_format_delta
+sequences:
+  test_dbt_empty: empty
+  test_dbt_base: base
+  test_dbt_ephemeral: ephemeral
+  # snapshots require hudi format
+  test_dbt_snapshot_strategy_timestamp: snapshot_strategy_timestamp
+  test_dbt_snapshot_strategy_check_cols: snapshot_strategy_check_cols
+  test_dbt_data_test: data_test
+  test_dbt_schema_test: schema_test
+  # the local cluster currently tests on spark 2.x, which does not support this
+  # if we upgrade it to 3.x, we can enable this test
+  # test_dbt_incremental: incremental
+  # test_dbt_ephemeral_data_tests: data_test_ephemeral_models
