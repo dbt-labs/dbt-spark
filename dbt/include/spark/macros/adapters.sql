@@ -14,8 +14,16 @@
 {%- endmacro -%}
 
 {% macro options_clause() -%}
-  {%- set options = config.get('options') -%}
-  {%- if options is not none %}
+  {%- set options = config.get('options', {}) -%}
+  {%- if config.get('file_format') == 'hudi' -%}
+    {%- if 'primaryKey' not in options and config.get('unique_key', None) != None -%}
+      {%- set _ = options.update({'primaryKey': config.get('unique_key')}) -%}
+    {%- elif 'primaryKey' in options and options['primaryKey'] != config.get('unique_key') -%}
+      {{ exceptions.raise_compiler_error("unique_key and options('primaryKey') should be the same column(s).") }}
+    {%- endif %}
+  {%- endif %}
+
+  {%- if options %}
     options (
       {%- for option in options -%}
       {{ option }} "{{ options[option] }}" {% if not loop.last %}, {% endif %}

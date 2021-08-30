@@ -233,7 +233,8 @@ class SparkAdapter(SQLAdapter):
             columns = self.parse_describe_extended(relation, rows)
 
         # strip hudi metadata columns.
-        columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
+        if cached_relation.is_hudi:
+            columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
         return columns
 
     def parse_columns_from_information(

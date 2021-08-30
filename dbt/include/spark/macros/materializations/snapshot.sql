@@ -91,7 +91,7 @@
   {% endif %}
 
   {%- if target_relation_exists -%}
-    {%- if not target_relation.is_delta or if not target_relation.is_hudi -%}
+    {%- if not target_relation.is_delta or not target_relation.is_hudi -%}
       {% set invalid_format_msg -%}
         The existing table {{ model.schema }}.{{ target_table }} is in another format than 'delta' or 'hudi'
       {%- endset %}
