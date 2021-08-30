@@ -89,6 +89,10 @@ class TestHudiStrategies(TestIncrementalStrategies):
         self.assertTablesEqual("merge_no_key", "expected_append")
         self.assertTablesEqual("merge_unique_key", "expected_upsert")
         self.assertTablesEqual("merge_update_columns", "expected_partial_upsert")
+        self.assertTablesEqual(
+            "insert_overwrite_no_partitions", "expected_overwrite")
+        self.assertTablesEqual(
+            "insert_overwrite_partitions", "expected_upsert")
 
     @use_profile("apache_spark")
     def test_hudi_strategies_apache_spark(self):
