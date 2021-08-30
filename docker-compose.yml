@@ -19,7 +19,7 @@ services:
       - WAIT_FOR=dbt-hive-metastore:5432
 
   dbt-hive-metastore:
-    image: postgres:9.6.22-alpine
+    image: postgres:9.6.17-alpine
     volumes:
       - ./.hive-metastore/:/var/lib/postgresql/data
     environment:
