@@ -26,7 +26,7 @@
     {%- endif %}
   {%- endif %}
 
-  {%- if options is not none -%}
+  {%- if options is not none %}
     options (
       {%- for option in options -%}
       {{ option }} "{{ options[option] }}" {% if not loop.last %}, {% endif %}
