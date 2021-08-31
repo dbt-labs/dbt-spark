@@ -16,6 +16,10 @@ class TestIncrementalStrategies(DBTIntegrationTest):
             },
         }
 
+    def seed_and_run_once(self):
+        self.run_dbt(["seed"])
+        self.run_dbt(["run"])
+
     def seed_and_run_twice(self):
         self.run_dbt(["seed"])
         self.run_dbt(["run"])
@@ -84,7 +88,7 @@ class TestHudiStrategies(TestIncrementalStrategies):
         return "models_hudi"
 
     def run_and_test(self):
-        self.seed_and_run_twice()
+        self.seed_and_run_once()
         self.assertTablesEqual("append", "expected_append")
         self.assertTablesEqual("merge_no_key", "expected_append")
         self.assertTablesEqual("merge_unique_key", "expected_upsert")
