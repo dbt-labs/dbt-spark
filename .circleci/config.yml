@@ -32,6 +32,7 @@ jobs:
           --conf spark.hadoop.datanucleus.autoCreateTables=true
           --conf spark.hadoop.datanucleus.schema.autoCreateTables=true
           --conf spark.hadoop.datanucleus.fixedDatastore=false
+          --conf spark.sql.hive.convertMetastoreParquet=false
 
       - image: postgres:9.6.17-alpine
         environment:
