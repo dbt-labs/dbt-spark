@@ -29,6 +29,9 @@ jobs:
           --conf spark.jars.packages=org.apache.hudi:hudi-spark-bundle_2.11:0.9.0
           --conf spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension
           --conf spark.driver.userClassPathFirst=true
+          --conf spark.hadoop.datanucleus.autoCreateTables=true
+          --conf spark.hadoop.datanucleus.schema.autoCreateTables=true
+          --conf spark.hadoop.datanucleus.fixedDatastore=false
 
       - image: postgres:9.6.17-alpine
         environment:
