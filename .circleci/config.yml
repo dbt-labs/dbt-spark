@@ -26,7 +26,7 @@ jobs:
           --conf spark.hadoop.javax.jdo.option.ConnectionPassword=dbt
           --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.postgresql.Driver
           --conf spark.serializer=org.apache.spark.serializer.KryoSerializer
-          --conf spark.jars.packages=org.apache.hudi:hudi-spark-bundle_2.12:0.9.0
+          --conf spark.jars.packages=org.apache.hudi:hudi-spark-bundle_2.11:0.9.0
           --conf spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension
           --conf spark.driver.userClassPathFirst=true
 
