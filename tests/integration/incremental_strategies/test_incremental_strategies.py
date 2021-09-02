@@ -92,7 +92,6 @@ class TestHudiStrategies(TestIncrementalStrategies):
         self.assertTablesEqual("append", "expected_append")
         self.assertTablesEqual("merge_no_key", "expected_append")
         self.assertTablesEqual("merge_unique_key", "expected_upsert")
-        self.assertTablesEqual("merge_update_columns", "expected_partial_upsert")
         self.assertTablesEqual(
             "insert_overwrite_no_partitions", "expected_overwrite")
         self.assertTablesEqual(
