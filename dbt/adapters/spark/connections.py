@@ -134,7 +134,7 @@ class SparkCredentials(Credentials):
     @property
     def type(self):
         return 'spark'
-        
+
     @property
     def unique_field(self):
         return self.host
