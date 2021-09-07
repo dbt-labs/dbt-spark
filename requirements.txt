@@ -1,4 +1,4 @@
-dbt-core==0.20.2rc2
+dbt-core==0.20.2
 PyHive[hive]>=0.6.0,<0.7.0
 pyodbc>=4.0.30
 sqlparams>=3.0.0
