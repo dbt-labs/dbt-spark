@@ -14,7 +14,6 @@ metadata:
   annotations:
     github.com/project-slug: cultureamp/dbt-spark
     github.com/team-slug: cultureamp/data-platform 
-    backstage.io/techdocs-ref: url:https://github.com/cultureamp/blob/master/dbt-spark
     buildkite.com/project-slug: culture-amp/dbt-spark
 spec:
   type: library
