@@ -1,9 +1,9 @@
 from cProfile import run
-from test.custom.base import DBTSparkIntegrationTest, use_profile
+from test.custom.base import DBTIntegrationTest, use_profile
 import dbt.exceptions
 
 
-class TestIncrementalStrategies(DBTSparkIntegrationTest):
+class TestIncrementalStrategies(DBTIntegrationTest):
     @property
     def schema(self):
         return "incremental_strategies"
