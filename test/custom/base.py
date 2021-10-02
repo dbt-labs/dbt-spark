@@ -79,7 +79,6 @@ class TestArgs:
         self.__dict__.update(kwargs)
 
 
-@staticmethod
 def _profile_from_test_name(test_name):
     adapter_names = ('apache_spark', 'databricks_cluster',
                      'databricks_sql_endpoint')
