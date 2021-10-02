@@ -40,6 +40,11 @@ jobs:
     name: ${{ matrix.toxenv }}
 
     runs-on: ubuntu-latest
+<<<<<<< HEAD
+=======
+    container:
+      image: fishtownanalytics/test-container:10
+>>>>>>> 1be1365 (Repo housekeeping)
 
     strategy:
       fail-fast: false
@@ -58,16 +63,26 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v2
+<<<<<<< HEAD
         with: 
           python-version: '3.8'
 
       - name: Install python dependencies
         run: |
           sudo apt-get install libsasl2-dev
+=======
+
+      - name: Install python dependencies
+        run: |
+>>>>>>> 1be1365 (Repo housekeeping)
           pip install --user --upgrade pip
           pip install tox
           pip --version
           tox --version
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1be1365 (Repo housekeeping)
       - name: Run tox
         run: tox
 
@@ -75,6 +90,11 @@ jobs:
     name: unit test / python ${{ matrix.python-version }}
 
     runs-on: ubuntu-latest
+<<<<<<< HEAD
+=======
+    container:
+      image: fishtownanalytics/test-container:10
+>>>>>>> 1be1365 (Repo housekeeping)
 
     strategy:
       fail-fast: false
@@ -98,11 +118,18 @@ jobs:
 
       - name: Install python dependencies
         run: |
+<<<<<<< HEAD
           sudo apt-get install libsasl2-dev
+=======
+>>>>>>> 1be1365 (Repo housekeeping)
           pip install --user --upgrade pip
           pip install tox
           pip --version
           tox --version
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1be1365 (Repo housekeeping)
       - name: Run tox
         run: tox
 
@@ -138,6 +165,10 @@ jobs:
           pip install --user --upgrade pip
           pip install --upgrade setuptools wheel twine check-wheel-contents
           pip --version
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1be1365 (Repo housekeeping)
       - name: Build distributions
         run: ./scripts/build-dist.sh
 
@@ -147,9 +178,17 @@ jobs:
       - name: Check distribution descriptions
         run: |
           twine check dist/*
+<<<<<<< HEAD
       - name: Check wheel contents
         run: |
           check-wheel-contents dist/*.whl --ignore W007,W008
+=======
+
+      - name: Check wheel contents
+        run: |
+          check-wheel-contents dist/*.whl --ignore W007,W008
+
+>>>>>>> 1be1365 (Repo housekeeping)
       - uses: actions/upload-artifact@v2
         with:
           name: dist
@@ -179,6 +218,10 @@ jobs:
           pip install --user --upgrade pip
           pip install --upgrade wheel
           pip --version
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1be1365 (Repo housekeeping)
       - uses: actions/download-artifact@v2
         with:
           name: dist
@@ -190,12 +233,24 @@ jobs:
       - name: Install wheel distributions
         run: |
           find ./dist/*.whl -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+<<<<<<< HEAD
       - name: Check wheel distributions
         run: |
           dbt --version
       - name: Install source distributions
         run: |
           find ./dist/*.gz -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+=======
+
+      - name: Check wheel distributions
+        run: |
+          dbt --version
+
+      - name: Install source distributions
+        run: |
+          find ./dist/*.gz -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+
+>>>>>>> 1be1365 (Repo housekeeping)
       - name: Check source distributions
         run: |
           dbt --version

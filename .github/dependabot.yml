@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    rebase-strategy: "disabled"
