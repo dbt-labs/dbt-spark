@@ -1,4 +1,9 @@
-## dbt-spark 0.21.0 (Release TBD)
+## dbt-spark 0.21.1 (Release TBD)
+
+### Fixes
+- Fix `--store-failures` for tests, by suppressing irrelevant error in `comment_clause()` macro ([#232](https://github.com/dbt-labs/dbt-spark/issues/232), [#233](https://github.com/dbt-labs/dbt-spark/pull/233))
+
+## dbt-spark 0.21.0 (October 4, 2021)
 
 ### Fixes
 - Enhanced get_columns_in_relation method to handle a bug in open source deltalake which doesnt return schema details in `show table extended in databasename like '*'` query output. This impacts dbt snapshots if file format is open source deltalake ([#207](https://github.com/dbt-labs/dbt-spark/pull/207))
