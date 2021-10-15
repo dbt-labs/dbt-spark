@@ -32,7 +32,7 @@
       {%- if raw_relation -%}
       comment '{{ model.description | replace("'", "\\'") }}'
       {% endif %}
-  {%- else -%}
+  {%- elif raw_persist_docs -%}
     {{ exceptions.raise_compiler_error("Invalid value provided for 'persist_docs'. Expected dict but got value: " ~ raw_persist_docs) }}
   {% endif %}
 {%- endmacro -%}
