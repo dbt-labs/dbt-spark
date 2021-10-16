@@ -42,7 +42,7 @@ class TestPersistDocsDelta(DBTSparkIntegrationTest):
         self.run_dbt(['seed'])
         self.run_dbt(['run'])
         
-        for table in ['table_delta_model', 'seed']:
+        for table in ['table_delta_model', 'seed', 'incremental_delta_model']:
             results = self.run_sql(
                 'describe extended {schema}.{table}'.format(schema=self.unique_schema(), table=table),
                 fetch='all'
