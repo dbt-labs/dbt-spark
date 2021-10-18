@@ -42,7 +42,11 @@ class TestPersistDocsDelta(DBTSparkIntegrationTest):
         self.run_dbt(['seed'])
         self.run_dbt(['run'])
         
-        for table in ['table_delta_model', 'seed']:
+        for table, whatis in [
+            ('table_delta_model', 'Table'), 
+            ('seed', 'Seed'), 
+            ('incremental_delta_model', 'Incremental')
+        ]:
             results = self.run_sql(
                 'describe extended {schema}.{table}'.format(schema=self.unique_schema(), table=table),
                 fetch='all'
@@ -50,7 +54,6 @@ class TestPersistDocsDelta(DBTSparkIntegrationTest):
             
             for result in results:
                 if result[0] == 'Comment':
-                    whatis = 'Seed' if table == 'seed' else 'Table'
                     assert result[1].startswith(f'{whatis} model description')
                 if result[0] == 'id':
                     assert result[2].startswith('id Column description')
