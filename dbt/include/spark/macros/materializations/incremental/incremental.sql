@@ -11,6 +11,8 @@
   {%- set partition_by = config.get('partition_by', none) -%}
 
   {%- set full_refresh_mode = (flags.FULL_REFRESH == True) -%}
+  
+  {% set on_schema_change = incremental_validate_on_schema_change(config.get('on_schema_change'), default='ignore') %}
 
   {% set target_relation = this %}
   {% set existing_relation = load_relation(this) %}
@@ -31,6 +33,7 @@
     {% set build_sql = create_table_as(False, target_relation, sql) %}
   {% else %}
     {% do run_query(create_table_as(True, tmp_relation, sql)) %}
+    {% do process_schema_changes(on_schema_change, tmp_relation, existing_relation) %}
     {% set build_sql = dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) %}
   {% endif %}
 
@@ -38,6 +41,8 @@
     {{ build_sql }}
   {%- endcall -%}
 
+  {% do persist_docs(target_relation, model) %}
+  
   {{ run_hooks(post_hooks) }}
 
   {{ return({'relations': [target_relation]}) }}

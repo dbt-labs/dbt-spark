@@ -32,7 +32,7 @@
       {%- if raw_relation -%}
       comment '{{ model.description | replace("'", "\\'") }}'
       {% endif %}
-  {%- else -%}
+  {%- elif raw_persist_docs -%}
     {{ exceptions.raise_compiler_error("Invalid value provided for 'persist_docs'. Expected dict but got value: " ~ raw_persist_docs) }}
   {% endif %}
 {%- endmacro -%}
@@ -125,7 +125,7 @@
 
 {% macro spark__get_columns_in_relation(relation) -%}
   {% call statement('get_columns_in_relation', fetch_result=True) %}
-      describe extended {{ relation }}
+      describe extended {{ relation.include(schema=(schema is not none)) }}
   {% endcall %}
   {% do return(load_result('get_columns_in_relation').table) %}
 {% endmacro %}
@@ -193,4 +193,49 @@
       {% do run_query(comment_query) %}
     {% endfor %}
   {% endif %}
+{% endmacro %}
+
+
+{% macro spark__make_temp_relation(base_relation, suffix) %}
+    {% set tmp_identifier = base_relation.identifier ~ suffix %}
+    {% set tmp_relation = base_relation.incorporate(path = {
+        "identifier": tmp_identifier,
+        "schema": None
+    }) -%}
+
+    {% do return(tmp_relation) %}
+{% endmacro %}
+
+
+{% macro spark__alter_column_type(relation, column_name, new_column_type) -%}
+  {% call statement('alter_column_type') %}
+    alter table {{ relation }} alter column {{ column_name }} type {{ new_column_type }};
+  {% endcall %}
+{% endmacro %}
+
+
+{% macro spark__alter_relation_add_remove_columns(relation, add_columns, remove_columns) %}
+  
+  {% if remove_columns %}
+    {% set platform_name = 'Delta Lake' if relation.is_delta else 'Apache Spark' %}
+    {{ exceptions.raise_compiler_error(platform_name + ' does not support dropping columns from tables') }}
+  {% endif %}
+  
+  {% if add_columns is none %}
+    {% set add_columns = [] %}
+  {% endif %}
+  
+  {% set sql -%}
+     
+     alter {{ relation.type }} {{ relation }}
+       
+       {% if add_columns %} add columns {% endif %}
+            {% for column in add_columns %}
+               {{ column.name }} {{ column.data_type }}{{ ',' if not loop.last }}
+            {% endfor %}
+  
+  {%- endset -%}
+
+  {% do run_query(sql) %}
+
 {% endmacro %}
