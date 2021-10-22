@@ -8,6 +8,7 @@ tox==3.2.0
 ipdb
 pytest-xdist>=2.1.0,<3
 flaky>=3.5.3,<4
+pytest-csv
 
 # Test requirements
 pytest-dbt-adapter==0.5.1
