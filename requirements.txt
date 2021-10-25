@@ -1,0 +1,6 @@
+dbt-core==1.0.0b1
+PyHive[hive]>=0.6.0,<0.7.0
+pyodbc>=4.0.30
+sqlparams>=3.0.0
+thrift>=0.13.0
+sqlparse>=0.4.2 # not directly required, pinned by Snyk to avoid a vulnerability
