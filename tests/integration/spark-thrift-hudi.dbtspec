@@ -18,7 +18,7 @@ projects:
         dbt_test_project:
           file_format: hudi
   - overrides: snapshot_strategy_timestamp
-    dbt_project_yml: *file_format_delta
+    dbt_project_yml: *file_format_hudi
 sequences:
   test_dbt_empty: empty
   test_dbt_base: base
