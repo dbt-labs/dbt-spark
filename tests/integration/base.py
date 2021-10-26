@@ -11,6 +11,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
 
+import pyodbc
 import pytest
 import yaml
 from unittest.mock import patch
@@ -24,7 +25,6 @@ from dbt.config import RuntimeConfig
 from dbt.context import providers
 from dbt.logger import GLOBAL_LOGGER as logger, log_manager
 from dbt.contracts.graph.manifest import Manifest
-
 
 INITIAL_ROOT = os.getcwd()
 
