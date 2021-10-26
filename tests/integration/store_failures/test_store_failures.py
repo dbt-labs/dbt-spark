@@ -21,7 +21,7 @@ class TestStoreFailures(DBTIntegrationTest):
 
     def test_store_failures(self):
         self.run_dbt(['run'])
-        results = self.run_dbt(['test', '--store-failures'], strict = False)
+        results = self.run_dbt(['test', '--store-failures'])
 
 class TestStoreFailuresApacheSpark(TestStoreFailures):
 
