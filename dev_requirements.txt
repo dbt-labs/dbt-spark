@@ -1,6 +1,7 @@
 # install latest changes in dbt-core
 # TODO: how to automate switching from develop to version branches?
-git+https://github.com/dbt-labs/dbt.git#egg=dbt-core&subdirectory=core
+# git+https://github.com/dbt-labs/dbt.git#egg=dbt-core&subdirectory=core
+dbt-core==0.21.0
 
 freezegun==0.3.9
 pytest==6.0.2
@@ -15,7 +16,7 @@ flaky>=3.5.3,<4
 pytest-csv
 
 # Test requirements
-#pytest-dbt-adapter==0.5.1
-git+https://github.com/dbt-labs/dbt-adapter-tests.git#egg=pytest-dbt-adapter
+pytest-dbt-adapter==0.5.1
+#git+https://github.com/dbt-labs/dbt-adapter-tests.git#egg=pytest-dbt-adapter
 sasl==0.2.1
 thrift_sasl==0.4.1
