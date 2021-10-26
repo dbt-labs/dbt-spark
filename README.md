@@ -14,7 +14,7 @@
 
 dbt is the T in ELT. Organize, cleanse, denormalize, filter, rename, and pre-aggregate the raw data in your warehouse so that it's ready for analysis.
 
-## dbt-snowflake
+## dbt-spark
 
 The `dbt-spark` package contains all of the code enabling dbt to work with Apache Spark and Databricks. For
 more information, consult [the docs](https://docs.getdbt.com/docs/profile-spark).
@@ -31,7 +31,7 @@ more information, consult [the docs](https://docs.getdbt.com/docs/profile-spark)
 
 ## Reporting bugs and contributing code
 
-- Want to report a bug or request a feature? Let us know on [Slack](http://community.getdbt.com/), or open [an issue](https://github.com/dbt-labs/dbt-snowflake/issues/new)
+- Want to report a bug or request a feature? Let us know on [Slack](http://community.getdbt.com/), or open [an issue](https://github.com/dbt-labs/dbt-spark/issues/new)
 - Want to help us build dbt? Check out the [Contributing Guide](https://github.com/dbt-labs/dbt/blob/HEAD/CONTRIBUTING.md)
 
 ## Code of Conduct
