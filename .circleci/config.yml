@@ -33,6 +33,8 @@ jobs:
           --conf spark.hadoop.datanucleus.schema.autoCreateTables=true
           --conf spark.hadoop.datanucleus.fixedDatastore=false
           --conf spark.sql.hive.convertMetastoreParquet=false
+          --hiveconf hoodie.datasource.hive_sync.use_jdbc=false
+          --hiveconf hoodie.datasource.hive_sync.mode=hms
           --hiveconf datanucleus.schema.autoCreateAll=true
           --hiveconf hive.metastore.schema.verification=false
 
