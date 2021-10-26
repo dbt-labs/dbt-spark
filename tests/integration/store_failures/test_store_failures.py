@@ -1,6 +1,6 @@
-from test.custom.base import DBTSparkIntegrationTest, use_profile
+from tests.integration.base import DBTIntegrationTest, use_profile
 
-class TestStoreFailures(DBTSparkIntegrationTest):
+class TestStoreFailures(DBTIntegrationTest):
     @property
     def schema(self):
         return "store_failures"
