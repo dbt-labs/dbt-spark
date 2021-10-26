@@ -1,11 +1,11 @@
 from cProfile import run
-from test.custom.base import DBTSparkIntegrationTest, use_profile
+from tests.integration.base import DBTIntegrationTest, use_profile
 import dbt.exceptions
 
 import json
 
 
-class TestPersistDocsDelta(DBTSparkIntegrationTest):
+class TestPersistDocsDelta(DBTIntegrationTest):
     @property
     def schema(self):
         return "persist_docs_columns"

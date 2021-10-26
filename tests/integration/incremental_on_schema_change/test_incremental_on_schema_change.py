@@ -1,9 +1,9 @@
 from cProfile import run
-from test.custom.base import DBTSparkIntegrationTest, use_profile
+from tests.integration.base import DBTIntegrationTest, use_profile
 import dbt.exceptions
 
 
-class TestIncrementalOnSchemaChange(DBTSparkIntegrationTest):
+class TestIncrementalOnSchemaChange(DBTIntegrationTest):
     @property
     def schema(self):
         return "incremental_on_schema_change"

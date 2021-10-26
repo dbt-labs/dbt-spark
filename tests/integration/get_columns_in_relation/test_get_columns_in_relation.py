@@ -1,7 +1,7 @@
-from test.custom.base import DBTSparkIntegrationTest, use_profile
+from tests.integration.base import DBTIntegrationTest, use_profile
 
 
-class TestGetColumnInRelationInSameRun(DBTSparkIntegrationTest):
+class TestGetColumnInRelationInSameRun(DBTIntegrationTest):
     @property
     def schema(self):
         return "get_columns_in_relation"

@@ -1,9 +1,9 @@
 from cProfile import run
-from test.custom.base import DBTSparkIntegrationTest, use_profile
+from tests.integration.base import DBTIntegrationTest, use_profile
 import dbt.exceptions
 
 
-class TestSeedColumnTypeCast(DBTSparkIntegrationTest):
+class TestSeedColumnTypeCast(DBTIntegrationTest):
     @property
     def schema(self):
         return "seed_column_types"

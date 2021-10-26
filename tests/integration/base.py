@@ -5,7 +5,7 @@ from dbt_adapter_tests import DBTIntegrationTestBase
 import pyodbc
 
 
-class DBTSparkIntegrationTest(DBTIntegrationTestBase):
+class DBTIntegrationTest(DBTIntegrationTestBase):
 
     def get_profile(self, adapter_type):
         if adapter_type == 'apache_spark':
@@ -157,7 +157,7 @@ def use_profile(profile_name):
         def func(self, *args, **kwargs):
             return wrapped(self, *args, **kwargs)
         # sanity check at import time
-        assert DBTSparkIntegrationTest._profile_from_test_name(
+        assert DBTIntegrationTest._profile_from_test_name(
             wrapped.__name__) == profile_name
         return func
     return outer
