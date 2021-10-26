@@ -19,6 +19,7 @@ A clear and concise description of what you expected to happen.
 ### Screenshots and log output
 If applicable, add screenshots or log output to help explain your problem.
 
+### System information
 **The output of `dbt --version`:**
 ```
 <output goes here>
