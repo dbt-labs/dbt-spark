@@ -3,7 +3,7 @@ name: Build and Release
 
 on:
   workflow_dispatch:
-
+  
 # Release version number that must be updated for each release
 env:
   version_number: '0.20.0rc2'
@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-python@v2.2.2
         with: 
           python-version: '3.8'
-
+          
       - uses: actions/checkout@v2
 
       - name: Test release        
@@ -30,6 +30,7 @@ jobs:
           pip install dist/dbt-spark-*.tar.gz
           pip install dist/dbt_spark-*-py3-none-any.whl
           twine check dist/dbt_spark-*-py3-none-any.whl dist/dbt-spark-*.tar.gz
+
   GitHubRelease:
     name: GitHub release
     runs-on: ubuntu-latest
@@ -39,7 +40,7 @@ jobs:
         uses: actions/setup-python@v2.2.2
         with: 
           python-version: '3.8'
-
+          
       - uses: actions/checkout@v2
 
       - name: Bumping version
@@ -51,6 +52,7 @@ jobs:
           bumpversion --config-file .bumpversion-dbt.cfg patch --new-version ${{env.version_number}}
           bumpversion --config-file .bumpversion.cfg patch --new-version ${{env.version_number}} --allow-dirty
           git status
+
       - name: Commit version bump and tag
         uses: EndBug/add-and-commit@v7
         with:
@@ -58,7 +60,7 @@ jobs:
           author_email: 'leah.antkiewicz@dbtlabs.com'
           message: 'Bumping version to ${{env.version_number}}'
           tag: v${{env.version_number}}
-
+          
       # Need to set an output variable because env variables can't be taken as input
       # This is needed for the next step with releasing to GitHub
       - name: Find release type
@@ -78,6 +80,7 @@ jobs:
           prerelease: ${{ steps.release_type.outputs.isPrerelease }}
           body: |
             Tracking [dbt-core v${{env.version_number}}](https://github.com/dbt-labs/dbt/releases/tag/v${{env.version_number}}).
+
             ```sh
             $ pip install dbt-spark==${{env.version_number}}
             # or
@@ -96,11 +99,11 @@ jobs:
         uses: actions/setup-python@v2.2.2
         with: 
           python-version: '3.8'
-
+          
       - uses: actions/checkout@v2
         with:
           ref: v${{env.version_number}}
-
+      
       - name: Release to pypi
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
@@ -113,4 +116,4 @@ jobs:
           pip install twine wheel setuptools
           python setup.py sdist bdist_wheel
           twine upload --non-interactive dist/dbt_spark-${{env.version_number}}-py3-none-any.whl dist/dbt-spark-${{env.version_number}}.tar.gz
-  
+          
