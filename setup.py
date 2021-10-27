@@ -1,41 +1,65 @@
 #!/usr/bin/env python
-from setuptools import find_namespace_packages, setup
 import os
+import sys
 import re
 
+# require python 3.6 or newer
+if sys.version_info < (3, 6):
+    print('Error: dbt does not support this version of Python.')
+    print('Please upgrade to Python 3.6 or higher.')
+    sys.exit(1)
 
+
+# require version of setuptools that supports find_namespace_packages
+from setuptools import setup
+try:
+    from setuptools import find_namespace_packages
+except ImportError:
+    # the user has a downlevel version of setuptools.
+    print('Error: dbt requires setuptools v40.1.0 or higher.')
+    print('Please upgrade setuptools with "pip install --upgrade setuptools" '
+          'and try again')
+    sys.exit(1)
+
+
+# pull long description from README
 this_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(this_directory, 'README.md'), 'r', encoding='utf8') as f:
     long_description = f.read()
 
 
-package_name = "dbt-spark"
-
-
-# get this from a separate file
-def _dbt_spark_version():
+# get this package's version from dbt/adapters/<name>/__version__.py
+def _get_plugin_version_dict():
     _version_path = os.path.join(
         this_directory, 'dbt', 'adapters', 'spark', '__version__.py'
     )
-    _version_pattern = r'''version\s*=\s*["'](.+)["']'''
+    _semver = r'''(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)'''
+    _pre = r'''((?P<prekind>a|b|rc)(?P<pre>\d+))?'''
+    _version_pattern = fr'''version\s*=\s*["']{_semver}{_pre}["']'''
     with open(_version_path) as f:
         match = re.search(_version_pattern, f.read().strip())
         if match is None:
             raise ValueError(f'invalid version at {_version_path}')
-        return match.group(1)
+        return match.groupdict()
 
 
-package_version = _dbt_spark_version()
-description = """The SparkSQL plugin for dbt (data build tool)"""
+def _get_plugin_version():
+    parts = _get_plugin_version_dict()
+    return "{major}.{minor}.{patch}{prekind}{pre}".format(**parts)
 
-dbt_version = '0.21.0'
-# the package version should be the dbt version, with maybe some things on the
-# ends of it. (0.21.0 vs 0.21.0a1, 0.21.0.1, ...)
-if not package_version.startswith(dbt_version):
-    raise ValueError(
-        f'Invalid setup.py: package_version={package_version} must start with '
-        f'dbt_version={dbt_version}'
-    )
+
+# require a compatible minor version (~=), prerelease if this is a prerelease
+def _get_dbt_core_version():
+    parts = _get_plugin_version_dict()
+    minor = "{major}.{minor}.0".format(**parts)
+    pre = (parts["prekind"]+"1" if parts["prekind"] else "")
+    return f"{minor}{pre}"
+
+
+package_name = "dbt-spark"
+package_version = _get_plugin_version()
+dbt_core_version = _get_dbt_core_version()
+description = """The Apache Spark adapter plugin for dbt"""
 
 odbc_extras = ['pyodbc>=4.0.30']
 pyhive_extras = [
@@ -52,14 +76,14 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
 
-    author='Fishtown Analytics',
-    author_email='info@fishtownanalytics.com',
-    url='https://github.com/fishtown-analytics/dbt-spark',
+    author='dbt Labs',
+    author_email='info@dbtlabs.com',
+    url='https://github.com/dbt-labs/dbt-spark',
 
     packages=find_namespace_packages(include=['dbt', 'dbt.*']),
     include_package_data=True,
     install_requires=[
-        f'dbt-core=={dbt_version}',
+        'dbt-core~={}'.format(dbt_core_version),
         'sqlparams>=3.0.0',
     ],
     extras_require={
