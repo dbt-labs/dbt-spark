@@ -1,14 +1,6 @@
 version: 2.1
 
 jobs:
-  unit:
-    environment:
-      DBT_INVOCATION_ENV: circle
-    docker:
-      - image: fishtownanalytics/test-container:10
-    steps:
-      - checkout
-      - run: tox -e flake8,unit
 
   integration-spark-thrift:
     environment:
@@ -94,16 +86,7 @@ workflows:
   version: 2
   test-everything:
     jobs:
-      - unit
-      - integration-spark-thrift:
-          requires:
-            - unit
-      - integration-spark-databricks-http:
-          requires:
-            - integration-spark-thrift
-      - integration-spark-databricks-odbc-cluster:
-          requires:
-            - integration-spark-thrift
-      - integration-spark-databricks-odbc-endpoint:
-          requires:
-            - integration-spark-thrift
+      - integration-spark-thrift
+      - integration-spark-databricks-http
+      - integration-spark-databricks-odbc-cluster
+      - integration-spark-databricks-odbc-endpoint
