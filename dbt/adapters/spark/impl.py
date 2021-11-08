@@ -16,8 +16,10 @@ from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
-from dbt.logger import GLOBAL_LOGGER as logger
+from dbt.events import AdapterLogger
 from dbt.utils import executor
+
+logger = AdapterLogger("Spark")
 
 GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
 LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
