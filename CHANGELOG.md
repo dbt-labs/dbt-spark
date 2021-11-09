@@ -1,3 +1,9 @@
+## dbt-spark 1.0.0 (Release TBD)
+
+### Under the hood
+
+- Remove official support for python 3.6, which is reaching end of life on December 23, 2021 ([dbt-core#4134](https://github.com/dbt-labs/dbt-core/issues/4134), [#253](https://github.com/dbt-labs/dbt-snowflake/pull/253))
+
 ## dbt-spark 0.21.1 (Release TBD)
 
 ### Fixes
