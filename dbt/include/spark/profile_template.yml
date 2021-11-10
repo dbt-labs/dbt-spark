@@ -2,7 +2,7 @@ fixed:
   type: spark
 prompts:
   host:
-    hint: [yourorg.sparkhost.com]
+    hint: yourorg.sparkhost.com
   _choose_authentication_method:
     odbc:
       _fixed_method: odbc
