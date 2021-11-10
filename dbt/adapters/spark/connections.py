@@ -4,7 +4,7 @@ import dbt.exceptions
 from dbt.adapters.base import Credentials
 from dbt.adapters.sql import SQLConnectionManager
 from dbt.contracts.connection import ConnectionState
-from dbt.logger import GLOBAL_LOGGER as logger
+from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
 from dbt.adapters.spark import __version__
 
@@ -41,6 +41,8 @@ except ImportError:
 
 import base64
 import time
+
+logger = AdapterLogger("Spark")
 
 NUMBERS = DECIMALS + (int, float)
 
