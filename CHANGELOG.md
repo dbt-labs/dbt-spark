@@ -1,18 +1,22 @@
 ## dbt-spark 1.0.0 (Release TBD)
 
+## dbt-spark 1.0.0rc1 (November 10, 2021)
+
 ### Under the hood
 
 - Remove official support for python 3.6, which is reaching end of life on December 23, 2021 ([dbt-core#4134](https://github.com/dbt-labs/dbt-core/issues/4134), [#253](https://github.com/dbt-labs/dbt-snowflake/pull/253))
 
+### Under the hood
+- Add support for structured logging [#251](https://github.com/dbt-labs/dbt-spark/pull/251)
+
 ## dbt-spark 0.21.1 (Release TBD)
+
+## dbt-spark 0.21.1rc1 (November 3, 2021)
 
 ### Fixes
 - Fix `--store-failures` for tests, by suppressing irrelevant error in `comment_clause()` macro ([#232](https://github.com/dbt-labs/dbt-spark/issues/232), [#233](https://github.com/dbt-labs/dbt-spark/pull/233))
 - Add support for `on_schema_change` config in incremental models: `ignore`, `fail`, `append_new_columns`. For `sync_all_columns`, removing columns is not supported by Apache Spark or Delta Lake ([#198](https://github.com/dbt-labs/dbt-spark/issues/198), [#226](https://github.com/dbt-labs/dbt-spark/issues/226), [#229](https://github.com/dbt-labs/dbt-spark/pull/229))
 - Add `persist_docs` call to incremental model ([#224](https://github.com/dbt-labs/dbt-spark/issues/224), [#234](https://github.com/dbt-labs/dbt-spark/pull/234))
-
-### Under the hood
-- Add support for structured logging [#251](https://github.com/dbt-labs/dbt-spark/pull/251)
 
 ### Contributors
 - [@binhnefits](https://github.com/binhnefits) ([#234](https://github.com/dbt-labs/dbt-spark/pull/234))
