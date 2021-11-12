@@ -2,15 +2,13 @@
 
 ### Under the hood
 - Refactor seed macros: remove duplicated code from dbt-core, and provide clearer logging of SQL parameters that differ by connection method ([#249](https://github.com/dbt-labs/dbt-spark/issues/249), [#250](https://github.com/dbt-labs/dbt-snowflake/pull/250))
+- Replace `sample_profiles.yml` with `profile_template.yml`, for use with new `dbt init` ([#247](https://github.com/dbt-labs/dbt-spark/pull/247))
 
 ## dbt-spark 1.0.0rc1 (November 10, 2021)
 
 ### Under the hood
 - Remove official support for python 3.6, which is reaching end of life on December 23, 2021 ([dbt-core#4134](https://github.com/dbt-labs/dbt-core/issues/4134), [#253](https://github.com/dbt-labs/dbt-snowflake/pull/253))
-- Add support for structured logging [#251](https://github.com/dbt-labs/dbt-spark/pull/251)
-
-### Under the hood
-- Add support for structured logging [#251](https://github.com/dbt-labs/dbt-spark/pull/251)
+- Add support for structured logging ([#251](https://github.com/dbt-labs/dbt-spark/pull/251))
 
 ## dbt-spark 0.21.1 (Release TBD)
 
