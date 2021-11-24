@@ -1,5 +1,7 @@
 ## dbt-spark 1.0.0 (Release TBD)
 
+## dbt-spark 1.0.0rc2 (November 24, 2021)
+
 ### Features
 - Add support for Apache Hudi (hudi file format) which supports incremental merge strategies ([#187](https://github.com/dbt-labs/dbt-spark/issues/187), [#210](https://github.com/dbt-labs/dbt-spark/pull/210))
 
