@@ -1,10 +1,10 @@
 ## dbt-spark 1.0.0 (Release TBD)
 
 ### Fixes
-- ```dbt run --full-refresh``` corrected to respect config that overrides full_refresh = False. As explained in [issue 260](https://github.com/dbt-labs/dbt-spark/issues/260), the current incremental implementation only uses the FULL_REFRESH flag, unlike the implementation in dbt-code/dbt-snowflake, etc.
+- Incremental materialization corrected to respect `full_refresh` config, by using `should_full_refresh()` macro ([#260](https://github.com/dbt-labs/dbt-spark/issues/260), [#262](https://github.com/dbt-labs/dbt-spark/pull/262/))
 
 ### Contributors
-- [@grindheim](https://github.com/grindheim) ([#260](https://github.com/dbt-labs/dbt-spark/pull/262/)
+- [@grindheim](https://github.com/grindheim) ([#262](https://github.com/dbt-labs/dbt-spark/pull/262/))
 
 ## dbt-spark 1.0.0rc2 (November 24, 2021)
 
@@ -25,12 +25,6 @@
 - Add support for structured logging ([#251](https://github.com/dbt-labs/dbt-spark/pull/251))
 
 ## dbt-spark 0.21.1 (Release TBD)
-
-### Fixes
-- ```dbt run --full-refresh``` corrected to respect config that overrides full_refresh = False. As explained in [issue 260](https://github.com/dbt-labs/dbt-spark/issues/260), the current incremental implementation only uses the FULL_REFRESH flag, unlike the implementation in dbt-code/dbt-snowflake, etc.
-
-### Contributors
-- [@grindheim](https://github.com/grindheim) ([#260](https://github.com/dbt-labs/dbt-spark/pull/262/)
 
 ## dbt-spark 0.21.1rc1 (November 3, 2021)
 
