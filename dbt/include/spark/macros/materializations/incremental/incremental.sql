@@ -10,7 +10,7 @@
   {%- set unique_key = config.get('unique_key', none) -%}
   {%- set partition_by = config.get('partition_by', none) -%}
 
-  {%- set full_refresh_mode = (flags.FULL_REFRESH == True) -%}
+  {%- set full_refresh_mode = (should_full_refresh()) -%}
   
   {% set on_schema_change = incremental_validate_on_schema_change(config.get('on_schema_change'), default='ignore') %}
 
