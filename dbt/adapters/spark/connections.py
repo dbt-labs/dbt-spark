@@ -305,7 +305,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
     @classmethod
     def get_response(cls, cursor) -> AdapterResponse:
-        # until we do this better: https://github.com/dbt-labs/dbt-spark/issues/142
+        # https://github.com/dbt-labs/dbt-spark/issues/142
         message = 'OK'
         return AdapterResponse(
             _message=message
