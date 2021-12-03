@@ -15,6 +15,17 @@
 
 {% macro options_clause() -%}
   {%- set options = config.get('options') -%}
+  {%- if config.get('file_format') == 'hudi' -%}
+    {%- set unique_key = config.get('unique_key') -%}
+    {%- if unique_key is not none and options is none -%}
+      {%- set options = {'primaryKey': config.get('unique_key')} -%}
+    {%- elif unique_key is not none and options is not none and 'primaryKey' not in options -%}
+      {%- set _ = options.update({'primaryKey': config.get('unique_key')}) -%}
+    {%- elif options is not none and 'primaryKey' in options and options['primaryKey'] != unique_key -%}
+      {{ exceptions.raise_compiler_error("unique_key and options('primaryKey') should be the same column(s).") }}
+    {%- endif %}
+  {%- endif %}
+
   {%- if options is not none %}
     options (
       {%- for option in options -%}
@@ -181,7 +192,7 @@
 {% endmacro %}
 
 {% macro spark__alter_column_comment(relation, column_dict) %}
-  {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
+  {% if config.get('file_format', validator=validation.any[basestring]) in ['delta', 'hudi'] %}
     {% for column_name in column_dict %}
       {% set comment = column_dict[column_name]['description'] %}
       {% set escaped_comment = comment | replace('\'', '\\\'') %}

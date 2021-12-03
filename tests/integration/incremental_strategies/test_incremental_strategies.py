@@ -16,6 +16,10 @@ class TestIncrementalStrategies(DBTIntegrationTest):
             },
         }
 
+    def seed_and_run_once(self):
+        self.run_dbt(["seed"])
+        self.run_dbt(["run"])
+
     def seed_and_run_twice(self):
         self.run_dbt(["seed"])
         self.run_dbt(["run"])
@@ -76,6 +80,26 @@ class TestDeltaStrategies(TestIncrementalStrategies):
     @use_profile("databricks_cluster")
     def test_delta_strategies_databricks_cluster(self):
         self.run_and_test()
+
+# Uncomment this hudi integration test after the hudi 0.10.0 release to make it work.
+# class TestHudiStrategies(TestIncrementalStrategies):
+#     @property
+#     def models(self):
+#         return "models_hudi"
+#
+#     def run_and_test(self):
+#         self.seed_and_run_once()
+#         self.assertTablesEqual("append", "expected_append")
+#         self.assertTablesEqual("merge_no_key", "expected_append")
+#         self.assertTablesEqual("merge_unique_key", "expected_upsert")
+#         self.assertTablesEqual(
+#             "insert_overwrite_no_partitions", "expected_overwrite")
+#         self.assertTablesEqual(
+#             "insert_overwrite_partitions", "expected_upsert")
+#
+#     @use_profile("apache_spark")
+#     def test_hudi_strategies_apache_spark(self):
+#         self.run_and_test()
 
 
 class TestBadStrategies(TestIncrementalStrategies):
