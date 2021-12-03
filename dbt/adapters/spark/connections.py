@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import dbt.exceptions
 from dbt.adapters.base import Credentials
 from dbt.adapters.sql import SQLConnectionManager
-from dbt.contracts.connection import ConnectionState
+from dbt.contracts.connection import ConnectionState, AdapterResponse
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
 from dbt.adapters.spark import __version__
@@ -304,8 +304,12 @@ class SparkConnectionManager(SQLConnectionManager):
         connection.handle.cancel()
 
     @classmethod
-    def get_response(cls, cursor):
-        return 'OK'
+    def get_response(cls, cursor) -> AdapterResponse:
+        # https://github.com/dbt-labs/dbt-spark/issues/142
+        message = 'OK'
+        return AdapterResponse(
+            _message=message
+        )
 
     # No transactions on Spark....
     def add_begin_query(self, *args, **kwargs):
