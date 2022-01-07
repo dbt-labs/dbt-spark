@@ -3,7 +3,7 @@ import os
 import sys
 import re
 
-# require python 3.6 or newer
+# require python 3.7 or newer
 if sys.version_info < (3, 7):
     print('Error: dbt does not support this version of Python.')
     print('Please upgrade to Python 3.7 or higher.')
@@ -41,11 +41,6 @@ def _get_plugin_version_dict():
         if match is None:
             raise ValueError(f'invalid version at {_version_path}')
         return match.groupdict()
-
-
-def _get_plugin_version():
-    parts = _get_plugin_version_dict()
-    return "{major}.{minor}.{patch}{prekind}{pre}".format(**parts)
 
 
 # require a compatible minor version (~=), prerelease if this is a prerelease
