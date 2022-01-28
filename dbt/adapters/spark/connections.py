@@ -287,6 +287,10 @@ class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
             self._cursor.execute(sql, *bindings)
 
 
+class SessionConnectionWrapper(PyodbcConnectionWrapper):
+    """Connection wrapper for the sessoin connection method."""
+
+
 class SparkConnectionManager(SQLConnectionManager):
     TYPE = 'spark'
 
