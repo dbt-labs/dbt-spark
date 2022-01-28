@@ -55,6 +55,7 @@ class SparkConnectionMethod(StrEnum):
     THRIFT = 'thrift'
     HTTP = 'http'
     ODBC = 'odbc'
+    SESSION = 'session'
 
 
 @dataclass
