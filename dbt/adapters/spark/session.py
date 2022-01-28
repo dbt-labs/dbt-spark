@@ -5,10 +5,6 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Any
 
-from dbt.adapters.spark.connections import (
-    PyodbcConnectionWrapper,
-    SparkConnectionManager,
-)
 from dbt.contracts.connection import ConnectionState
 from pyspark.sql import DataFrame, Row, SparkSession
 
