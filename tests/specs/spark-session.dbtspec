@@ -1,5 +1,8 @@
 target:
-  type: session
+  type: spark
+  method: session
+  host: localhost
+  schema: "analytics_{{ var('_dbt_random_suffix') }}"
 sequences:
   test_dbt_empty: empty
   test_dbt_base: base
