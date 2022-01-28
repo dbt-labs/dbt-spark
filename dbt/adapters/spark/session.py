@@ -169,12 +169,3 @@ class Connection:
             The cursor.
         """
         return Cursor()
-
-
-class _SparkConnectionManager(SparkConnectionManager):
-    @classmethod
-    def open(cls, connection: Any) -> Any:
-        handle = PyodbcConnectionWrapper(Connection())
-        connection.handle = handle
-        connection.state = ConnectionState.OPEN
-        return connection

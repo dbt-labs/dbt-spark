@@ -460,6 +460,9 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     conn = pyodbc.connect(connection_str, autocommit=True)
                     handle = PyodbcConnectionWrapper(conn)
+                elif creds.method == SparkConnectionMethod.SESSION:
+                    from .session import Connection  # noqa: F401
+                    handle = PyodbcConnectionWrapper(Connection())
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
