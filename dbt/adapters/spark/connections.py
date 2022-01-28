@@ -134,6 +134,18 @@ class SparkCredentials(Credentials):
                 "`pip install dbt-spark[PyHive]`"
             )
 
+        if self.method == SparkConnectionMethod.SESSION:
+            try:
+                import pyspark  # noqa: F401
+            except ImportError as e:
+                raise dbt.exceptions.RuntimeException(
+                    f"{self.method} connection method requires "
+                    "additional dependencies. \n"
+                    "Install the additional required dependencies with "
+                    "`pip install dbt-spark[session]`\n\n"
+                    f"ImportError({e.msg})"
+                ) from e
+
     @property
     def type(self):
         return 'spark'
