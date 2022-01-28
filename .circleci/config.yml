@@ -44,6 +44,20 @@ jobs:
           POSTGRES_PASSWORD: dbt
           POSTGRES_DB: metastore
 
+  integration-spark-session:
+    environment:
+      DBT_INVOCATION_ENV: circle
+    docker:
+      - image: fishtownanalytics/test-container:10
+    steps:
+      - checkout
+      - run:
+          name: Run integration tests
+          command: tox -e integration-spark-session
+          no_output_timeout: 1h
+      - store_artifacts:
+          path: ./logs
+
     steps:
       - checkout
 
@@ -108,6 +122,9 @@ workflows:
     jobs:
       - unit
       - integration-spark-thrift:
+          requires:
+            - unit
+      - integration-spark-session:
           requires:
             - unit
       - integration-spark-databricks-http:
