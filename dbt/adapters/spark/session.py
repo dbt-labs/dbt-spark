@@ -5,7 +5,6 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Any
 
-from dbt.contracts.connection import ConnectionState
 from pyspark.sql import DataFrame, Row, SparkSession
 
 
@@ -100,6 +99,8 @@ class Cursor:
         """
         if len(parameters) > 0:
             sql = sql % parameters
+        spark_session = SparkSession.builder.getOrCreate()
+        self._df = spark_session.sql(sql)
 
     def fetchall(self) -> list[Row] | None:
         """
