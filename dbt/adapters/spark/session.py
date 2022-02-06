@@ -99,11 +99,7 @@ class Cursor:
         https://github.com/mkleehammer/pyodbc/wiki/Cursor#executesql-parameters
         """
         if len(parameters) > 0:
-            raise NotImplementedError(
-                "Formatting sql statement is not implemented."
-            )
-        spark_session = SparkSession.builder.getOrCreate()
-        self._df = spark_session.sql(sql)
+            sql = sql % parameters
 
     def fetchall(self) -> list[Row] | None:
         """
