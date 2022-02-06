@@ -17,6 +17,8 @@ jobs:
       - image: godatadriven/spark:3.1
     steps:
       - checkout
+      - run: python3 -m pip install --upgrade pip
+      - run: python3 -m pip install tox
       - run:
           name: Run integration tests
           command: tox -e integration-spark-session
