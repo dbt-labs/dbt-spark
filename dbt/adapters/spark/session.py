@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from types import TracebackType
 from typing import Any
 
+from dbt.events import AdapterLogger
+from dbt.utils import DECIMALS
 from pyspark.sql import DataFrame, Row, SparkSession
+
+
+logger = AdapterLogger("Spark")
+NUMBERS = DECIMALS + (int, float)
 
 
 class Cursor:
@@ -162,3 +169,53 @@ class Connection:
             The cursor.
         """
         return Cursor()
+
+
+class SessionConnectionWrapper(object):
+    """Connection wrapper for the sessoin connection method."""
+
+    def __init__(self, handle):
+        self.handle = handle
+        self._cursor = None
+
+    def cursor(self):
+        self._cursor = self.handle.cursor()
+        return self
+
+    def cancel(self):
+        logger.debug("NotImplemented: cancel")
+
+    def close(self):
+        if self._cursor:
+            self._cursor.close()
+
+    def rollback(self, *args, **kwargs):
+        logger.debug("NotImplemented: rollback")
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    def execute(self, sql, bindings=None):
+        if sql.strip().endswith(";"):
+            sql = sql.strip()[:-1]
+
+        if bindings is None:
+            self._cursor.execute(sql)
+        else:
+            bindings = [self._fix_binding(binding) for binding in bindings]
+            self._cursor.execute(sql, *bindings)
+
+    @property
+    def description(self):
+        return self._cursor.description
+
+    @classmethod
+    def _fix_binding(cls, value):
+        """Convert complex datatypes to primitives that can be loaded by
+        the Spark driver"""
+        if isinstance(value, NUMBERS):
+            return float(value)
+        elif isinstance(value, dt.datetime):
+            return f"'{value.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}'"
+        else:
+            return f"'{value}'"
