@@ -18,8 +18,8 @@ jobs:
     steps:
       - checkout
       - run: apt-get update
-      - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
       - run: python3 -m pip install --upgrade pip
+      - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
       - run: python3 -m pip install tox
       - run:
           name: Run integration tests
