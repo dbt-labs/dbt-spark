@@ -8,9 +8,9 @@
 7. [Submitting a Pull Request](#submitting-a-pull-request)
 
 ## About this document
-This document is a guide intended for folks interested in contributing to `dbt-spark`. Below, we document the process by which members of the community should create issues and submit pull requests (PRs) in this repository. It is not intended as a guide for using `dbt-spark`, and it assumes a certain level of familiarity with Python concepts such as virtualenvs, `pip`, python modules, filesystems, and so on. This guide assumes you are using macOS or Linux and are comfortable with the command line.
+This document is a guide intended for folks interested in contributing to `dbt-spark`. Below, we document the process by which members of the community should create issues and submit pull requests (PRs) in this repository. It is not intended as a guide for using `dbt-spark`, and it assumes a certain level of familiarity with Python concepts such as virtualenvs, `pip`, Python modules, and so on. This guide assumes you are using macOS or Linux and are comfortable with the command line.
 
-For those wishing to contribute we highly suggest reading the [dbt-core](https://github.com/dbt-labs/dbt-core/blob/main/CONTRIBUTING.md). if you haven't already. Almost all of the information there is applicable to contributing here, too!
+For those wishing to contribute we highly suggest reading the dbt-core's [contribution guide](https://github.com/dbt-labs/dbt-core/blob/HEAD/CONTRIBUTING.md) if you haven't already. Almost all of the information there is applicable to contributing here, too!
 
 ### Signing the CLA
 
@@ -19,7 +19,7 @@ Please note that all contributors to `dbt-spark` must sign the [Contributor Lice
 
 ## Getting the code 
 
-You will need `git` in order to download and modify the `dbt-spark` source code. On macOS, the best way to download git is to just install [Xcode](https://developer.apple.com/support/xcode/).
+You will need `git` in order to download and modify the `dbt-spark` source code. You can find directions [here](https://github.com/git-guides/install-git) on how to install `git`.
 
 ### External contributors
 
@@ -68,7 +68,7 @@ There are a few methods for running tests locally.
 #### `tox`
 `tox` takes care of managing Python virtualenvs and installing dependencies in order to run tests. You can also run tests in parallel, for example you can run unit tests for Python 3.7, Python 3.8, Python 3.9, and `flake8` checks in parallel with `tox -p`. Also, you can run unit tests for specific python versions with `tox -e py37`. The configuration of these tests are located in `tox.ini`.
 
-#### `pyteest`
+#### `pytest`
 Finally, you can also run a specific test or group of tests using `pytest` directly. With a Python virtualenv active and dev dependencies installed you can do things like:
 
 ```sh
@@ -87,8 +87,6 @@ Many changes will require and update to the `dbt-spark` docs here are some usefu
 - The docs repo for making changes is located [here]( https://github.com/dbt-labs/docs.getdbt.com).
 - The changes made are likely to impact one or both of [Spark Profile](https://docs.getdbt.com/reference/warehouse-profiles/spark-profile), or [Saprk Configs](https://docs.getdbt.com/reference/resource-configs/spark-configs).
 - We ask every community member who makes a user-facing change to open an issue or PR regarding doc changes.
-
-
 
 ## Submitting a Pull Request
 
