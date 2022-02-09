@@ -457,7 +457,10 @@ class SparkConnectionManager(SQLConnectionManager):
                     conn = pyodbc.connect(connection_str, autocommit=True)
                     handle = PyodbcConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.SESSION:
-                    from .session import Connection, SessionConnectionWrapper  # noqa: F401
+                    from .session import (  # noqa: F401
+                        Connection,
+                        SessionConnectionWrapper,
+                    )
                     handle = SessionConnectionWrapper(Connection())
                 else:
                     raise dbt.exceptions.DbtProfileError(
