@@ -1,3 +1,11 @@
+## dbt-spark 1.0.1rc0 (Release TBD)
+
+### Fixes
+- Closes the connection properly ([#280](https://github.com/dbt-labs/dbt-spark/issues/280), [#285](https://github.com/dbt-labs/dbt-spark/pull/285))
+
+### Contributors
+- [@ueshin](https://github.com/ueshin) ([#285](https://github.com/dbt-labs/dbt-spark/pull/285))
+
 ## dbt-spark 1.0.0 (Release TBD)
 
 ### Fixes
