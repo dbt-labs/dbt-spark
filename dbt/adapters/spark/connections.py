@@ -179,6 +179,7 @@ class PyhiveConnectionWrapper(object):
                 logger.debug(
                     "Exception while closing cursor: {}".format(exc)
                 )
+        self.handle.close()
 
     def rollback(self, *args, **kwargs):
         logger.debug("NotImplemented: rollback")
