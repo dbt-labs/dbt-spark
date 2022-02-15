@@ -416,7 +416,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     cls.validate_creds(creds, required_fields)
 
                     dbt_spark_version = __version__.version
-                    user_agent_entry = f"fishtown-analytics-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
+                    user_agent_entry = f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
 
                     # http://simba.wpengine.com/products/Spark/doc/ODBC_InstallGuide/unix/content/odbc/hi/configuring/serverside.htm
                     ssp = {
