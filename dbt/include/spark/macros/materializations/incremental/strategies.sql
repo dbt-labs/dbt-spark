@@ -65,3 +65,26 @@
   {%- endif -%}
 
 {% endmacro %}
+
+
+--  Commented out first attempt at making changes basically incorporating dbt-cores implementation very closely
+--  leaving commented out at bottom of file to send up to get eyes on while I look up more information on Spark.
+
+  -- {% set merge_condition %}
+  --   {% if unique_key %}
+  --     {% if unique_key is sequence and unique_key key is not mapping and unique_key is not string%}
+  --       {% for key in unique_key %}
+  --         {% set this_key_match %}
+  --           on DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
+  --         { endset %%}
+  --         {% do predicates.append(this_key_match) %}
+  --       {% endfor %}
+  --     {% else %}
+  --       {% set unique_key_match %}
+  --         on DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
+  --       { endset %%}
+  --       {% do predicates.append(unique_key_match) %}
+  --   {% else %}
+  --       on false
+  --   {% endif %}
+  -- {% endset %}
