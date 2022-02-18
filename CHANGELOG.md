@@ -1,3 +1,11 @@
+## dbt-spark 1.1.0 (Release TBD)
+
+### Under the hood
+- Update plugin author name (`fishtown-analytics` &rarr; `dbt-labs`) in ODBC user agent ([#288](https://github.com/dbt-labs/dbt-spark/pull/288))
+
+### Contributors
+- [@amychen1776](https://github.com/amychen1776) ([#288](https://github.com/dbt-labs/dbt-spark/pull/288))
+
 ## dbt-spark 1.0.1rc0 (Release TBD)
 
 ### Fixes
@@ -6,7 +14,7 @@
 ### Contributors
 - [@ueshin](https://github.com/ueshin) ([#285](https://github.com/dbt-labs/dbt-spark/pull/285))
 
-## dbt-spark 1.0.0 (Release TBD)
+## dbt-spark 1.0.0 (December 3, 2021)
 
 ### Fixes
 - Incremental materialization corrected to respect `full_refresh` config, by using `should_full_refresh()` macro ([#260](https://github.com/dbt-labs/dbt-spark/issues/260), [#262](https://github.com/dbt-labs/dbt-spark/pull/262/))
