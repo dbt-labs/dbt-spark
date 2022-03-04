@@ -13,4 +13,6 @@ test/integration/.user.yml
 .DS_Store
 .vscode
 *.log
+*.mypy_cache/
+*.pytest_cache/
 logs/
