@@ -4,6 +4,10 @@ default_language_version:
   python: python3.8
 
 repos:
+- repo: https://github.com/zahorniak/pre-commit-circleci.git
+  rev: v0.3 # Ensure this is the latest tag, comparing to the Releases tab
+  hooks:
+    - id: circleci_validate
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v3.2.0
   hooks:
