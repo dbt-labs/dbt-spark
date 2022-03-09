@@ -194,12 +194,20 @@
   {{ return(adapter.get_columns_in_relation(relation)) }}
 {% endmacro %}
 
-{% macro spark__list_relations_without_caching(relation) %}
-  {% call statement('list_relations_without_caching', fetch_result=True) -%}
-    show table extended in {{ relation }} like '*'
+{% macro spark__list_tables_without_caching(relation) %}
+  {% call statement('list_tables_without_caching', fetch_result=True) -%}
+    show tables in {{ relation.schema }} like '*'
   {% endcall %}
 
-  {% do return(load_result('list_relations_without_caching').table) %}
+  {% do return(load_result('list_tables_without_caching').table) %}
+{% endmacro %}
+
+{% macro spark__list_views_without_caching(relation) %}
+  {% call statement('list_views_without_caching', fetch_result=True) -%}
+    show views in {{ relation.schema }} like '*'
+  {% endcall %}
+
+  {% do return(load_result('list_views_without_caching').table) %}
 {% endmacro %}
 
 {% macro spark__list_schemas(database) -%}
