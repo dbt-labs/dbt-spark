@@ -8,7 +8,7 @@ jobs:
       - image: fishtownanalytics/test-container:10
     steps:
       - checkout
-      - run: tox -e unit
+      - run: tox -e flake8,unit
 
   integration-spark-thrift:
     environment:

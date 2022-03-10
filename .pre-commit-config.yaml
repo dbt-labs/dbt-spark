@@ -44,11 +44,11 @@ repos:
   hooks:
   - id: mypy
     args: [--show-error-codes]
-    files: ^dbt/
+    files: ^dbt/adapter
     language: system
   - id: mypy
     alias: mypy-check
     stages: [manual]
     args: [--show-error-codes, --pretty]
-    files: ^dbt/
+    files: ^dbt/adapter
     language: system
