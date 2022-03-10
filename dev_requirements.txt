@@ -16,5 +16,5 @@ pytest-csv
 
 # Test requirements
 pytest-dbt-adapter==0.6.0
-sasl==0.2.1
+sasl>=0.2.1
 thrift_sasl==0.4.1
