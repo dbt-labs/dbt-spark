@@ -19,6 +19,16 @@ class TestIncrementalUniqueKey(DBTIntegrationTest):
     @property
     def models(self):
         return 'models'
+        
+    @property
+    def project_config(self):
+        return {
+            "config-version": 2,
+            "models": {
+                "+file_format": "delta",
+                "+incremental_strategy": "merge"
+            }
+        }
 
     def update_incremental_model(self, incremental_model):
         '''update incremental model after the seed table has been updated'''
