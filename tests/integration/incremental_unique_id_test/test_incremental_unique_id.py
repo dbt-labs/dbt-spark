@@ -113,8 +113,8 @@ class TestIncrementalUniqueKey(DBTIntegrationTest):
 
 class TestNoIncrementalUniqueKey(TestIncrementalUniqueKey):
 
-    @use_profile("apache_spark")
-    def test__apache_spark_no_unique_keys(self):
+    @use_profile("databricks_sql_endpoint")
+    def test__databricks_sql_endpoint_no_unique_keys(self):
         '''with no unique keys, seed and model should match'''
         seed='seed'
         seed_rows=8
@@ -133,8 +133,8 @@ class TestNoIncrementalUniqueKey(TestIncrementalUniqueKey):
 
 
 class TestIncrementalStrUniqueKey(TestIncrementalUniqueKey):
-    @use_profile('apache_spark')
-    def test__apache_spark_empty_str_unique_key(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_empty_str_unique_key(self):
         '''with empty string for unique key, seed and model should match'''
         seed='seed'
         seed_rows=8
@@ -151,8 +151,8 @@ class TestIncrementalStrUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
-    @use_profile('apache_spark')
-    def test__apache_spark_one_unique_key(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_one_unique_key(self):
         '''with one unique key, model will overwrite existing row'''
         seed='seed'
         seed_rows=7
@@ -171,23 +171,21 @@ class TestIncrementalStrUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
-    @use_profile('apache_spark')
-    def test__apache_spark_bad_unique_key(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_bad_unique_key(self):
         '''expect compilation error from unique key not being a column'''
-
-        err_msg = "Name thisisnotacolumn not found inside DBT_INTERNAL_SOURCE"
 
         (status, exc) = self.fail_to_build_inc_missing_unique_key_column(
             incremental_model_name='not_found_unique_key'
         )
 
         self.assertEqual(status, RunStatus.Error)
-        self.assertTrue(err_msg in exc)
+        self.assertTrue("thisisnotacolumn" in exc)
 
 
 class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
-    @use_profile('apache_spark')
-    def test__apache_spark_empty_unique_key_list(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_empty_unique_key_list(self):
         '''with no unique keys, seed and model should match'''
         seed='seed'
         seed_rows=8
@@ -204,8 +202,8 @@ class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
-    @use_profile('apache_spark')
-    def test__apache_spark_unary_unique_key_list(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_unary_unique_key_list(self):
         '''with one unique key, model will overwrite existing row'''
         seed='seed'
         seed_rows=7
@@ -224,8 +222,8 @@ class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
-    @use_profile('apache_spark')
-    def test__apache_spark_duplicated_unary_unique_key_list(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_duplicated_unary_unique_key_list(self):
         '''with two of the same unique key, model will overwrite existing row'''
         seed='seed'
         seed_rows=7
@@ -244,8 +242,8 @@ class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
-    @use_profile('apache_spark')
-    def test__apache_spark_trinary_unique_key_list(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_trinary_unique_key_list(self):
         '''with three unique keys, model will overwrite existing row'''
         seed='seed'
         seed_rows=7
@@ -264,8 +262,8 @@ class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
-    @use_profile('apache_spark')
-    def test__apache_spark_trinary_unique_key_list_no_update(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_trinary_unique_key_list_no_update(self):
         '''even with three unique keys, adding distinct rows to seed does not
            cause seed and model to diverge'''
         seed='seed'
@@ -283,15 +281,13 @@ class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
-    @use_profile('apache_spark')
-    def test__apache_spark_bad_unique_key_list(self):
+    @use_profile('databricks_sql_endpoint')
+    def test__databricks_sql_endpoint_bad_unique_key_list(self):
         '''expect compilation error from unique key not being a column'''
-
-        err_msg = "Name thisisnotacolumn not found inside DBT_INTERNAL_SOURCE"
 
         (status, exc) = self.fail_to_build_inc_missing_unique_key_column(
             incremental_model_name='not_found_unique_key_list'
         )
 
         self.assertEqual(status, RunStatus.Error)
-        self.assertTrue(err_msg in exc)
+        self.assertTrue("thisisnotacolumn" in exc)
