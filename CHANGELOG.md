@@ -1,5 +1,8 @@
 ## dbt-spark 1.1.0 (Release TBD)
 
+### Features
+- Adds new integration test to check against new ability to allow unique_key to be a list. ([#282](https://github.com/dbt-labs/dbt-spark/issues/282))
+
 ### Under the hood
 - Update plugin author name (`fishtown-analytics` &rarr; `dbt-labs`) in ODBC user agent ([#288](https://github.com/dbt-labs/dbt-spark/pull/288))
 
