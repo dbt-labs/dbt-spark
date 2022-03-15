@@ -3,6 +3,18 @@ target:
   method: session
   host: localhost
   schema: "analytics_{{ var('_dbt_random_suffix') }}"
+projects:
+  - overrides: snapshot_strategy_check_cols
+    dbt_project_yml: &file_format_delta
+      # we're going to UPDATE the seed tables as part of testing, so we must make them delta format
+      seeds:
+        dbt_test_project:
+          file_format: delta
+      snapshots:
+        dbt_test_project:
+          file_format: delta
+  - overrides: snapshot_strategy_timestamp
+    dbt_project_yml: *file_format_delta
 sequences:
   test_dbt_empty: empty
   test_dbt_base: base
