@@ -21,7 +21,7 @@
 
     <property>
         <name>javax.jdo.option.ConnectionURL</name>
-        <value>jdbc:postgresql://dbt-hive-metastore/metastore</value>
+        <value>jdbc:postgresql://localhost/metastore</value>
     </property>
 
     <property>

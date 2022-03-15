@@ -15,8 +15,17 @@ jobs:
       DBT_INVOCATION_ENV: circle
     docker:
       - image: godatadriven/pyspark:3.1
+        environment:
+          WAIT_FOR: localhost:5432
+      - image: postgres:9.6.17-alpine
+        environment:
+          POSTGRES_USER: dbt
+          POSTGRES_PASSWORD: dbt
+          POSTGRES_DB: metastore
     steps:
       - checkout
+      - run: cp docker/spark-defaults.conf $(python /opt/miniconda3/bin/find_spark_home.py)/conf/
+      - run: cp docker/hive-site.xml $(python /opt/miniconda3/bin/find_spark_home.py)/conf/
       - run: apt-get update
       - run: python3 -m pip install --upgrade pip
       - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
@@ -108,7 +117,7 @@ jobs:
           no_output_timeout: 1h
       - store_artifacts:
           path: ./logs
-          
+
   integration-spark-databricks-odbc-endpoint:
     <<: *databricks-odbc
     steps:
