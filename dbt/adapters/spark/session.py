@@ -106,7 +106,7 @@ class Cursor:
         """
         if len(parameters) > 0:
             sql = sql % parameters
-        spark_session = SparkSession.builder.getOrCreate()
+        spark_session = SparkSession.builder.enableHiveSupport().getOrCreate()
         self._df = spark_session.sql(sql)
 
     def fetchall(self) -> list[Row] | None:
