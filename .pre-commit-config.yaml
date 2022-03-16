@@ -43,12 +43,12 @@ repos:
   rev: v0.782
   hooks:
   - id: mypy
-    args: [--show-error-codes]
-    files: ^dbt/adapter
+    args: [--show-error-codes, --ignore-missing-imports]
+    files: ^dbt/adapters/.*
     language: system
   - id: mypy
     alias: mypy-check
     stages: [manual]
-    args: [--show-error-codes, --pretty]
-    files: ^dbt/adapter
+    args: [--show-error-codes, --pretty, --ignore-missing-imports]
+    files: ^dbt/adapters
     language: system
