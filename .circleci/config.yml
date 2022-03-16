@@ -24,7 +24,7 @@ jobs:
           POSTGRES_DB: metastore
     steps:
       - checkout
-      - run: cp docker/* $(find_spark_home.py)/conf/
+      - run: cp docker/spark-defaults.conf $(find_spark_home.py)/conf/
       - run: ls -al $(find_spark_home.py)/conf/
       - run: apt-get update
       - run: python3 -m pip install --upgrade pip
