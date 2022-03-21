@@ -141,11 +141,47 @@ class TestNoIncrementalUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
+    @use_profile("databricks_cluster")
+    def test__databricks_cluster_no_unique_keys(self):
+        '''with no unique keys, seed and model should match'''
+        seed='seed'
+        seed_rows=8
+        incremental_model='no_unique_key'
+        update_sql_file='add_new_rows'
+
+        expected_fields = self.stub_expected_fields(
+            relation=seed, seed_rows=seed_rows
+        )
+        test_case_fields = TestResults(
+            *self.setup_test(seed, incremental_model, update_sql_file),
+            opt_model_count=None, relation=incremental_model
+        )
+
+        self.test_scenario_correctness(expected_fields, test_case_fields)
+
 
 class TestIncrementalStrUniqueKey(TestIncrementalUniqueKey):
 
     @use_profile('databricks_sql_endpoint')
     def test__databricks_sql_endpoint_empty_str_unique_key(self):
+        '''with empty string for unique key, seed and model should match'''
+        seed='seed'
+        seed_rows=8
+        incremental_model='empty_str_unique_key'
+        update_sql_file='add_new_rows'
+
+        expected_fields = self.stub_expected_fields(
+            relation=seed, seed_rows=seed_rows
+        )
+        test_case_fields = TestResults(
+            *self.setup_test(seed, incremental_model, update_sql_file),
+            opt_model_count=None, relation=incremental_model
+        )
+
+        self.test_scenario_correctness(expected_fields, test_case_fields)
+
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_empty_str_unique_key(self):
         '''with empty string for unique key, seed and model should match'''
         seed='seed'
         seed_rows=8
@@ -182,8 +218,39 @@ class TestIncrementalStrUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_one_unique_key(self):
+        '''with one unique key, model will overwrite existing row'''
+        seed='seed'
+        seed_rows=7
+        incremental_model='str_unique_key'
+        update_sql_file='duplicate_insert'
+        expected_model='one_str__overwrite'
+
+        expected_fields = self.stub_expected_fields(
+            relation=expected_model, seed_rows=seed_rows, opt_model_count=1
+        )
+        test_case_fields = TestResults(
+            *self.setup_test(seed, incremental_model, update_sql_file),
+            opt_model_count=self.update_incremental_model(expected_model),
+            relation=incremental_model
+        )
+
+        self.test_scenario_correctness(expected_fields, test_case_fields)
+
     @use_profile('databricks_sql_endpoint')
     def test__databricks_sql_endpoint_bad_unique_key(self):
+        '''expect compilation error from unique key not being a column'''
+
+        (status, exc) = self.fail_to_build_inc_missing_unique_key_column(
+            incremental_model_name='not_found_unique_key'
+        )
+
+        self.assertEqual(status, RunStatus.Error)
+        self.assertTrue("thisisnotacolumn" in exc)
+
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_bad_unique_key(self):
         '''expect compilation error from unique key not being a column'''
 
         (status, exc) = self.fail_to_build_inc_missing_unique_key_column(
@@ -214,8 +281,46 @@ class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_empty_unique_key_list(self):
+        '''with no unique keys, seed and model should match'''
+        seed='seed'
+        seed_rows=8
+        incremental_model='empty_unique_key_list'
+        update_sql_file='add_new_rows'
+
+        expected_fields = self.stub_expected_fields(
+            relation=seed, seed_rows=seed_rows
+        )
+        test_case_fields = TestResults(
+            *self.setup_test(seed, incremental_model, update_sql_file),
+            opt_model_count=None, relation=incremental_model
+        )
+
+        self.test_scenario_correctness(expected_fields, test_case_fields)
+
     @use_profile('databricks_sql_endpoint')
     def test__databricks_sql_endpoint_unary_unique_key_list(self):
+        '''with one unique key, model will overwrite existing row'''
+        seed='seed'
+        seed_rows=7
+        incremental_model='unary_unique_key_list'
+        update_sql_file='duplicate_insert'
+        expected_model='unique_key_list__inplace_overwrite'
+
+        expected_fields = self.stub_expected_fields(
+            relation=expected_model, seed_rows=seed_rows, opt_model_count=1
+        )
+        test_case_fields = TestResults(
+            *self.setup_test(seed, incremental_model, update_sql_file),
+            opt_model_count=self.update_incremental_model(expected_model),
+            relation=incremental_model
+        )
+
+        self.test_scenario_correctness(expected_fields, test_case_fields)
+
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_unary_unique_key_list(self):
         '''with one unique key, model will overwrite existing row'''
         seed='seed'
         seed_rows=7
@@ -254,8 +359,48 @@ class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_duplicated_unary_unique_key_list(self):
+        '''with two of the same unique key, model will overwrite existing row'''
+        seed='seed'
+        seed_rows=7
+        incremental_model='duplicated_unary_unique_key_list'
+        update_sql_file='duplicate_insert'
+        expected_model='unique_key_list__inplace_overwrite'
+
+        expected_fields = self.stub_expected_fields(
+            relation=expected_model, seed_rows=seed_rows, opt_model_count=1
+        )
+        test_case_fields = TestResults(
+            *self.setup_test(seed, incremental_model, update_sql_file),
+            opt_model_count=self.update_incremental_model(expected_model),
+            relation=incremental_model
+        )
+
+        self.test_scenario_correctness(expected_fields, test_case_fields)
+
     @use_profile('databricks_sql_endpoint')
     def test__databricks_sql_endpoint_trinary_unique_key_list(self):
+        '''with three unique keys, model will overwrite existing row'''
+        seed='seed'
+        seed_rows=7
+        incremental_model='trinary_unique_key_list'
+        update_sql_file='duplicate_insert'
+        expected_model='unique_key_list__inplace_overwrite'
+
+        expected_fields = self.stub_expected_fields(
+            relation=expected_model, seed_rows=seed_rows, opt_model_count=1
+        )
+        test_case_fields = TestResults(
+            *self.setup_test(seed, incremental_model, update_sql_file),
+            opt_model_count=self.update_incremental_model(expected_model),
+            relation=incremental_model
+        )
+
+        self.test_scenario_correctness(expected_fields, test_case_fields)
+
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_trinary_unique_key_list(self):
         '''with three unique keys, model will overwrite existing row'''
         seed='seed'
         seed_rows=7
@@ -293,8 +438,38 @@ class TestIncrementalListUniqueKey(TestIncrementalUniqueKey):
 
         self.test_scenario_correctness(expected_fields, test_case_fields)
 
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_trinary_unique_key_list_no_update(self):
+        '''even with three unique keys, adding distinct rows to seed does not
+           cause seed and model to diverge'''
+        seed='seed'
+        seed_rows=8
+        incremental_model='nontyped_trinary_unique_key_list'
+        update_sql_file='add_new_rows'
+
+        expected_fields = self.stub_expected_fields(
+            relation=seed, seed_rows=seed_rows
+        )
+        test_case_fields = TestResults(
+            *self.setup_test(seed, incremental_model, update_sql_file),
+            opt_model_count=None, relation=incremental_model
+        )
+
+        self.test_scenario_correctness(expected_fields, test_case_fields)
+
     @use_profile('databricks_sql_endpoint')
     def test__databricks_sql_endpoint_bad_unique_key_list(self):
+        '''expect compilation error from unique key not being a column'''
+
+        (status, exc) = self.fail_to_build_inc_missing_unique_key_column(
+            incremental_model_name='not_found_unique_key_list'
+        )
+
+        self.assertEqual(status, RunStatus.Error)
+        self.assertTrue("thisisnotacolumn" in exc)
+
+    @use_profile('databricks_cluster')
+    def test__databricks_cluster_bad_unique_key_list(self):
         '''expect compilation error from unique key not being a column'''
 
         (status, exc) = self.fail_to_build_inc_missing_unique_key_column(
