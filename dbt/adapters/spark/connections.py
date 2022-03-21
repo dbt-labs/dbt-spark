@@ -108,7 +108,7 @@ class SparkCredentials(Credentials):
                     "additional dependencies. \n"
                     "Install the additional required dependencies with "
                     "`pip install dbt-spark[ODBC]`\n\n"
-                    f"ImportError({e.msg})"
+                    f"ImportError({e})"
                 ) from e
 
         if (
