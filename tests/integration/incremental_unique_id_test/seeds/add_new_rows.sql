@@ -2,8 +2,8 @@
 --   with any unique columns
 insert into {schema}.seed
     (state, county, city, last_visit_date)
-values ('WA','King','Seattle','2022-02-01');
+values ('WA','King','Seattle',cast('2022-02-01' as date));
 
 insert into {schema}.seed
     (state, county, city, last_visit_date)
-values ('CA','Los Angeles','Los Angeles','2022-02-01');
+values ('CA','Los Angeles','Los Angeles',cast('2022-02-01' as date));
