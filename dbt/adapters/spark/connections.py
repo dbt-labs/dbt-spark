@@ -486,7 +486,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     time.sleep(creds.connect_timeout)
                 else:
                     raise dbt.exceptions.FailedToConnectException(
-                        f'failed to connect ({e.msg})'
+                        f'failed to connect ({e})'
                     ) from e
         else:
             raise exc
