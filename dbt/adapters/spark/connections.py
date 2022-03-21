@@ -108,7 +108,7 @@ class SparkCredentials(Credentials):
                     "additional dependencies. \n"
                     "Install the additional required dependencies with "
                     "`pip install dbt-spark[ODBC]`\n\n"
-                    f"ImportError({e})"
+                    f"ImportError({e.msg})"
                 ) from e
 
         if (
@@ -486,7 +486,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     time.sleep(creds.connect_timeout)
                 else:
                     raise dbt.exceptions.FailedToConnectException(
-                        f'failed to connect ({e})'
+                        f'failed to connect: {e}'
                     ) from e
         else:
             raise exc
