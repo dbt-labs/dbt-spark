@@ -1,4 +1,4 @@
-## dbt-spark 1.1.0 (Release TBD)
+## dbt-spark 1.1.0b1 (March 23, 2022)
 
 ### Features
 - Adds new integration test to check against new ability to allow unique_key to be a list. ([#282](https://github.com/dbt-labs/dbt-spark/issues/282)), [#291](https://github.com/dbt-labs/dbt-spark/pull/291))
