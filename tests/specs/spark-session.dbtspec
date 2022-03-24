@@ -5,9 +5,10 @@ target:
   schema: "analytics_{{ var('_dbt_random_suffix') }}"
 sequences:
   test_dbt_empty: empty
-  test_dbt_base: base
-  test_dbt_ephemeral: ephemeral
-  test_dbt_incremental: incremental
+  # requires a metastore for persisting over dbt runs
+  # test_dbt_base: base
+  # test_dbt_ephemeral: ephemeral
+  # test_dbt_incremental: incremental
   # snapshots require delta format
   # test_dbt_snapshot_strategy_timestamp: snapshot_strategy_timestamp
   # test_dbt_snapshot_strategy_check_cols: snapshot_strategy_check_cols
