@@ -67,6 +67,9 @@ jobs:
           --hiveconf hive.metastore.schema.verification=false
 
       - image: postgres:9.6.17-alpine
+        command: >
+          -c log_statement=all
+          -c log_destination=stderr
         environment:
           POSTGRES_USER: dbt
           POSTGRES_PASSWORD: dbt
