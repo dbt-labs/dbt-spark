@@ -15,16 +15,6 @@ jobs:
       DBT_INVOCATION_ENV: circle
     docker:
       - image: godatadriven/pyspark:3.1
-        environment:
-          WAIT_FOR: localhost:5432
-      - image: postgres:9.6.17-alpine
-        command: >
-          -c log_statement=all
-          -c log_destination=stderr
-        environment:
-          POSTGRES_USER: dbt
-          POSTGRES_PASSWORD: dbt
-          POSTGRES_DB: metastore
     steps:
       - checkout
       - run: apt-get update
