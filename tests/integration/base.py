@@ -77,6 +77,8 @@ class FakeArgs:
 
 
 class TestArgs:
+    __test__ = False
+
     def __init__(self, kwargs):
         self.which = 'run'
         self.single_threaded = False
