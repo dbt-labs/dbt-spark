@@ -42,6 +42,17 @@ except ImportError:
 import base64
 import time
 
+
+try:
+    from pyspark.rdd import _load_from_socket
+    import pyspark.sql.functions as F
+    from pyspark.sql import SparkSession
+except ImportError:
+    SparkSession = None
+    _load_from_socket = None
+    F = None
+
+
 logger = AdapterLogger("Spark")
 
 NUMBERS = DECIMALS + (int, float)
@@ -56,7 +67,7 @@ class SparkConnectionMethod(StrEnum):
     HTTP = 'http'
     ODBC = 'odbc'
     SESSION = 'session'
-
+    PYSPARK = 'pyspark'
 
 @dataclass
 class SparkCredentials(Credentials):
@@ -77,6 +88,7 @@ class SparkCredentials(Credentials):
     use_ssl: bool = False
     server_side_parameters: Dict[str, Any] = field(default_factory=dict)
     retry_all: bool = False
+    python_module: Optional[str] = None
 
     @classmethod
     def __pre_deserialize__(cls, data):
@@ -99,6 +111,18 @@ class SparkCredentials(Credentials):
             )
         self.database = None
 
+        if (
+            self.method == SparkConnectionMethod.PYSPARK
+        ) and not (
+            _load_from_socket and SparkSession and F
+        ):
+            raise dbt.exceptions.RuntimeException(
+                f"{self.method} connection method requires "
+                "additional dependencies. \n"
+                "Install the additional required dependencies with "
+                "`pip install pyspark`"
+            )
+        
         if self.method == SparkConnectionMethod.ODBC:
             try:
                 import pyodbc    # noqa: F401
@@ -462,6 +486,11 @@ class SparkConnectionManager(SQLConnectionManager):
                         SessionConnectionWrapper,
                     )
                     handle = SessionConnectionWrapper(Connection())
+                elif creds.method == SparkConnectionMethod.PYSPARK:
+                    from .pysparkcon import (  # noqa: F401
+                        PysparkConnectionWrapper,
+                    )
+                    handle = PysparkConnectionWrapper(self.python_module)
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
