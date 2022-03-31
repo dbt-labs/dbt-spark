@@ -13,7 +13,7 @@ from dbt.tests.adapter.basic.test_snapshot_check_cols import BaseSnapshotCheckCo
 from dbt.tests.adapter.basic.test_snapshot_timestamp import BaseSnapshotTimestamp
 
 
-@pytest.mark.skip_profile('databricks_sql_endpoint')
+@pytest.mark.skip_profile('databricks_sql_endpoint', 'spark_session')
 class TestSimpleMaterializationsSpark(BaseSimpleMaterializations):
     pass
 
@@ -33,12 +33,12 @@ class TestEmptySpark(BaseEmpty):
     pass
 
 
-@pytest.mark.skip_profile('databricks_sql_endpoint')
+@pytest.mark.skip_profile('databricks_sql_endpoint', 'spark_session')
 class TestEphemeralSpark(BaseEphemeral):
     pass
 
 
-@pytest.mark.skip_profile('databricks_sql_endpoint')
+@pytest.mark.skip_profile('databricks_sql_endpoint', 'spark_session')
 class TestIncrementalSpark(BaseIncremental):
     pass
 
@@ -49,7 +49,7 @@ class TestGenericTestsSpark(BaseGenericTests):
 
 # These tests were not enabled in the dbtspec files, so skipping here.
 # Error encountered was: Error running query: java.lang.ClassNotFoundException: delta.DefaultSource
-@pytest.mark.skip_profile('apache_spark')
+@pytest.mark.skip_profile('apache_spark', 'spark_session')
 class TestSnapshotCheckColsSpark(BaseSnapshotCheckCols):
     @pytest.fixture(scope="class")
     def project_config_update(self):
@@ -65,7 +65,7 @@ class TestSnapshotCheckColsSpark(BaseSnapshotCheckCols):
 
 #hese tests were not enabled in the dbtspec files, so skipping here.
 # Error encountered was: Error running query: java.lang.ClassNotFoundException: delta.DefaultSource
-@pytest.mark.skip_profile('apache_spark')
+@pytest.mark.skip_profile('apache_spark', 'spark_session')
 class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
     @pytest.fixture(scope="class")
     def project_config_update(self):
