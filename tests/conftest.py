@@ -28,6 +28,8 @@ def dbt_profile_target(request):
         target = apache_spark_target()
     elif profile_type == "databricks_http_cluster":
         target = databricks_http_cluster_target()
+    elif profile_type == "spark_session":
+        target = spark_session_target()
     else:
         raise ValueError(f"Invalid profile type '{profile_type}'")
     return target
@@ -82,9 +84,19 @@ def databricks_http_cluster_target():
         "connect_timeout": 60,
     }
 
+
+def spark_session_target():
+    return {
+        "type": "spark",
+        "host": "localhost",
+        "method": "session",
+    }
+
+
 @pytest.fixture(autouse=True)
 def skip_by_profile_type(request):
     profile_type = request.config.getoption("--profile")
     if request.node.get_closest_marker("skip_profile"):
-        if request.node.get_closest_marker("skip_profile").args[0] == profile_type:
-            pytest.skip("skipped on '{profile_type}' profile")
+        for skip_profile_type in request.node.get_closest_marker("skip_profile").args:
+            if skip_profile_type == profile_type:
+                pytest.skip("skipped on '{profile_type}' profile")
