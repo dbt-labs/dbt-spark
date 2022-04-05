@@ -1,8 +1,11 @@
-## dbt-spark 1.0.1rc1 (Release TBD)
+## dbt-spark 1.0.1rc1 (April 5, 2022)
 
 ### Fixes
 - Closes the connection properly ([#280](https://github.com/dbt-labs/dbt-spark/issues/280), [#285](https://github.com/dbt-labs/dbt-spark/pull/285))
 - Make internal macros use macro dispatch to be overridable in child adapters ([#319](https://github.com/dbt-labs/dbt-spark/issues/319), [#320](https://github.com/dbt-labs/dbt-spark/pull/320))
+
+### Under the hood
+- Configure insert_overwrite models to use parquet ([#301](https://github.com/dbt-labs/dbt-spark/issues/301))
 
 ### Contributors
 - [@ueshin](https://github.com/ueshin) ([#285](https://github.com/dbt-labs/dbt-spark/pull/285), [#320](https://github.com/dbt-labs/dbt-spark/pull/320))
