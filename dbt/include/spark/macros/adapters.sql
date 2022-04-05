@@ -1,5 +1,5 @@
 {% macro file_format_clause() %}
-  {{ return(adapter.dispatch('file_format_clause')()) }}
+  {{ return(adapter.dispatch('file_format_clause', 'dbt')()) }}
 {%- endmacro -%}
 
 {% macro spark__file_format_clause() %}
@@ -11,7 +11,7 @@
 
 
 {% macro location_clause() %}
-  {{ return(adapter.dispatch('location_clause')()) }}
+  {{ return(adapter.dispatch('location_clause', 'dbt')()) }}
 {%- endmacro -%}
 
 {% macro spark__location_clause() %}
@@ -24,7 +24,7 @@
 
 
 {% macro options_clause() -%}
-  {{ return(adapter.dispatch('options_clause')()) }}
+  {{ return(adapter.dispatch('options_clause', 'dbt')()) }}
 {%- endmacro -%}
 
 {% macro spark__options_clause() -%}
@@ -51,7 +51,7 @@
 
 
 {% macro comment_clause() %}
-  {{ return(adapter.dispatch('comment_clause')()) }}
+  {{ return(adapter.dispatch('comment_clause', 'dbt')()) }}
 {%- endmacro -%}
 
 {% macro spark__comment_clause() %}
@@ -69,7 +69,7 @@
 
 
 {% macro partition_cols(label, required=false) %}
-  {{ return(adapter.dispatch('partition_cols')(label, required)) }}
+  {{ return(adapter.dispatch('partition_cols', 'dbt')(label, required)) }}
 {%- endmacro -%}
 
 {% macro spark__partition_cols(label, required=false) %}
@@ -89,7 +89,7 @@
 
 
 {% macro clustered_cols(label, required=false) %}
-  {{ return(adapter.dispatch('clustered_cols')(label, required)) }}
+  {{ return(adapter.dispatch('clustered_cols', 'dbt')(label, required)) }}
 {%- endmacro -%}
 
 {% macro spark__clustered_cols(label, required=false) %}
@@ -118,7 +118,7 @@
 
 
 {% macro create_temporary_view(relation, sql) -%}
-  {{ return(adapter.dispatch('create_temporary_view')(relation, sql)) }}
+  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, sql)) }}
 {%- endmacro -%}
 
 {#-- We can't use temporary tables with `create ... as ()` syntax #}
