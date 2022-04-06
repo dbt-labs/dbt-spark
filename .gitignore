@@ -5,12 +5,14 @@ env/
 *.pyc
 __pycache__
 .tox/
+.env
 .idea/
 build/
 dist/
 dbt-integration-tests
 test/integration/.user.yml
 .DS_Store
+test.env
 .vscode
 *.log
 logs/
