@@ -1,4 +1,4 @@
-## dbt-spark 1.0.1rc1 (April 5, 2022)
+## dbt-spark 1.0.1rc1 (April 6, 2022)
 
 ### Fixes
 - Closes the connection properly ([#280](https://github.com/dbt-labs/dbt-spark/issues/280), [#285](https://github.com/dbt-labs/dbt-spark/pull/285))
