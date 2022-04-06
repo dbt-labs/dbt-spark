@@ -1,7 +1,0 @@
-version: 2
-
-seeds:
-  - name: seed
-    config:
-      column_types:
-        last_visit_date: date
