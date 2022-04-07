@@ -42,8 +42,8 @@ def apache_spark_target():
         "user": "dbt",
         "method": "thrift",
         "port": 10000,
-        "connect_retries": 5,
-        "connect_timeout": 60,
+        "connect_retries": 3,
+        "connect_timeout": 5,
         "retry_all": True,
     }
 
@@ -57,6 +57,9 @@ def databricks_cluster_target():
         "token": os.getenv("DBT_DATABRICKS_TOKEN"),
         "driver": os.getenv("ODBC_DRIVER"),
         "port": 443,
+        "connect_retries": 3,
+        "connect_timeout": 5,
+        "retry_all": True,
     }
 
 
@@ -69,6 +72,9 @@ def databricks_sql_endpoint_target():
         "token": os.getenv("DBT_DATABRICKS_TOKEN"),
         "driver": os.getenv("ODBC_DRIVER"),
         "port": 443,
+        "connect_retries": 3,
+        "connect_timeout": 5,
+        "retry_all": True,
     }
 
 
@@ -80,8 +86,11 @@ def databricks_http_cluster_target():
         "token": os.getenv('DBT_DATABRICKS_TOKEN'),
         "method": "http",
         "port": 443,
+        # more retries + longer timout to handle unavailability while cluster is restarting
+        # return failures quickly in dev, retry all failures in CI (up to 5 min)
         "connect_retries": 5,
-        "connect_timeout": 60,
+        "connect_timeout": 60, 
+        "retry_all": bool(os.getenv('DBT_DATABRICKS_RETRY_ALL', False)),
     }
 
 
