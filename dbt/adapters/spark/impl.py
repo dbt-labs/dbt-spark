@@ -364,6 +364,30 @@ class SparkAdapter(SQLAdapter):
 
         return sql
 
+    # This is for use in the test suite
+    # Spark doesn't have 'commit' and 'rollback', so this override
+    # doesn't include those commands.
+    def run_sql_for_tests(self, sql, fetch, conn):
+        cursor = conn.handle.cursor()
+        try:
+            cursor.execute(sql)
+            if fetch == "one":
+                if hasattr(cursor, 'fetchone'):
+                    return cursor.fetchone()
+                else:
+                    # AttributeError: 'PyhiveConnectionWrapper' object has no attribute 'fetchone'
+                    return cursor.fetchall()[0]
+            elif fetch == "all":
+                return cursor.fetchall()
+            else:
+                return
+        except BaseException as e:
+            print(sql)
+            print(e)
+            raise
+        finally:
+            conn.transaction_open = False
+
 
 # spark does something interesting with joins when both tables have the same
 # static values for the join condition and complains that the join condition is
