@@ -160,8 +160,9 @@ class DBTIntegrationTest(unittest.TestCase):
                         'user': 'dbt',
                         'method': 'thrift',
                         'port': 10000,
-                        'connect_retries': 5,
-                        'connect_timeout': 60,
+                        'connect_retries': 3,
+                        'connect_timeout': 5,
+                        'retry_all': True,
                         'schema': self.unique_schema()
                     },
                 },
@@ -184,6 +185,9 @@ class DBTIntegrationTest(unittest.TestCase):
                         'token': os.getenv('DBT_DATABRICKS_TOKEN'),
                         'driver': os.getenv('ODBC_DRIVER'),
                         'port': 443,
+                        'connect_retries': 3,
+                        'connect_timeout': 5,
+                        'retry_all': True,
                         'schema': self.unique_schema()
                     },
                 },
@@ -206,6 +210,9 @@ class DBTIntegrationTest(unittest.TestCase):
                         'token': os.getenv('DBT_DATABRICKS_TOKEN'),
                         'driver': os.getenv('ODBC_DRIVER'),
                         'port': 443,
+                        'connect_retries': 3,
+                        'connect_timeout': 5,
+                        'retry_all': True,
                         'schema': self.unique_schema()
                     },
                 },
