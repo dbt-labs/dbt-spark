@@ -5,7 +5,6 @@
 
 ### Under the hood
 - Use dbt.tests.adapter.basic in test suite ([#298](https://github.com/dbt-labs/dbt-spark/issues/298), [#299](https://github.com/dbt-labs/dbt-spark/pull/299))
-- Convert unique id as a list tests to new pytest format ([#321](https://github.com/dbt-labs/dbt-spark/pull/321))
 - Make internal macros use macro dispatch to be overridable in child adapters ([#319](https://github.com/dbt-labs/dbt-spark/issues/319), [#320](https://github.com/dbt-labs/dbt-spark/pull/320))
 
 
