@@ -13,7 +13,7 @@ from dbt.tests.adapter.basic.test_snapshot_check_cols import BaseSnapshotCheckCo
 from dbt.tests.adapter.basic.test_snapshot_timestamp import BaseSnapshotTimestamp
 
 
-@pytest.mark.skip_profile('databricks_sql_endpoint', 'spark_session')
+@pytest.mark.skip_profile('spark_session')
 class TestSimpleMaterializationsSpark(BaseSimpleMaterializations):
     pass
 
@@ -33,12 +33,12 @@ class TestEmptySpark(BaseEmpty):
     pass
 
 
-@pytest.mark.skip_profile('databricks_sql_endpoint', 'spark_session')
+@pytest.mark.skip_profile('spark_session')
 class TestEphemeralSpark(BaseEphemeral):
     pass
 
 
-@pytest.mark.skip_profile('databricks_sql_endpoint', 'spark_session')
+@pytest.mark.skip_profile('spark_session')
 class TestIncrementalSpark(BaseIncremental):
     pass
 
