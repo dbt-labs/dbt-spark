@@ -79,6 +79,7 @@ jobs:
   integration-spark-databricks-http:
     environment:
       DBT_INVOCATION_ENV: circle
+      DBT_DATABRICKS_RETRY_ALL: True
     docker:
       - image: fishtownanalytics/test-container:10
     steps:
