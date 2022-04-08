@@ -400,6 +400,7 @@ class SparkAdapter(SQLAdapter):
         finally:
             conn.transaction_open = False
 
+
 # spark does something interesting with joins when both tables have the same
 # static values for the join condition and complains that the join condition is
 # "trivial". Which is true, though it seems like an unreasonable cause for
