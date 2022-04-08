@@ -11,6 +11,7 @@ from dbt.tests.adapter.basic.test_incremental import BaseIncremental
 from dbt.tests.adapter.basic.test_generic_tests import BaseGenericTests
 from dbt.tests.adapter.basic.test_snapshot_check_cols import BaseSnapshotCheckCols
 from dbt.tests.adapter.basic.test_snapshot_timestamp import BaseSnapshotTimestamp
+from dbt.tests.adapter.basic.test_adapter_methods import BaseAdapterMethod
 
 
 @pytest.mark.skip_profile('spark_session')
@@ -77,3 +78,6 @@ class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
                 "+file_format": "delta",
             }
         }
+
+class TestBaseAdapterMethod(BaseAdapterMethod):
+    pass

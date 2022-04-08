@@ -231,8 +231,15 @@ class SparkAdapter(SQLAdapter):
             # return relation's schema. if columns are empty from cache,
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
-            rows: List[agate.Row] = super().get_columns_in_relation(relation)
-            columns = self.parse_describe_extended(relation, rows)
+            try:
+                rows: List[agate.Row] = super().get_columns_in_relation(relation)
+                columns = self.parse_describe_extended(relation, rows)
+            except dbt.exceptions.RuntimeException as e:
+                # spark would throw error when table doesn't exist, where other
+                # CDW would just return and empty list, normalizing the behavior here
+                errmsg = getattr(e, "msg", "")
+                if f"Table or view not found: {relation}" not in errmsg:
+                    raise e
 
         # strip hudi metadata columns.
         columns = [x for x in columns
