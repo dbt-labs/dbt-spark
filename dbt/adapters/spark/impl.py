@@ -238,7 +238,12 @@ class SparkAdapter(SQLAdapter):
                 # spark would throw error when table doesn't exist, where other
                 # CDW would just return and empty list, normalizing the behavior here
                 errmsg = getattr(e, "msg", "")
-                if f"Table or view not found: {relation}" not in errmsg:
+                if (
+                    f"Table or view not found: {relation}" in errmsg
+                    or "NoSuchTableException" in errmsg
+                ):
+                    pass
+                else:
                     raise e
 
         # strip hudi metadata columns.
@@ -370,30 +375,6 @@ class SparkAdapter(SQLAdapter):
         )
 
         return sql
-
-    # This is for use in the test suite
-    # Spark doesn't have 'commit' and 'rollback', so this override
-    # doesn't include those commands.
-    def run_sql_for_tests(self, sql, fetch, conn):
-        cursor = conn.handle.cursor()
-        try:
-            cursor.execute(sql)
-            if fetch == "one":
-                if hasattr(cursor, 'fetchone'):
-                    return cursor.fetchone()
-                else:
-                    # AttributeError: 'PyhiveConnectionWrapper' object has no attribute 'fetchone'
-                    return cursor.fetchall()[0]
-            elif fetch == "all":
-                return cursor.fetchall()
-            else:
-                return
-        except BaseException as e:
-            print(sql)
-            print(e)
-            raise
-        finally:
-            conn.transaction_open = False
 
 
 # spark does something interesting with joins when both tables have the same
