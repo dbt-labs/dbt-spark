@@ -239,7 +239,7 @@ class SparkAdapter(SQLAdapter):
                 # CDW would just return and empty list, normalizing the behavior here
                 errmsg = getattr(e, "msg", "")
                 if (
-                    f"Table or view not found: {relation}" in errmsg or
+                    "Table or view not found" in errmsg or
                     "NoSuchTableException" in errmsg
                 ):
                     pass
