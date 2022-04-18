@@ -155,7 +155,7 @@ class SparkCredentials(Credentials):
         return self.host
 
     def _connection_keys(self):
-        return ('host', 'port', 'cluster',
+        return ('method', 'host', 'port', 'cluster',
                 'endpoint', 'schema', 'organization')
 
 
