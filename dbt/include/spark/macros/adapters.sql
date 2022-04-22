@@ -1,4 +1,4 @@
-{% macro file_format_clause() %}
+t {% macro file_format_clause() %}
   {{ return(adapter.dispatch('file_format_clause', 'dbt')()) }}
 {%- endmacro -%}
 
@@ -16,9 +16,10 @@
 
 {% macro spark__location_clause() %}
   {%- set location_root = config.get('location_root', validator=validation.any[basestring]) -%}
+  {%- set schema = model['schema'] -%}
   {%- set identifier = model['alias'] -%}
   {%- if location_root is not none %}
-    location '{{ location_root }}/{{ identifier }}'
+  location '{{ location_root }}/{{ schema }}/{{ identifier }}'
   {%- endif %}
 {%- endmacro -%}
 
