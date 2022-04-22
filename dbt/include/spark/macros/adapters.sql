@@ -1,4 +1,4 @@
-t {% macro file_format_clause() %}
+{% macro file_format_clause() %}
   {{ return(adapter.dispatch('file_format_clause', 'dbt')()) }}
 {%- endmacro -%}
 
