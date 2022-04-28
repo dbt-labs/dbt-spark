@@ -1,4 +1,4 @@
-## dbt-spark 1.1.0 (TBD)
+## dbt-spark 1.1.0 (April 28, 2022)
 
 ### Features
 - Add session connection method ([#272](https://github.com/dbt-labs/dbt-spark/issues/272), [#279](https://github.com/dbt-labs/dbt-spark/pull/279))
