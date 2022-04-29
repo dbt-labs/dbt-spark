@@ -151,7 +151,7 @@ class SparkAdapter(SQLAdapter):
         for tbl in tables:
             rel_type = ('view' if tbl['tableName'] in views.columns["viewName"].values() else 'table')
             relation = self.Relation.create(
-                schema=tbl['database'],
+                schema=tbl['namespace'],
                 identifier=tbl['tableName'],
                 type=rel_type,
             )
