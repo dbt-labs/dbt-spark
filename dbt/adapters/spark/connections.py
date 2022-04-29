@@ -55,6 +55,7 @@ class SparkConnectionMethod(StrEnum):
     THRIFT = 'thrift'
     HTTP = 'http'
     ODBC = 'odbc'
+    SESSION = 'session'
 
 
 @dataclass
@@ -132,6 +133,18 @@ class SparkCredentials(Credentials):
                 "Install the additional required dependencies with "
                 "`pip install dbt-spark[PyHive]`"
             )
+
+        if self.method == SparkConnectionMethod.SESSION:
+            try:
+                import pyspark  # noqa: F401
+            except ImportError as e:
+                raise dbt.exceptions.RuntimeException(
+                    f"{self.method} connection method requires "
+                    "additional dependencies. \n"
+                    "Install the additional required dependencies with "
+                    "`pip install dbt-spark[session]`\n\n"
+                    f"ImportError({e.msg})"
+                ) from e
 
     @property
     def type(self):
@@ -443,6 +456,12 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     conn = pyodbc.connect(connection_str, autocommit=True)
                     handle = PyodbcConnectionWrapper(conn)
+                elif creds.method == SparkConnectionMethod.SESSION:
+                    from .session import (  # noqa: F401
+                        Connection,
+                        SessionConnectionWrapper,
+                    )
+                    handle = SessionConnectionWrapper(Connection())
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
