@@ -145,39 +145,20 @@ class SparkAdapter(SQLAdapter):
                 description = "Error while retrieving information about"
                 logger.debug(f"{description} {schema_relation}: {e.msg}")
                 return []
-                
-        
+
+
         relations = []
+        view_names = views.columns["viewName"].values()
+
         for tbl in tables:
-            rel_type = ('view' if tbl['tableName'] in views.columns["viewName"].values() else 'table')
+            rel_type = RelationType('view' if tbl['tableName'] in view_names else 'table')
+            schema = tbl['namespace'] if 'namespace' in tbl else tbl['database']
             relation = self.Relation.create(
-                schema=tbl['namespace'],
+                schema=schema,
                 identifier=tbl['tableName'],
                 type=rel_type,
             )
             relations.append(relation)
-
-#        relations = []
-#        for row in results:
-#            if len(row) != 4:
-#                raise dbt.exceptions.RuntimeException(
-#                    f'Invalid value from "show table extended ...", '
-#                    f'got {len(row)} values, expected 4'
-#                )
-#            _schema, name, _, information = row
-#            rel_type = RelationType.View \
-#                if 'Type: VIEW' in information else RelationType.Table
-#            is_delta = 'Provider: delta' in information
-#            is_hudi = 'Provider: hudi' in information
-#            relation = self.Relation.create(
-#                schema=_schema,
-#                identifier=name,
-#                type=rel_type,
-#                information=information,
-#                is_delta=is_delta,
-#                is_hudi=is_hudi,
-#            )
-#            relations.append(relation)
 
         return relations
 
