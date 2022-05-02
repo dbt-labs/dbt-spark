@@ -146,15 +146,16 @@ class SparkAdapter(SQLAdapter):
                 logger.debug(f"{description} {schema_relation}: {e.msg}")
                 return []
 
-
         relations = []
         view_names = views.columns["viewName"].values()
 
+        raise Exception(f"tbl: {tables.print_json()}")
+
         for tbl in tables:
             rel_type = RelationType('view' if tbl['tableName'] in view_names else 'table')
-            schema = tbl['namespace'] if 'namespace' in tbl else tbl['database']
+            _schema = tbl['namespace'] if 'namespace' in tbl else tbl['database']
             relation = self.Relation.create(
-                schema=schema,
+                schema=_schema,
                 identifier=tbl['tableName'],
                 type=rel_type,
             )
