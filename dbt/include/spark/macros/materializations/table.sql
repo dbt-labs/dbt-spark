@@ -18,9 +18,16 @@
   {%- endif %}
 
   -- build model
-  {% call statement('main') -%}
-    {{ create_table_as(False, target_relation, sql) }}
-  {%- endcall %}
+  {% if config.get('language', 'sql') == 'python' -%}}
+    -- sql here is really just the compiled python code
+    {%- set python_code = py_complete_script(model=model, schema=schema, python_code=sql) -%}
+    {{ log("python code " ~ python_code ) }}
+    {{adapter.submit_python_job('chenyu.li@dbtlabs.com', identifier, python_code)}}
+  {%- else -%}
+    {% call statement('main') -%}
+      {{ create_table_as(False, target_relation, sql) }}
+    {%- endcall %}
+  {%- endif %}
   
   {% do persist_docs(target_relation, model) %}
 
@@ -29,3 +36,13 @@
   {{ return({'relations': [target_relation]})}}
 
 {% endmaterialization %}
+
+
+{% macro py_complete_script(model, schema, python_code) %}
+{#-- can we wrap in 'def model:' here? or will formatting screw us? --#}
+{#-- Above was Drew's comment --#}
+{{ python_code }}
+
+df.write.mode("overwrite").format("delta").saveAsTable("{{schema}}.{{model['alias']}}")
+
+{% endmacro %}
