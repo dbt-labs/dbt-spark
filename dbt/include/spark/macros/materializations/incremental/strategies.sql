@@ -1,5 +1,5 @@
 {% macro get_insert_overwrite_sql(source_relation, target_relation) %}
-    
+
     {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
     {%- set dest_cols_csv = dest_columns | map(attribute='quoted') | join(', ') -%}
     insert overwrite table {{ target_relation }}
@@ -41,20 +41,20 @@
   {% else %}
       {% do predicates.append('FALSE') %}
   {% endif %}
-  
+
   {{ sql_header if sql_header is not none }}
-  
+
   merge into {{ target }} as DBT_INTERNAL_DEST
       using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
       on {{ predicates | join(' and ') }}
-      
+
       when matched then update set
         {% if update_columns -%}{%- for column_name in update_columns %}
             {{ column_name }} = DBT_INTERNAL_SOURCE.{{ column_name }}
             {%- if not loop.last %}, {%- endif %}
         {%- endfor %}
         {%- else %} * {% endif %}
-    
+
       when not matched then insert *
 {% endmacro %}
 
