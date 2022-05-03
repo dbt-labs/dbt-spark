@@ -526,13 +526,9 @@ def build_ssl_transport(host, port, username, auth, kerberos_service_name, passw
     return transport
 
 
-def _is_retryable_error(exc: Exception) -> Optional[str]:
-    message = getattr(exc, "message", None)
-    if message is None:
-        return None
-    message = message.lower()
-    if "pending" in message:
-        return exc.message
-    if "temporarily_unavailable" in message:
-        return exc.message
-    return None
+def _is_retryable_error(exc: Exception) -> str:
+    message = str(exc).lower()
+    if "pending" in message or "temporarily_unavailable" in message:
+        return str(exc)
+    else:
+        return ""
