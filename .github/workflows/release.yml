@@ -3,28 +3,28 @@ name: Build and Release
 
 on:
   workflow_dispatch:
-  
+
 # Release version number that must be updated for each release
 env:
   version_number: '0.20.0rc2'
 
-jobs:          
+jobs:
   Test:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
-        with: 
+        with:
           python-version: '3.8'
-          
+
       - uses: actions/checkout@v2
 
-      - name: Test release        
+      - name: Test release
         run: |
           python3 -m venv env
           source env/bin/activate
           sudo apt-get install libsasl2-dev
-          pip install -r dev_requirements.txt
+          pip install -r dev-requirements.txt
           pip install twine wheel setuptools
           python setup.py sdist bdist_wheel
           pip install dist/dbt-spark-*.tar.gz
@@ -38,9 +38,9 @@ jobs:
     steps:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
-        with: 
+        with:
           python-version: '3.8'
-          
+
       - uses: actions/checkout@v2
 
       - name: Bumping version
@@ -48,7 +48,7 @@ jobs:
           python3 -m venv env
           source env/bin/activate
           sudo apt-get install libsasl2-dev
-          pip install -r dev_requirements.txt
+          pip install -r dev-requirements.txt
           bumpversion --config-file .bumpversion-dbt.cfg patch --new-version ${{env.version_number}}
           bumpversion --config-file .bumpversion.cfg patch --new-version ${{env.version_number}} --allow-dirty
           git status
@@ -60,7 +60,7 @@ jobs:
           author_email: 'leah.antkiewicz@dbtlabs.com'
           message: 'Bumping version to ${{env.version_number}}'
           tag: v${{env.version_number}}
-          
+
       # Need to set an output variable because env variables can't be taken as input
       # This is needed for the next step with releasing to GitHub
       - name: Find release type
@@ -69,7 +69,7 @@ jobs:
           IS_PRERELEASE: ${{ contains(env.version_number, 'rc') ||  contains(env.version_number, 'b') }}
         run: |
           echo ::set-output name=isPrerelease::$IS_PRERELEASE
-          
+
       - name: Create GitHub release
         uses: actions/create-release@v1
         env:
@@ -88,7 +88,7 @@ jobs:
             # or
             $ pip install "dbt-spark[PyHive]==${{env.version_number}}"
             ```
-          
+
   PypiRelease:
     name: Pypi release
     runs-on: ubuntu-latest
@@ -97,13 +97,13 @@ jobs:
     steps:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
-        with: 
+        with:
           python-version: '3.8'
-          
+
       - uses: actions/checkout@v2
         with:
           ref: v${{env.version_number}}
-      
+
       - name: Release to pypi
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
@@ -112,8 +112,8 @@ jobs:
           python3 -m venv env
           source env/bin/activate
           sudo apt-get install libsasl2-dev
-          pip install -r dev_requirements.txt
+          pip install -r dev-requirements.txt
           pip install twine wheel setuptools
           python setup.py sdist bdist_wheel
           twine upload --non-interactive dist/dbt_spark-${{env.version_number}}-py3-none-any.whl dist/dbt-spark-${{env.version_number}}.tar.gz
-          
+
