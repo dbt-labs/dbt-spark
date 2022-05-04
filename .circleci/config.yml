@@ -8,19 +8,20 @@ jobs:
       - image: fishtownanalytics/test-container:10
     steps:
       - checkout
-      - run: tox -e flake8,unit
+      - run: tox -e unit
 
   integration-spark-session:
     environment:
       DBT_INVOCATION_ENV: circle
     docker:
-      - image: godatadriven/pyspark:3.1
+      - image: bitnami/spark:3.2.1
+        user: root
     steps:
       - checkout
       - run: apt-get update
-      - run: python3 -m pip install --upgrade pip
       - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
-      - run: python3 -m pip install tox
+      - run: python3 -m pip install --upgrade pip
+      - run: python3 -m pip install flake8 tox pyspark==3.2.1
       - run:
           name: Run integration tests
           command: tox -e integration-spark-session
@@ -33,7 +34,7 @@ jobs:
       DBT_INVOCATION_ENV: circle
     docker:
       - image: fishtownanalytics/test-container:10
-      - image: godatadriven/spark:2
+      - image: godatadriven/spark:3.1
         environment:
           WAIT_FOR: localhost:5432
         command: >
@@ -44,7 +45,7 @@ jobs:
           --conf spark.hadoop.javax.jdo.option.ConnectionPassword=dbt
           --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.postgresql.Driver
           --conf spark.serializer=org.apache.spark.serializer.KryoSerializer
-          --conf spark.jars.packages=org.apache.hudi:hudi-spark-bundle_2.11:0.9.0
+          --conf spark.jars.packages=org.apache.hudi:hudi-spark3.1-bundle_2.12:0.11.0
           --conf spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension
           --conf spark.driver.userClassPathFirst=true
           --conf spark.hadoop.datanucleus.autoCreateTables=true

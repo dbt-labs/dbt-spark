@@ -1,3 +1,4 @@
+import json
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
@@ -148,8 +149,6 @@ class SparkAdapter(SQLAdapter):
 
         relations = []
         view_names = views.columns["viewName"].values()
-
-        raise Exception(f"tbl: {tables.print_json()}")
 
         for tbl in tables:
             rel_type = RelationType('view' if tbl['tableName'] in view_names else 'table')

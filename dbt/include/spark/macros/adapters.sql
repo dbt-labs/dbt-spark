@@ -179,7 +179,6 @@
   {% call statement('list_tables_without_caching', fetch_result=True) -%}
     show tables in {{ relation.schema }}
   {% endcall %}
-
   {% do return(load_result('list_tables_without_caching').table) %}
 {% endmacro %}
 
@@ -187,7 +186,6 @@
   {% call statement('list_views_without_caching', fetch_result=True) -%}
     show views in {{ relation.schema }}
   {% endcall %}
-
   {% do return(load_result('list_views_without_caching').table) %}
 {% endmacro %}
 
