@@ -6,7 +6,7 @@ on:
   
 # Release version number that must be updated for each release
 env:
-  version_number: '0.20.0rc2'
+  version_number: '1.0.0'
 
 jobs:          
   Test:
@@ -49,7 +49,6 @@ jobs:
           source env/bin/activate
           sudo apt-get install libsasl2-dev
           pip install -r dev_requirements.txt
-          bumpversion --config-file .bumpversion-dbt.cfg patch --new-version ${{env.version_number}}
           bumpversion --config-file .bumpversion.cfg patch --new-version ${{env.version_number}} --allow-dirty
           git status
 

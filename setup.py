@@ -50,7 +50,7 @@ def _get_dbt_core_version():
     pre = (parts["prekind"]+"1" if parts["prekind"] else "")
     return f"{minor}{pre}"
 
-
+# TODO remove old logic and add to versionBump script
 package_name = "dbt-spark"
 package_version = "1.2.0a1"
 dbt_core_version = _get_dbt_core_version()
@@ -93,9 +93,9 @@ setup(
     zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
-        
+
         'License :: OSI Approved :: Apache Software License',
-        
+
         'Operating System :: Microsoft :: Windows',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: POSIX :: Linux',
