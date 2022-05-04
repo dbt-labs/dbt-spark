@@ -2,6 +2,7 @@
 
 ### Features
 - Add session connection method ([#272](https://github.com/dbt-labs/dbt-spark/issues/272), [#279](https://github.com/dbt-labs/dbt-spark/pull/279))
+- rename file to match reference to dbt-core ([#344](https://github.com/dbt-labs/dbt-spark/pull/344))
 
 ### Under the hood
 - Use dbt.tests.adapter.basic in test suite ([#298](https://github.com/dbt-labs/dbt-spark/issues/298), [#299](https://github.com/dbt-labs/dbt-spark/pull/299))
