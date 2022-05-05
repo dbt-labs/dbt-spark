@@ -1,7 +1,9 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Union, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Union
+from typing_extensions import TypeAlias
+
 import agate
 from dbt.contracts.relation import RelationType
 
@@ -74,10 +76,10 @@ class SparkAdapter(SQLAdapter):
         "_hoodie_file_name",
     ]
 
-    Relation = SparkRelation
-    Column = SparkColumn
-    ConnectionManager = SparkConnectionManager
-    AdapterSpecificConfigs = SparkConfig
+    Relation: TypeAlias = SparkRelation
+    Column: TypeAlias = SparkColumn
+    ConnectionManager: TypeAlias = SparkConnectionManager
+    AdapterSpecificConfigs: TypeAlias = SparkConfig
 
     @classmethod
     def date_function(cls) -> str:
@@ -159,7 +161,7 @@ class SparkAdapter(SQLAdapter):
 
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
-            database = None
+            database = ""
 
         return super().get_relation(database, schema, identifier)
 
