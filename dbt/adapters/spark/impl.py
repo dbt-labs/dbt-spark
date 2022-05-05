@@ -13,6 +13,7 @@ import dbt.exceptions
 
 from dbt.adapters.base import AdapterConfig
 from dbt.adapters.base.impl import catch_as_completed
+from dbt.adapters.base.meta import available
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
@@ -402,7 +403,7 @@ class SparkAdapter(SQLAdapter):
             raise
         finally:
             conn.transaction_open = False
-
+    @available
     def submit_python_job(self, schema, identifier, file_contents):
         # basically copying drew's other script over :)
         auth_header = {'Authorization': f'Bearer {self.connections.profile.credentials.token}'}
