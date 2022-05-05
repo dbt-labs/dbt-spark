@@ -407,22 +407,26 @@ class SparkAdapter(SQLAdapter):
         # basically copying drew's other script over :)
         auth_header = {'Authorization': f'Bearer {self.connections.profile.credentials.token}'}
         b64_encoded_content = base64.b64encode(file_contents.encode()).decode()
-
         # create new dir
-        # response = requests.post(
-        #     f'https://{self.connections.profile.credentials.host}/api/2.0/workspace/mkdirs',
-        #     headers=auth_header,
-        #     json={
-        #         'path': f'/Users/{schema}/',
-        #     }
-        # )
+        if not self.connections.profile.credentials.user:
+            raise ValueError('Need to supply user in profile to submit python job')
+        # it is safe to call mkdirs even if dir already exists and have content inside
+        work_dir = f'/Users/{self.connections.profile.credentials.user}/{schema}'
+        response = requests.post(
+            f'https://{self.connections.profile.credentials.host}/api/2.0/workspace/mkdirs',
+            headers=auth_header,
+            json={
+                'path': work_dir,
+            }
+        )
+        # TODO check the response
 
         # add notebook
         response = requests.post(
             f'https://{self.connections.profile.credentials.host}/api/2.0/workspace/import',
             headers=auth_header,
             json={
-                'path': f'/Users/{schema}/{identifier}',
+                'path': f'{work_dir}/{identifier}',
                 'content': b64_encoded_content,
                 'language': 'PYTHON',
                 'overwrite': True,
@@ -440,7 +444,7 @@ class SparkAdapter(SQLAdapter):
                 "run_name": "debug task",
                 "existing_cluster_id": self.connections.profile.credentials.cluster,
                 'notebook_task': {
-                    'notebook_path': f'/Users/{schema}/{identifier}',
+                    'notebook_path': f'{work_dir}/{identifier}',
                 }
             }
         )
@@ -465,64 +469,8 @@ class SparkAdapter(SQLAdapter):
             f'https://{self.connections.profile.credentials.host}/api/2.1/jobs/runs/get-output?run_id={run_id}',
             headers=auth_header,
         )
-
-"""
-sample run_output
-
-{
-    "metadata": {
-        "job_id": 116603964177912,
-        "run_id": 981,
-        "number_in_job": 981,
-        "state": {
-            "life_cycle_state": "TERMINATED",
-            "result_state": "FAILED",
-            "state_message": "",
-            "user_cancelled_or_timedout": false
-        },
-        "start_time": 1651187347908,
-        "setup_duration": 0,
-        "execution_duration": 14000,
-        "cleanup_duration": 0,
-        "end_time": 1651187362169,
-        "creator_user_name": "chenyu.li@dbtlabs.com",
-        "run_name": "debug task",
-        "run_page_url": "https://dbc-9274a712-595c.cloud.databricks.com/?o=733816330658499#job/116603964177912/run/981",
-        "run_type": "SUBMIT_RUN",
-        "tasks": [
-            {
-                "run_id": 981,
-                "task_key": "debug_task",
-                "notebook_task": {
-                    "notebook_path": "/Users/chenyu.li@dbtlabs.com/random"
-                },
-                "existing_cluster_id": "0411-132815-9avnz2eh",
-                "state": {
-                    "life_cycle_state": "TERMINATED",
-                    "result_state": "FAILED",
-                    "state_message": "",
-                    "user_cancelled_or_timedout": false
-                },
-                "run_page_url": "https://dbc-9274a712-595c.cloud.databricks.com/?o=733816330658499#job/116603964177912/run/981",
-                "start_time": 1651187347908,
-                "setup_duration": 0,
-                "execution_duration": 14000,
-                "cleanup_duration": 0,
-                "end_time": 1651187362169,
-                "cluster_instance": {
-                    "cluster_id": "0411-132815-9avnz2eh",
-                    "spark_context_id": "768047027524473660"
-                },
-                "attempt_number": 0
-            }
-        ],
-        "format": "MULTI_TASK"
-    },
-    "error": "SyntaxError: EOL while scanning string literal",
-    "error_trace": "File \"<command-3726944017016201>\", line 1\n    print(\"hello world\n                      ^\nSyntaxError: EOL while scanning string literal",
-    "notebook_output": {}
-}
-""" 
+        # TODO have more info here and determine what do we want to if python model fail
+        return run_output.json()['metadata']['state']['result_state']
 
         
 

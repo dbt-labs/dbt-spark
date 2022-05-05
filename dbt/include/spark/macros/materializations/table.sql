@@ -22,7 +22,11 @@
     -- sql here is really just the compiled python code
     {%- set python_code = py_complete_script(model=model, schema=schema, python_code=sql) -%}
     {{ log("python code " ~ python_code ) }}
-    {{adapter.submit_python_job('chenyu.li@dbtlabs.com', identifier, python_code)}}
+    {% set result = adapter.submit_python_job(schema, identifier, python_code) %}
+    {% call noop_statement('main', result,) %}
+      -- python model return run result --
+    {% endcall %}
+
   {%- else -%}
     {% call statement('main') -%}
       {{ create_table_as(False, target_relation, sql) }}
@@ -37,31 +41,13 @@
 
 {% endmaterialization %}
 
-{% macro py_script_prefix( model) %}
-# this part is dbt logic for get ref work
-{{ build_ref_function(model ) }}
-{{ build_source_function(model ) }}
-
-def config(*args, **kwargs):
-  pass
-
-class dbt:
-  config = config
-  ref = ref
-  source = source
-
-# COMMAND ----------
-# This part of the code is python model code
-
-{% endmacro %}
 
 {% macro py_complete_script(model, schema, python_code) %}
-{#-- can we wrap in 'def model:' here? or will formatting screw us? --#}
-{#-- Above was Drew's comment --#}
 {{ python_code }}
-
 # COMMAND ----------
-# this is materialization code
-df.write.mode("overwrite").format("delta").saveAsTable("{{schema}}.{{model['alias']}}")
+# this is materialization code dbt generated, please do not modify
 
+# we are doing this to make some example code working databricks and snowflake 
+df = model(spark, dbt)
+df.write.mode("overwrite").format("delta").saveAsTable("{{schema}}.{{model['alias']}}")
 {% endmacro %}
