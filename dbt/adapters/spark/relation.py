@@ -27,7 +27,7 @@ class SparkRelation(BaseRelation):
     quote_character: str = "`"
     is_delta: Optional[bool] = None
     is_hudi: Optional[bool] = None
-    information: str = ""
+    information: Optional[str] = None
 
     def __post_init__(self):
         if self.database != self.schema and self.database:
