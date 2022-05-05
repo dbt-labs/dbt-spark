@@ -37,12 +37,31 @@
 
 {% endmaterialization %}
 
+{% macro py_script_prefix( model) %}
+# this part is dbt logic for get ref work
+{{ build_ref_function(model ) }}
+{{ build_source_function(model ) }}
+
+def config(*args, **kwargs):
+  pass
+
+class dbt:
+  config = config
+  ref = ref
+  source = source
+
+# COMMAND ----------
+# This part of the code is python model code
+
+{% endmacro %}
 
 {% macro py_complete_script(model, schema, python_code) %}
 {#-- can we wrap in 'def model:' here? or will formatting screw us? --#}
 {#-- Above was Drew's comment --#}
 {{ python_code }}
 
+# COMMAND ----------
+# this is materialization code
 df.write.mode("overwrite").format("delta").saveAsTable("{{schema}}.{{model['alias']}}")
 
 {% endmacro %}

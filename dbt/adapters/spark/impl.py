@@ -459,6 +459,7 @@ class SparkAdapter(SQLAdapter):
             state = resp.json()['state']['life_cycle_state']
             print(f"Polling.... in state: {state}")
             time.sleep(1)
+            # TODO resp.json()['state_message'] contain useful information and we may want to surface to user if job fails
         
         run_output = requests.get(
             f'https://{self.connections.profile.credentials.host}/api/2.1/jobs/runs/get-output?run_id={run_id}',
