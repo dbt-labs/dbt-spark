@@ -23,7 +23,7 @@
     {%- set python_code = py_complete_script(model=model, schema=schema, python_code=sql) -%}
     {{ log("python code " ~ python_code ) }}
     {% set result = adapter.submit_python_job(schema, identifier, python_code) %}
-    {% call noop_statement('main', result,) %}
+    {% call noop_statement('main', 'OK', 'OK', 1) %}
       -- python model return run result --
     {% endcall %}
 
@@ -44,6 +44,9 @@
 
 {% macro py_complete_script(model, schema, python_code) %}
 {{ python_code }}
+
+df = model(spark, dbt)
+
 # COMMAND ----------
 # this is materialization code dbt generated, please do not modify
 
