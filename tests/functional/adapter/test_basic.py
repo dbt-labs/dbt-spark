@@ -14,7 +14,7 @@ from dbt.tests.adapter.basic.test_snapshot_timestamp import BaseSnapshotTimestam
 from dbt.tests.adapter.basic.test_adapter_methods import BaseAdapterMethod
 
 
-@pytest.mark.skip_profile('spark_session')
+# @pytest.mark.skip_profile('spark_session')
 class TestSimpleMaterializationsSpark(BaseSimpleMaterializations):
     pass
 
@@ -23,9 +23,6 @@ class TestSingularTestsSpark(BaseSingularTests):
     pass
 
 
-# The local cluster currently tests on spark 2.x, which does not support this
-# if we upgrade it to 3.x, we can enable this test
-@pytest.mark.skip_profile('apache_spark')
 class TestSingularTestsEphemeralSpark(BaseSingularTestsEphemeral):
     pass
 
@@ -34,12 +31,10 @@ class TestEmptySpark(BaseEmpty):
     pass
 
 
-@pytest.mark.skip_profile('spark_session')
 class TestEphemeralSpark(BaseEphemeral):
     pass
 
 
-@pytest.mark.skip_profile('spark_session')
 class TestIncrementalSpark(BaseIncremental):
     pass
 
@@ -64,7 +59,7 @@ class TestSnapshotCheckColsSpark(BaseSnapshotCheckCols):
         }
 
 
-#hese tests were not enabled in the dbtspec files, so skipping here.
+# These tests were not enabled in the dbtspec files, so skipping here.
 # Error encountered was: Error running query: java.lang.ClassNotFoundException: delta.DefaultSource
 @pytest.mark.skip_profile('apache_spark', 'spark_session')
 class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
