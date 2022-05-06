@@ -73,5 +73,6 @@ class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
             }
         }
 
+
 class TestBaseAdapterMethod(BaseAdapterMethod):
     pass
