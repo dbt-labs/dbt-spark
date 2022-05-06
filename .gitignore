@@ -2,6 +2,7 @@
 .spark-warehouse/
 *.egg-info
 env/
+test.env
 *.pyc
 __pycache__
 .tox/
