@@ -33,7 +33,7 @@ jobs:
       DBT_INVOCATION_ENV: circle
     docker:
       - image: fishtownanalytics/test-container:10
-      - image: godatadriven/spark:3.1.1
+      - image: godatadriven/spark:3.1
         environment:
           WAIT_FOR: localhost:5432
         command: >
