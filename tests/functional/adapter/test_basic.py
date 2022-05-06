@@ -14,7 +14,6 @@ from dbt.tests.adapter.basic.test_snapshot_timestamp import BaseSnapshotTimestam
 from dbt.tests.adapter.basic.test_adapter_methods import BaseAdapterMethod
 
 
-# @pytest.mark.skip_profile('spark_session')
 class TestSimpleMaterializationsSpark(BaseSimpleMaterializations):
     pass
 
