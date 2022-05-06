@@ -62,7 +62,7 @@ pyhive_extras = [
     'thrift>=0.11.0,<0.16.0',
 ]
 session_extras = [
-    "pyspark>=3.0.0,<4.0.0"
+    "pyspark>=3.1.1,<4.0.0"
 ]
 all_extras = odbc_extras + pyhive_extras + session_extras
 
