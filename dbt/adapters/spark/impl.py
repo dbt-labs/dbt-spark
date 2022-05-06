@@ -462,7 +462,7 @@ class SparkAdapter(SQLAdapter):
                 headers=auth_header,
             )
             state = resp.json()['state']['life_cycle_state']
-            print(f"Polling.... in state: {state}")
+            logger.debug(f"Polling.... in state: {state}")
             time.sleep(1)
             # TODO resp.json()['state_message'] contain useful information and we may want to surface to user if job fails
         

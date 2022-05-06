@@ -23,7 +23,7 @@
     {%- set python_code = py_complete_script(model=model, schema=schema, python_code=sql) -%}
     {{ log("python code " ~ python_code ) }}
     {% set result = adapter.submit_python_job(schema, identifier, python_code) %}
-    {% call noop_statement('main', result,) %}
+    {% call noop_statement('main', result, 'OK', 1) %}
       -- python model return run result --
     {% endcall %}
 
@@ -44,10 +44,11 @@
 
 {% macro py_complete_script(model, schema, python_code) %}
 {{ python_code }}
+
+df = model(dbt)
+
 # COMMAND ----------
 # this is materialization code dbt generated, please do not modify
 
-# we are doing this to make some example code working databricks and snowflake 
-df = model(dbt)
 df.write.mode("overwrite").format("delta").saveAsTable("{{schema}}.{{model['alias']}}")
 {% endmacro %}
