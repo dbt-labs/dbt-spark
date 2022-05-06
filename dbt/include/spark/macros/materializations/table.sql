@@ -48,6 +48,6 @@
 # this is materialization code dbt generated, please do not modify
 
 # we are doing this to make some example code working databricks and snowflake 
-df = model(spark, dbt)
+df = model(dbt)
 df.write.mode("overwrite").format("delta").saveAsTable("{{schema}}.{{model['alias']}}")
 {% endmacro %}
