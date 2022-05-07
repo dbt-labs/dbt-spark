@@ -1,4 +1,3 @@
-import json
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
@@ -152,7 +151,7 @@ class SparkAdapter(SQLAdapter):
 
         for tbl in tables:
             rel_type = RelationType('view' if tbl['tableName'] in view_names else 'table')
-            _schema = tbl['namespace'] if 'namespace' in tbl else tbl['database']
+            _schema = tbl['namespace'] if 'namespace' in tables.column_names else tbl['database']
             relation = self.Relation.create(
                 schema=_schema,
                 identifier=tbl['tableName'],

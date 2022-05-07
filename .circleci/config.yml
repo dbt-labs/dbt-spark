@@ -8,20 +8,19 @@ jobs:
       - image: fishtownanalytics/test-container:10
     steps:
       - checkout
-      - run: tox -e unit
+      - run: tox -e flake8,unit
 
   integration-spark-session:
     environment:
       DBT_INVOCATION_ENV: circle
     docker:
-      - image: bitnami/spark:3.2.1
-        user: root
+      - image: godatadriven/pyspark:3.1
     steps:
       - checkout
       - run: apt-get update
       - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
       - run: python3 -m pip install --upgrade pip
-      - run: python3 -m pip install flake8 tox pyspark==3.2.1
+      - run: python3 -m pip install tox
       - run:
           name: Run integration tests
           command: tox -e integration-spark-session
@@ -52,6 +51,8 @@ jobs:
           --conf spark.hadoop.datanucleus.schema.autoCreateTables=true
           --conf spark.hadoop.datanucleus.fixedDatastore=false
           --conf spark.sql.hive.convertMetastoreParquet=false
+          --conf spark.driver.memory=2g
+          --conf spark.executor.memory=2g
           --hiveconf hoodie.datasource.hive_sync.use_jdbc=false
           --hiveconf hoodie.datasource.hive_sync.mode=hms
           --hiveconf datanucleus.schema.autoCreateAll=true

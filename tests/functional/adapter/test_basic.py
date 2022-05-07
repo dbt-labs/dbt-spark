@@ -12,7 +12,6 @@ from dbt.tests.adapter.basic.test_generic_tests import BaseGenericTests
 from dbt.tests.adapter.basic.test_snapshot_check_cols import BaseSnapshotCheckCols
 from dbt.tests.adapter.basic.test_snapshot_timestamp import BaseSnapshotTimestamp
 from dbt.tests.adapter.basic.test_adapter_methods import BaseAdapterMethod
-from dbt.tests.util import run_dbt, check_relations_equal
 
 
 @pytest.mark.skip_profile('spark_session')
@@ -81,8 +80,4 @@ class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
         }
 
 class TestBaseAdapterMethod(BaseAdapterMethod):
-    def test_adapter_methods(self, project, equal_tables):
-        run_dbt(["--debug", "compile"])  # trigger any compile-time issues
-        result = run_dbt()
-        assert len(result) == 3
-        check_relations_equal(project.adapter, equal_tables)
+    pass
