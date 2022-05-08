@@ -57,6 +57,7 @@ jobs:
           --hiveconf hoodie.datasource.hive_sync.mode=hms
           --hiveconf datanucleus.schema.autoCreateAll=true
           --hiveconf hive.metastore.schema.verification=false
+          --hiveconf hive.metastore.sasl.enabled=true
 
       - image: postgres:9.6.17-alpine
         environment:
