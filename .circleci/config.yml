@@ -58,6 +58,8 @@ jobs:
           --hiveconf datanucleus.schema.autoCreateAll=true
           --hiveconf hive.metastore.schema.verification=false
           --hiveconf hive.metastore.sasl.enabled=true
+          --hiveconf hive.server2.thrift.port=10000
+          --hiveconf hive.server2.thrift.bind.host=localhost
 
       - image: postgres:9.6.17-alpine
         environment:
