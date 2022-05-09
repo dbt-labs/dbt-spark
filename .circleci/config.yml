@@ -34,7 +34,7 @@ jobs:
       DBT_DEBUG: True
     docker:
       - image: fishtownanalytics/test-container:10
-      - image: godatadriven/spark:3.1
+      - image: godatadriven/spark:latest
         environment:
           WAIT_FOR: localhost:5432
         command: >
