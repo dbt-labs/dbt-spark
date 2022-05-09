@@ -231,8 +231,20 @@ class SparkAdapter(SQLAdapter):
             # return relation's schema. if columns are empty from cache,
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
-            rows: List[agate.Row] = super().get_columns_in_relation(relation)
-            columns = self.parse_describe_extended(relation, rows)
+            try:
+                rows: List[agate.Row] = super().get_columns_in_relation(relation)
+                columns = self.parse_describe_extended(relation, rows)
+            except dbt.exceptions.RuntimeException as e:
+                # spark would throw error when table doesn't exist, where other
+                # CDW would just return and empty list, normalizing the behavior here
+                errmsg = getattr(e, "msg", "")
+                if (
+                    "Table or view not found" in errmsg or
+                    "NoSuchTableException" in errmsg
+                ):
+                    pass
+                else:
+                    raise e
 
         # strip hudi metadata columns.
         columns = [x for x in columns
@@ -363,6 +375,30 @@ class SparkAdapter(SQLAdapter):
         )
 
         return sql
+
+    # This is for use in the test suite
+    # Spark doesn't have 'commit' and 'rollback', so this override
+    # doesn't include those commands.
+    def run_sql_for_tests(self, sql, fetch, conn):
+        cursor = conn.handle.cursor()
+        try:
+            cursor.execute(sql)
+            if fetch == "one":
+                if hasattr(cursor, 'fetchone'):
+                    return cursor.fetchone()
+                else:
+                    # AttributeError: 'PyhiveConnectionWrapper' object has no attribute 'fetchone'
+                    return cursor.fetchall()[0]
+            elif fetch == "all":
+                return cursor.fetchall()
+            else:
+                return
+        except BaseException as e:
+            print(sql)
+            print(e)
+            raise
+        finally:
+            conn.transaction_open = False
 
 
 # spark does something interesting with joins when both tables have the same

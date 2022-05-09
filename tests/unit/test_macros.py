@@ -15,7 +15,9 @@ class TestSparkMacros(unittest.TestCase):
             'validation': mock.Mock(),
             'model': mock.Mock(),
             'exceptions': mock.Mock(),
-            'config': mock.Mock()
+            'config': mock.Mock(),
+            'adapter': mock.Mock(),
+            'return': lambda r: r,
         }
         self.default_context['config'].get = lambda key, default=None, **kwargs: self.config.get(key, default)
 
@@ -24,6 +26,11 @@ class TestSparkMacros(unittest.TestCase):
 
     def __run_macro(self, template, name, temporary, relation, sql):
         self.default_context['model'].alias = relation
+
+        def dispatch(macro_name, macro_namespace=None, packages=None):
+            return getattr(template.module, f'spark__{macro_name}')
+        self.default_context['adapter'].dispatch = dispatch
+
         value = getattr(template.module, name)(temporary, relation, sql)
         return re.sub(r'\s\s+', ' ', value)
 

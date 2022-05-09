@@ -55,6 +55,7 @@ class SparkConnectionMethod(StrEnum):
     THRIFT = 'thrift'
     HTTP = 'http'
     ODBC = 'odbc'
+    SESSION = 'session'
 
 
 @dataclass
@@ -133,6 +134,18 @@ class SparkCredentials(Credentials):
                 "`pip install dbt-spark[PyHive]`"
             )
 
+        if self.method == SparkConnectionMethod.SESSION:
+            try:
+                import pyspark  # noqa: F401
+            except ImportError as e:
+                raise dbt.exceptions.RuntimeException(
+                    f"{self.method} connection method requires "
+                    "additional dependencies. \n"
+                    "Install the additional required dependencies with "
+                    "`pip install dbt-spark[session]`\n\n"
+                    f"ImportError({e.msg})"
+                ) from e
+
     @property
     def type(self):
         return 'spark'
@@ -179,6 +192,7 @@ class PyhiveConnectionWrapper(object):
                 logger.debug(
                     "Exception while closing cursor: {}".format(exc)
                 )
+        self.handle.close()
 
     def rollback(self, *args, **kwargs):
         logger.debug("NotImplemented: rollback")
@@ -415,7 +429,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     cls.validate_creds(creds, required_fields)
 
                     dbt_spark_version = __version__.version
-                    user_agent_entry = f"fishtown-analytics-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
+                    user_agent_entry = f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
 
                     # http://simba.wpengine.com/products/Spark/doc/ODBC_InstallGuide/unix/content/odbc/hi/configuring/serverside.htm
                     ssp = {
@@ -442,6 +456,12 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     conn = pyodbc.connect(connection_str, autocommit=True)
                     handle = PyodbcConnectionWrapper(conn)
+                elif creds.method == SparkConnectionMethod.SESSION:
+                    from .session import (  # noqa: F401
+                        Connection,
+                        SessionConnectionWrapper,
+                    )
+                    handle = SessionConnectionWrapper(Connection())
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
