@@ -31,6 +31,7 @@ jobs:
   integration-spark-thrift:
     environment:
       DBT_INVOCATION_ENV: circle
+      DBT_DEBUG: True
     docker:
       - image: fishtownanalytics/test-container:10
       - image: godatadriven/spark:3.1
