@@ -70,7 +70,7 @@ jobs:
       - name: Bumping version
         run: |
           source env/bin/activate
-          pip install -r dev_requirements.txt
+          pip install -r dev-requirements.txt
           env/bin/bumpversion --allow-dirty --new-version ${{steps.variables.outputs.VERSION_NUMBER}} major
           git status
 

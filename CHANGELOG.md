@@ -2,6 +2,7 @@
 
 ### Features
 - Add session connection method ([#272](https://github.com/dbt-labs/dbt-spark/issues/272), [#279](https://github.com/dbt-labs/dbt-spark/pull/279))
+- rename file to match reference to dbt-core ([#344](https://github.com/dbt-labs/dbt-spark/pull/344))
 
 ### Under the hood
 - Add precommit tooling to this repo ([#356](https://github.com/dbt-labs/dbt-spark/pull/356))
