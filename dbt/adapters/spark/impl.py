@@ -21,7 +21,7 @@ from dbt.utils import executor
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
+GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = 'get_columns_in_relation_raw'
 LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
 LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
 DROP_RELATION_MACRO_NAME = 'drop_relation'
@@ -232,7 +232,9 @@ class SparkAdapter(SQLAdapter):
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
             try:
-                rows: List[agate.Row] = super().get_columns_in_relation(relation)
+                rows: List[agate.Row] = self.execute_macro(
+                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+                )
                 columns = self.parse_describe_extended(relation, rows)
             except dbt.exceptions.RuntimeException as e:
                 # spark would throw error when table doesn't exist, where other
