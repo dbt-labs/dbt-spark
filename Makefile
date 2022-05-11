@@ -44,11 +44,6 @@ test: ## Runs unit tests with py38 and code checks against staged changes.
 	pre-commit run flake8-check --hook-stage manual | grep -v "INFO"; \
 	pre-commit run mypy-check --hook-stage manual | grep -v "INFO"
 
-.PHONY: integration
-integration: ## Runs snowflake integration tests with py38.
-	@\
-	tox -e py38-snowflake --
-
 .PHONY: clean
 	@echo "cleaning repo"
 	@git clean -f -X
