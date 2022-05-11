@@ -56,7 +56,7 @@ jobs:
         run: |
           sudo apt-get install libsasl2-dev
           pip install --user --upgrade pip
-          pip install -r dev_requirements.txt
+          pip install -r dev-requirements.txt
           pre-commit --version
           mypy --version
           dbt --version
