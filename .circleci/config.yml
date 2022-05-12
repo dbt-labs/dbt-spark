@@ -14,7 +14,7 @@ jobs:
     environment:
       DBT_INVOCATION_ENV: circle
     docker:
-      - image: godatadriven/pyspark:3.1
+      - image: apache/spark-py:v3.1.3
     steps:
       - checkout
       - run: apt-get update
