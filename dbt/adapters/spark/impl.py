@@ -261,16 +261,14 @@ class SparkAdapter(SQLAdapter):
             None,
         )
 
-        updated_relation = self._set_relation_information(cached_relation)
+        if not cached_relation:
+            updated_relation = self.cache.add(self._get_updated_relation(relation))
+        else:
+            updated_relation = self._set_relation_information(relation)
+
         return self._get_spark_columns(updated_relation)
 
-    def _set_relation_information(
-        self, relation: SparkRelation
-    ) -> SparkRelation:
-        """Update the information of the relation, or return it if it already exists."""
-        if relation.has_information():
-            return relation
-
+    def _get_updated_relation(self, relation: BaseRelation) -> SparkRelation:
         metadata = None
         columns = []
 
@@ -282,8 +280,8 @@ class SparkAdapter(SQLAdapter):
             # CDW would just return and empty list, normalizing the behavior here
             errmsg = getattr(e, "msg", "")
             if (
-                "Table or view not found" in errmsg or
-                "NoSuchTableException" in errmsg
+                    "Table or view not found" in errmsg or
+                    "NoSuchTableException" in errmsg
             ):
                 pass
             else:
@@ -294,7 +292,7 @@ class SparkAdapter(SQLAdapter):
                    if x.name not in self.HUDI_METADATA_COLUMNS]
 
         provider = metadata[KEY_TABLE_PROVIDER]
-        new_relation = self.Relation.create(
+        return self.Relation.create(
             database=None,
             schema=relation.schema,
             identifier=relation.identifier,
@@ -306,8 +304,15 @@ class SparkAdapter(SQLAdapter):
             columns={x.column: x.dtype for x in columns}
         )
 
-        self.cache.upsert_relation(new_relation)
-        return new_relation
+    def _set_relation_information(self, relation: SparkRelation) -> SparkRelation:
+        """Update the information of the relation, or return it if it already exists."""
+        if relation.has_information():
+            return relation
+
+        updated_relation = self._get_updated_relation(relation)
+
+        self.cache.upsert_relation(updated_relation)
+        return updated_relation
 
     @staticmethod
     def _get_spark_columns(
