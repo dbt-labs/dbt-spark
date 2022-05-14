@@ -33,7 +33,7 @@ jobs:
       DBT_INVOCATION_ENV: circle
     docker:
       - image: fishtownanalytics/test-container:10
-      - image: godatadriven/spark:3.1
+      - image: godatadriven/spark:2
         environment:
           WAIT_FOR: localhost:5432
         command: >
@@ -44,15 +44,13 @@ jobs:
           --conf spark.hadoop.javax.jdo.option.ConnectionPassword=dbt
           --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.postgresql.Driver
           --conf spark.serializer=org.apache.spark.serializer.KryoSerializer
-          --conf spark.jars.packages=org.apache.hudi:hudi-spark3.1-bundle_2.12:0.11.0
+          --conf spark.jars.packages=org.apache.hudi:hudi-spark-bundle_2.11:0.9.0
           --conf spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension
           --conf spark.driver.userClassPathFirst=true
           --conf spark.hadoop.datanucleus.autoCreateTables=true
           --conf spark.hadoop.datanucleus.schema.autoCreateTables=true
           --conf spark.hadoop.datanucleus.fixedDatastore=false
           --conf spark.sql.hive.convertMetastoreParquet=false
-          --conf spark.driver.memory=2g
-          --conf spark.executor.memory=2g
           --hiveconf hoodie.datasource.hive_sync.use_jdbc=false
           --hiveconf hoodie.datasource.hive_sync.mode=hms
           --hiveconf datanucleus.schema.autoCreateAll=true

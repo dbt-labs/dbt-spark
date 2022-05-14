@@ -1,8 +1,10 @@
-from typing import Optional
+from typing import Optional, List, Dict, Hashable
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from dbt.adapters.base import Column
 from dbt.adapters.base.relation import BaseRelation, Policy
+from dbt.contracts.relation import FakeAPIObject
 from dbt.exceptions import RuntimeException
 
 
@@ -27,7 +29,9 @@ class SparkRelation(BaseRelation):
     quote_character: str = '`'
     is_delta: Optional[bool] = None
     is_hudi: Optional[bool] = None
-    information: str = None
+    owner: Optional[str] = None
+    stats: Optional[str] = None
+    columns: Dict[str, str] = field(default_factory=lambda: {})
 
     def __post_init__(self):
         if self.database != self.schema and self.database:
@@ -40,3 +44,9 @@ class SparkRelation(BaseRelation):
                 'include, but only one can be set'
             )
         return super().render()
+
+    @property
+    def has_information(self) -> bool:
+        return self.owner is not None and \
+               self.stats is not None and \
+               len(self.columns) > 0

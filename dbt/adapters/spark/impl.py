@@ -1,9 +1,15 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Union, Iterable
+from typing import Optional, List, Dict, Any, Union, Iterable, Tuple
 import agate
+from dbt.adapters.cache import RelationsCache, _CachedRelation
 from dbt.contracts.relation import RelationType
+from dbt.events.base_types import DebugLevel, Cache
+from dbt.adapters.reference_keys import _ReferenceKey, _make_key
+from dbt.events.functions import fire_event
+from dbt.events.types import AddRelation, DumpBeforeAddGraph
+from dbt.helper_types import Lazy
 
 import dbt
 import dbt.exceptions
@@ -30,6 +36,7 @@ FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
 
 KEY_TABLE_OWNER = 'Owner'
 KEY_TABLE_STATISTICS = 'Statistics'
+KEY_TABLE_PROVIDER = 'Provider'
 
 
 @dataclass
@@ -41,6 +48,36 @@ class SparkConfig(AdapterConfig):
     buckets: Optional[int] = None
     options: Optional[Dict[str, str]] = None
     merge_update_columns: Optional[str] = None
+
+
+@dataclass
+class UpdateRelation(DebugLevel, Cache):
+    relation: _ReferenceKey
+    code: str = "E038"
+
+    def message(self) -> str:
+        return f"Updating relation: {str(self.relation)}"
+
+
+class SparkRelationsCache(RelationsCache):
+    def _update(self, relation: _CachedRelation):
+        key = relation.key()
+
+        if key not in self.relations:
+            return
+
+        self.relations[key].inner = relation.inner
+
+    def upsert_relation(self, relation):
+        """Update the relation inner to the cache
+
+        : param BaseRelation relation: The underlying relation.
+        """
+        cached = _CachedRelation(relation)
+        fire_event(UpdateRelation(relation=_make_key(cached)))
+
+        with self.lock:
+            self._update(cached)
 
 
 class SparkAdapter(SQLAdapter):
@@ -83,6 +120,7 @@ class SparkAdapter(SQLAdapter):
     Column = SparkColumn
     ConnectionManager = SparkConnectionManager
     AdapterSpecificConfigs = SparkConfig
+    cache = SparkRelationsCache()
 
     @classmethod
     def date_function(cls) -> str:
@@ -167,13 +205,14 @@ class SparkAdapter(SQLAdapter):
         if not self.Relation.include_policy.database:
             database = None
 
-        return super().get_relation(database, schema, identifier)
+        cached = super().get_relation(database, schema, identifier)
+        return self._set_relation_information(cached)
 
     def parse_describe_extended(
             self,
             relation: Relation,
             raw_rows: List[agate.Row]
-    ) -> List[SparkColumn]:
+    ) -> Tuple[Dict[str, any], List[SparkColumn]]:
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
         # Find the separator between the rows and the metadata provided
@@ -191,7 +230,7 @@ class SparkAdapter(SQLAdapter):
 
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
-        return [SparkColumn(
+        return metadata, [SparkColumn(
             table_database=None,
             table_schema=relation.schema,
             table_name=relation.name,
@@ -219,69 +258,77 @@ class SparkAdapter(SQLAdapter):
                                 for cached_relation in cached_relations
                                 if str(cached_relation) == str(relation)),
                                None)
+
+        updated_relation = self._set_relation_information(cached_relation)
+        return self._get_spark_columns(updated_relation)
+
+    def _set_relation_information(
+        self, relation: SparkRelation
+    ) -> SparkRelation:
+        """Update the information of the relation, or return it if it already exists."""
+        if relation.has_information:
+            return relation
+
+        metadata = None
         columns = []
-        if cached_relation and cached_relation.information:
-            columns = self.parse_columns_from_information(cached_relation)
-        if not columns:
-            # in open source delta 'show table extended' query output doesnt
-            # return relation's schema. if columns are empty from cache,
-            # use get_columns_in_relation spark macro
-            # which would execute 'describe extended tablename' query
-            try:
-                rows: List[agate.Row] = super().get_columns_in_relation(relation)
-                columns = self.parse_describe_extended(relation, rows)
-            except dbt.exceptions.RuntimeException as e:
-                # spark would throw error when table doesn't exist, where other
-                # CDW would just return and empty list, normalizing the behavior here
-                errmsg = getattr(e, "msg", "")
-                if (
-                    "Table or view not found" in errmsg or
-                    "NoSuchTableException" in errmsg
-                ):
-                    pass
-                else:
-                    raise e
+
+        try:
+            rows: List[agate.Row] = super().get_columns_in_relation(relation)
+            metadata, columns = self.parse_describe_extended(relation, rows)
+        except dbt.exceptions.RuntimeException as e:
+            # spark would throw error when table doesn't exist, where other
+            # CDW would just return and empty list, normalizing the behavior here
+            errmsg = getattr(e, "msg", "")
+            if (
+                "Table or view not found" in errmsg or
+                "NoSuchTableException" in errmsg
+            ):
+                pass
+            else:
+                raise e
 
         # strip hudi metadata columns.
         columns = [x for x in columns
                    if x.name not in self.HUDI_METADATA_COLUMNS]
-        return columns
 
-    def parse_columns_from_information(
-            self, relation: SparkRelation
+        provider = metadata[KEY_TABLE_PROVIDER]
+        new_relation = self.Relation.create(
+            database=None,
+            schema=relation.schema,
+            identifier=relation.identifier,
+            type=relation.type,
+            is_delta=(provider == 'delta'),
+            is_hudi=(provider == 'hudi'),
+            owner=metadata[KEY_TABLE_OWNER],
+            stats=metadata[KEY_TABLE_STATISTICS],
+            columns={x.column: x.dtype for x in columns}
+        )
+
+        self.cache.upsert_relation(new_relation)
+        return new_relation
+
+    @staticmethod
+    def _get_spark_columns(
+        relation: SparkRelation
     ) -> List[SparkColumn]:
-        owner_match = re.findall(
-            self.INFORMATION_OWNER_REGEX, relation.information)
-        owner = owner_match[0] if owner_match else None
-        matches = re.finditer(
-            self.INFORMATION_COLUMNS_REGEX, relation.information)
-        columns = []
-        stats_match = re.findall(
-            self.INFORMATION_STATISTICS_REGEX, relation.information)
-        raw_table_stats = stats_match[0] if stats_match else None
-        table_stats = SparkColumn.convert_table_stats(raw_table_stats)
-        for match_num, match in enumerate(matches):
-            column_name, column_type, nullable = match.groups()
-            column = SparkColumn(
-                table_database=None,
-                table_schema=relation.schema,
-                table_name=relation.table,
-                table_type=relation.type,
-                column_index=match_num,
-                table_owner=owner,
-                column=column_name,
-                dtype=column_type,
-                table_stats=table_stats
-            )
-            columns.append(column)
-        return columns
+        return [SparkColumn(
+            table_database=None,
+            table_schema=relation.schema,
+            table_name=relation.name,
+            table_type=relation.type,
+            table_owner=relation.owner,
+            table_stats=relation.stats,
+            column=name,
+            column_index=idx,
+            dtype=dtype
+        ) for idx, (name, dtype) in enumerate(relation.columns.items())]
 
     def _get_columns_for_catalog(
         self, relation: SparkRelation
     ) -> Iterable[Dict[str, Any]]:
-        columns = self.parse_columns_from_information(relation)
+        updated_relation = self._set_relation_information(relation)
 
-        for column in columns:
+        for column in self._get_spark_columns(updated_relation):
             # convert SparkColumns into catalog dicts
             as_dict = column.to_column_dict()
             as_dict['column_name'] = as_dict.pop('column', None)
