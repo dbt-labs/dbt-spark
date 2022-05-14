@@ -2,9 +2,7 @@ from typing import Optional, List, Dict, Hashable
 
 from dataclasses import dataclass, field
 
-from dbt.adapters.base import Column
 from dbt.adapters.base.relation import BaseRelation, Policy
-from dbt.contracts.relation import FakeAPIObject
 from dbt.exceptions import RuntimeException
 
 
@@ -45,7 +43,6 @@ class SparkRelation(BaseRelation):
             )
         return super().render()
 
-    @property
     def has_information(self) -> bool:
         return self.owner is not None and \
                self.stats is not None and \

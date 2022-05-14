@@ -10,8 +10,6 @@ from dbt.contracts.relation import RelationType
 from dbt.events.base_types import DebugLevel, Cache
 from dbt.adapters.reference_keys import _ReferenceKey, _make_key
 from dbt.events.functions import fire_event
-from dbt.events.types import AddRelation, DumpBeforeAddGraph
-from dbt.helper_types import Lazy
 
 import dbt
 import dbt.exceptions
@@ -29,16 +27,16 @@ from dbt.utils import executor
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
-LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
-LIST_TABLES_MACRO_NAME = 'spark__list_tables_without_caching'
-LIST_VIEWS_MACRO_NAME = 'spark__list_views_without_caching'
-DROP_RELATION_MACRO_NAME = 'drop_relation'
-FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
+GET_COLUMNS_IN_RELATION_MACRO_NAME = "get_columns_in_relation"
+LIST_SCHEMAS_MACRO_NAME = "list_schemas"
+LIST_TABLES_MACRO_NAME = "spark__list_tables_without_caching"
+LIST_VIEWS_MACRO_NAME = "spark__list_views_without_caching"
+DROP_RELATION_MACRO_NAME = "drop_relation"
+FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 
-KEY_TABLE_OWNER = 'Owner'
-KEY_TABLE_STATISTICS = 'Statistics'
-KEY_TABLE_PROVIDER = 'Provider'
+KEY_TABLE_OWNER = "Owner"
+KEY_TABLE_STATISTICS = "Statistics"
+KEY_TABLE_PROVIDER = "Provider"
 
 
 @dataclass
@@ -61,11 +59,21 @@ class UpdateRelation(DebugLevel, Cache):
         return f"Updating relation: {str(self.relation)}"
 
 
+@dataclass
+class UpdateMissingRelation(DebugLevel, Cache):
+    relation: _ReferenceKey
+    code: str = "E039"
+
+    def message(self) -> str:
+        return f"updated a nonexistent relationship: {str(self.relation)}"
+
+
 class SparkRelationsCache(RelationsCache):
     def _update(self, relation: _CachedRelation):
         key = relation.key()
 
         if key not in self.relations:
+            fire_event(UpdateMissingRelation(relation=key))
             return
 
         self.relations[key].inner = relation.inner
@@ -114,10 +122,10 @@ class SparkAdapter(SQLAdapter):
         "_hoodie_file_name",
     ]
 
-    Relation = SparkRelation
-    Column = SparkColumn
-    ConnectionManager = SparkConnectionManager
-    AdapterSpecificConfigs = SparkConfig
+    Relation: TypeAlias = SparkRelation
+    Column: TypeAlias = SparkColumn
+    ConnectionManager: TypeAlias = SparkConnectionManager
+    AdapterSpecificConfigs: TypeAlias = SparkConfig
     cache = SparkRelationsCache()
 
     @classmethod
@@ -163,7 +171,7 @@ class SparkAdapter(SQLAdapter):
     def list_relations_without_caching(
         self, schema_relation: SparkRelation
     ) -> List[SparkRelation]:
-        kwargs = {'relation': schema_relation}
+        kwargs = {"relation": schema_relation}
         try:
             tables = self.execute_macro(
                 LIST_TABLES_MACRO_NAME,
@@ -186,11 +194,11 @@ class SparkAdapter(SQLAdapter):
         view_names = views.columns["viewName"].values()
 
         for tbl in tables:
-            rel_type = RelationType('view' if tbl['tableName'] in view_names else 'table')
-            _schema = tbl['namespace'] if 'namespace' in tables.column_names else tbl['database']
+            rel_type = RelationType("view" if tbl["tableName"] in view_names else "table")
+            _schema = tbl["namespace"] if "namespace" in tables.column_names else tbl["database"]
             relation = self.Relation.create(
                 schema=_schema,
-                identifier=tbl['tableName'],
+                identifier=tbl["tableName"],
                 type=rel_type,
             )
             relations.append(relation)
@@ -243,12 +251,15 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
-        cached_relations = self.cache.get_relations(
-            relation.database, relation.schema)
-        cached_relation = next((cached_relation
-                                for cached_relation in cached_relations
-                                if str(cached_relation) == str(relation)),
-                               None)
+        cached_relations = self.cache.get_relations(relation.database, relation.schema)
+        cached_relation = next(
+            (
+                cached_relation
+                for cached_relation in cached_relations
+                if str(cached_relation) == str(relation)
+            ),
+            None,
+        )
 
         updated_relation = self._set_relation_information(cached_relation)
         return self._get_spark_columns(updated_relation)
@@ -257,7 +268,7 @@ class SparkAdapter(SQLAdapter):
         self, relation: SparkRelation
     ) -> SparkRelation:
         """Update the information of the relation, or return it if it already exists."""
-        if relation.has_information:
+        if relation.has_information():
             return relation
 
         metadata = None
