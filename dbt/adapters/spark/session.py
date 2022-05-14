@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 from types import TracebackType
-from typing import Any
+from typing import Any, List, Optional, Tuple
 
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
@@ -25,17 +25,17 @@ class Cursor:
     """
 
     def __init__(self) -> None:
-        self._df: DataFrame | None = None
-        self._rows: list[Row] | None = None
+        self._df: Optional[DataFrame] = None
+        self._rows: Optional[List[Row]] = None
 
     def __enter__(self) -> Cursor:
         return self
 
     def __exit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_val: Exception | None,
-        exc_tb: TracebackType | None,
+        exc_type: Optional[BaseException],
+        exc_val: Optional[Exception],
+        exc_tb: Optional[TracebackType],
     ) -> bool:
         self.close()
         return True
@@ -43,13 +43,13 @@ class Cursor:
     @property
     def description(
         self,
-    ) -> list[tuple[str, str, None, None, None, None, bool]]:
+    ) -> List[Tuple[str, str, None, None, None, None, bool]]:
         """
         Get the description.
 
         Returns
         -------
-        out : list[tuple[str, str, None, None, None, None, bool]]
+        out : List[Tuple[str, str, None, None, None, None, bool]]
             The description.
 
         Source
@@ -109,13 +109,13 @@ class Cursor:
         spark_session = SparkSession.builder.enableHiveSupport().getOrCreate()
         self._df = spark_session.sql(sql)
 
-    def fetchall(self) -> list[Row] | None:
+    def fetchall(self) -> Optional[List[Row]]:
         """
         Fetch all data.
 
         Returns
         -------
-        out : list[Row] | None
+        out : Optional[List[Row]]
             The rows.
 
         Source
@@ -126,7 +126,7 @@ class Cursor:
             self._rows = self._df.collect()
         return self._rows
 
-    def fetchone(self) -> Row | None:
+    def fetchone(self) -> Optional[Row]:
         """
         Fetch the first output.
 

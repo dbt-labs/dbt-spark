@@ -237,7 +237,7 @@
       {% set comment = column_dict[column_name]['description'] %}
       {% set escaped_comment = comment | replace('\'', '\\\'') %}
       {% set comment_query %}
-        alter table {{ relation }} change column 
+        alter table {{ relation }} change column
             {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }}
             comment '{{ escaped_comment }}';
       {% endset %}
@@ -266,25 +266,25 @@
 
 
 {% macro spark__alter_relation_add_remove_columns(relation, add_columns, remove_columns) %}
-  
+
   {% if remove_columns %}
     {% set platform_name = 'Delta Lake' if relation.is_delta else 'Apache Spark' %}
     {{ exceptions.raise_compiler_error(platform_name + ' does not support dropping columns from tables') }}
   {% endif %}
-  
+
   {% if add_columns is none %}
     {% set add_columns = [] %}
   {% endif %}
-  
+
   {% set sql -%}
-     
+
      alter {{ relation.type }} {{ relation }}
-       
+
        {% if add_columns %} add columns {% endif %}
             {% for column in add_columns %}
                {{ column.name }} {{ column.data_type }}{{ ',' if not loop.last }}
             {% endfor %}
-  
+
   {%- endset -%}
 
   {% do run_query(sql) %}
