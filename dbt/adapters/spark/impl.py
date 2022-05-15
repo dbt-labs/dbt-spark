@@ -212,6 +212,7 @@ class SparkAdapter(SQLAdapter):
             database = None
 
         cached = super().get_relation(database, schema, identifier)
+        logger.info(f">>> get_relation: {cached.render() if cached is not None else 'Empty'}")
         return self._set_relation_information(cached)
 
     def parse_describe_extended(
@@ -261,10 +262,13 @@ class SparkAdapter(SQLAdapter):
             None,
         )
 
+        logger.info(f">>> get_columns_in_relation: {relation.render() if relation is not None else 'Empty'}, "
+                     f"{cached_relation.render() if cached_relation is not None else 'Empty'}")
+
         if not cached_relation:
             updated_relation = self.cache.add(self._get_updated_relation(relation))
         else:
-            updated_relation = self._set_relation_information(relation)
+            updated_relation = self._set_relation_information(cached_relation)
 
         return self._get_spark_columns(updated_relation)
 
@@ -333,6 +337,7 @@ class SparkAdapter(SQLAdapter):
     def _get_columns_for_catalog(
         self, relation: SparkRelation
     ) -> Iterable[Dict[str, Any]]:
+        logger.info(f">>> _get_columns_for_catalog: {relation.render() if relation is not None else 'Empty'}")
         updated_relation = self._set_relation_information(relation)
 
         for column in self._get_spark_columns(updated_relation):
