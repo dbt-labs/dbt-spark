@@ -213,7 +213,7 @@ class SparkAdapter(SQLAdapter):
 
         cached = super().get_relation(database, schema, identifier)
         logger.info(f">>> get_relation: {cached.render() if cached is not None else 'Empty'}")
-        return self._set_relation_information(cached)
+        return self._set_relation_information(cached) if cached else None
 
     def parse_describe_extended(
             self, relation: Relation, raw_rows: List[agate.Row]
