@@ -218,7 +218,7 @@ class SparkAdapter(SQLAdapter):
         return self._set_relation_information(cached) if cached else None
 
     def parse_describe_extended(
-            self, relation: Relation, raw_rows: List[agate.Row]
+        self, relation: Relation, raw_rows: List[agate.Row]
     ) -> Tuple[Dict[str, any], List[SparkColumn]]:
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
@@ -293,8 +293,7 @@ class SparkAdapter(SQLAdapter):
                 raise e
 
         # strip hudi metadata columns.
-        columns = [x for x in columns
-                   if x.name not in self.HUDI_METADATA_COLUMNS]
+        columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
 
         if not metadata:
             return None
