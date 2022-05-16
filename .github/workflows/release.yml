@@ -116,4 +116,3 @@ jobs:
           pip install twine wheel setuptools
           python setup.py sdist bdist_wheel
           twine upload --non-interactive dist/dbt_spark-${{env.version_number}}-py3-none-any.whl dist/dbt-spark-${{env.version_number}}.tar.gz
-
