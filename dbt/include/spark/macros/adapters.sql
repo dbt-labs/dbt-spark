@@ -168,11 +168,15 @@
   {%- endcall -%}
 {% endmacro %}
 
-{% macro spark__get_columns_in_relation(relation) -%}
-  {% call statement('get_columns_in_relation', fetch_result=True) %}
+{% macro spark__get_columns_in_relation_raw(relation) -%}
+  {% call statement('get_columns_in_relation_raw', fetch_result=True) %}
       describe extended {{ relation.include(schema=(schema is not none)) }}
   {% endcall %}
-  {% do return(load_result('get_columns_in_relation').table) %}
+  {% do return(load_result('get_columns_in_relation_raw').table) %}
+{% endmacro %}
+
+{% macro spark__get_columns_in_relation(relation) -%}
+  {{ return(adapter.get_columns_in_relation(relation)) }}
 {% endmacro %}
 
 {% macro spark__list_relations_without_caching(relation) %}
