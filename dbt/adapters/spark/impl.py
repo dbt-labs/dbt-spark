@@ -27,7 +27,7 @@ from dbt.utils import executor
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_MACRO_NAME = "get_columns_in_relation"
+GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "spark__get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_TABLES_MACRO_NAME = "spark__list_tables_without_caching"
 LIST_VIEWS_MACRO_NAME = "spark__list_views_without_caching"
@@ -279,14 +279,16 @@ class SparkAdapter(SQLAdapter):
         else:
             updated_relation = self._set_relation_information(cached_relation)
 
-        return updated_relation.columns
+        return updated_relation.columns if updated_relation is not None else []
 
     def _get_updated_relation(self, relation: BaseRelation) -> Optional[SparkRelation]:
         metadata = None
         columns = []
 
         try:
-            rows: List[agate.Row] = super().get_columns_in_relation(relation)
+            rows: List[agate.Row] = self.execute_macro(
+                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+                )
             metadata, columns = self.parse_describe_extended(relation, rows)
         except dbt.exceptions.RuntimeException as e:
             # spark would throw error when table doesn't exist, where other
@@ -334,7 +336,7 @@ class SparkAdapter(SQLAdapter):
     ) -> Iterable[Dict[str, Any]]:
         updated_relation = self._set_relation_information(relation)
 
-        for column in updated_relation.columns:
+        for column in (updated_relation.columns if updated_relation is not None else []):
             # convert SparkColumns into catalog dicts
             as_dict = column.to_column_dict()
             as_dict["column_name"] = as_dict.pop("column", None)
