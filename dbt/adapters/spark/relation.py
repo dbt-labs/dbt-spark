@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from dbt.adapters.base.relation import BaseRelation, Policy
 from dbt.exceptions import RuntimeException
 
+from dbt.adapters.spark.column import SparkColumn
+
 
 @dataclass
 class SparkQuotePolicy(Policy):
@@ -29,7 +31,7 @@ class SparkRelation(BaseRelation):
     is_hudi: Optional[bool] = None
     owner: Optional[str] = None
     stats: Optional[str] = None
-    columns: Dict[str, str] = field(default_factory=lambda: {})
+    columns: List[SparkColumn] = field(default_factory=lambda: [])
 
     def __post_init__(self):
         if self.database != self.schema and self.database:

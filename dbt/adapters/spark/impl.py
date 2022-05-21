@@ -209,12 +209,20 @@ class SparkAdapter(SQLAdapter):
         return relations
 
     def get_relation(
-        self, database: Optional[str], schema: str, identifier: str
+        self,
+        database: Optional[str],
+        schema: str,
+        identifier: str,
+        needs_information=False
     ) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
             database = None
 
         cached = super().get_relation(database, schema, identifier)
+
+        if not needs_information:
+            return cached
+
         return self._set_relation_information(cached) if cached else None
 
     def parse_describe_extended(
@@ -271,7 +279,7 @@ class SparkAdapter(SQLAdapter):
         else:
             updated_relation = self._set_relation_information(cached_relation)
 
-        return self._get_spark_columns(updated_relation)
+        return updated_relation.columns
 
     def _get_updated_relation(self, relation: BaseRelation) -> Optional[SparkRelation]:
         metadata = None
@@ -308,7 +316,7 @@ class SparkAdapter(SQLAdapter):
             is_hudi=(provider == 'hudi'),
             owner=metadata.get(KEY_TABLE_OWNER),
             stats=metadata.get(KEY_TABLE_STATISTICS),
-            columns={x.column: x.dtype for x in columns}
+            columns=columns
         )
 
     def _set_relation_information(self, relation: SparkRelation) -> SparkRelation:
@@ -321,31 +329,12 @@ class SparkAdapter(SQLAdapter):
         self.cache.update_relation(updated_relation)
         return updated_relation
 
-    @staticmethod
-    def _get_spark_columns(
-        relation: Optional[SparkRelation]
-    ) -> List[SparkColumn]:
-        if not relation:
-            return []
-
-        return [SparkColumn(
-            table_database=None,
-            table_schema=relation.schema,
-            table_name=relation.name,
-            table_type=relation.type,
-            table_owner=relation.owner,
-            table_stats=relation.stats,
-            column=name,
-            column_index=idx,
-            dtype=dtype
-        ) for idx, (name, dtype) in enumerate(relation.columns.items())]
-
     def _get_columns_for_catalog(
         self, relation: SparkRelation
     ) -> Iterable[Dict[str, Any]]:
         updated_relation = self._set_relation_information(relation)
 
-        for column in self._get_spark_columns(updated_relation):
+        for column in updated_relation.columns:
             # convert SparkColumns into catalog dicts
             as_dict = column.to_column_dict()
             as_dict["column_name"] = as_dict.pop("column", None)
