@@ -108,7 +108,11 @@ def spark_seed_stats():
 
 class TestDocsGenerateSpark(BaseDocsGenerate):
     @pytest.fixture(scope="class")
-    def expected_catalog(self, project):
+    def expected_catalog(self, project, request):
+        profile_type = request.config.getoption("--profile")
+        seed_stats = spark_seed_stats()
+        if 'databricks' in profile_type:
+            seed_stats = no_stats()
         return base_expected_catalog(
             project,
             role="root",
@@ -118,5 +122,5 @@ class TestDocsGenerateSpark(BaseDocsGenerate):
             view_type="view",
             table_type="table",
             model_stats=no_stats(),
-            seed_stats=spark_seed_stats(),
+            seed_stats=seed_stats,
         )
