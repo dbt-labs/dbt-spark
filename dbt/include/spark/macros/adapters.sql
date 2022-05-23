@@ -168,6 +168,10 @@
   {%- endcall -%}
 {% endmacro %}
 
+{% macro get_columns_in_relation_raw(relation) -%}
+  {{ return(adapter.dispatch('get_columns_in_relation_raw', 'dbt')(relation)) }}
+{%- endmacro -%}
+
 {% macro spark__get_columns_in_relation_raw(relation) -%}
   {% call statement('get_columns_in_relation_raw', fetch_result=True) %}
       describe extended {{ relation.include(schema=(schema is not none)) }}
