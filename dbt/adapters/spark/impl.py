@@ -403,12 +403,20 @@ class SparkAdapter(SQLAdapter):
             conn.transaction_open = False
 
     @available
-    def submit_python_job(self, schema, identifier, file_contents):
-        # basically copying drew's other script over :)
+    def submit_python_job(self, schema, identifier, file_contents, timeout=None):
+
+        # TODO limit this function to run only when doing the materialization of python nodes
+
+        # assuming that for python job running over 1 day user would mannually overwrite this
+        if not timeout:
+            timeout = 60*60*24
+        if timeout <= 0 :
+            raise ValueError('Timeout must larger than 0')
+
         auth_header = {
             "Authorization": f"Bearer {self.connections.profile.credentials.token}"
         }
-        b64_encoded_content = base64.b64encode(file_contents.encode()).decode()
+        
         # create new dir
         if not self.connections.profile.credentials.user:
             raise ValueError("Need to supply user in profile to submit python job")
@@ -421,9 +429,11 @@ class SparkAdapter(SQLAdapter):
                 "path": work_dir,
             },
         )
-        # TODO check the response
+        if response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(f'Error creating work_dir for python notebooks\n {response.content}')
 
         # add notebook
+        b64_encoded_content = base64.b64encode(file_contents.encode()).decode()
         response = requests.post(
             f"https://{self.connections.profile.credentials.host}/api/2.0/workspace/import",
             headers=auth_header,
@@ -435,11 +445,12 @@ class SparkAdapter(SQLAdapter):
                 "format": "SOURCE",
             },
         )
-        # need to validate submit succeed here
-        resp = response.json()
+        if response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(f'Error creating python notebook.\n {response.content}')
+        
 
         # submit job
-        response = requests.post(
+        submit_response = requests.post(
             f"https://{self.connections.profile.credentials.host}/api/2.1/jobs/runs/submit",
             headers=auth_header,
             json={
@@ -450,28 +461,42 @@ class SparkAdapter(SQLAdapter):
                 },
             },
         )
-
-        run_id = response.json()["run_id"]
+        if submit_response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(f'Error creating python run.\n {response.content}')
+        
 
         # poll until job finish
-        # this feels bad
         state = None
-        while state != "TERMINATED":
+        start = time.time()
+        run_id = submit_response.json()["run_id"]
+        terminal_states = ['TERMINATED', 'SKIPPED', 'INTERNAL_ERROR']
+        while state not in terminal_states and time.time() - start < timeout:
+            time.sleep(1)
             resp = requests.get(
                 f"https://{self.connections.profile.credentials.host}/api/2.1/jobs/runs/get?run_id={run_id}",
                 headers=auth_header,
             )
-            state = resp.json()["state"]["life_cycle_state"]
+            json_resp = resp.json()
+            state = json_resp["state"]["life_cycle_state"]
             logger.debug(f"Polling.... in state: {state}")
-            time.sleep(1)
-            # TODO resp.json()['state_message'] contain useful information and we may want to surface to user if job fails
+        if state != "TERMINATED":
+            raise dbt.exceptions.RuntimeException(f"python model run ended in state {state} with state_message\n {json_resp['state']['state_message']}")
 
+        # get end state to return to user
         run_output = requests.get(
             f"https://{self.connections.profile.credentials.host}/api/2.1/jobs/runs/get-output?run_id={run_id}",
             headers=auth_header,
         )
-        # TODO have more info here and determine what do we want to if python model fail
-        return run_output.json()["metadata"]["state"]["result_state"]
+        json_run_output = run_output.json()
+        result_state = json_run_output["metadata"]["state"]["result_state"]
+        if result_state != 'SUCCESS':
+            raise dbt.exceptions.RuntimeException(
+                f"\
+Python model failed with traceback as:\n \
+(Note that the line number here does not match the line number in your code due to dbt templating)\n \
+{json_run_output['error_trace']}"
+            )
+        return result_state
 
 
 # spark does something interesting with joins when both tables have the same
