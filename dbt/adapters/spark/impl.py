@@ -67,9 +67,7 @@ class SparkAdapter(SQLAdapter):
         "stats:rows:description",
         "stats:rows:include",
     )
-    INFORMATION_COLUMNS_REGEX = re.compile(
-        r"^ \|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE
-    )
+    INFORMATION_COLUMNS_REGEX = re.compile(r"^ \|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
     INFORMATION_OWNER_REGEX = re.compile(r"^Owner: (.*)$", re.MULTILINE)
     INFORMATION_STATISTICS_REGEX = re.compile(r"^Statistics: (.*)$", re.MULTILINE)
     HUDI_METADATA_COLUMNS = [
@@ -148,9 +146,7 @@ class SparkAdapter(SQLAdapter):
                     f"got {len(row)} values, expected 4"
                 )
             _schema, name, _, information = row
-            rel_type = (
-                RelationType.View if "Type: VIEW" in information else RelationType.Table
-            )
+            rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
             is_delta = "Provider: delta" in information
             is_hudi = "Provider: hudi" in information
             relation = self.Relation.create(
@@ -165,9 +161,7 @@ class SparkAdapter(SQLAdapter):
 
         return relations
 
-    def get_relation(
-        self, database: str, schema: str, identifier: str
-    ) -> Optional[BaseRelation]:
+    def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
             database = None
 
@@ -237,10 +231,7 @@ class SparkAdapter(SQLAdapter):
                 # spark would throw error when table doesn't exist, where other
                 # CDW would just return and empty list, normalizing the behavior here
                 errmsg = getattr(e, "msg", "")
-                if (
-                    "Table or view not found" in errmsg
-                    or "NoSuchTableException" in errmsg
-                ):
+                if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
                     pass
                 else:
                     raise e
@@ -249,16 +240,12 @@ class SparkAdapter(SQLAdapter):
         columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
         return columns
 
-    def parse_columns_from_information(
-        self, relation: SparkRelation
-    ) -> List[SparkColumn]:
+    def parse_columns_from_information(self, relation: SparkRelation) -> List[SparkColumn]:
         owner_match = re.findall(self.INFORMATION_OWNER_REGEX, relation.information)
         owner = owner_match[0] if owner_match else None
         matches = re.finditer(self.INFORMATION_COLUMNS_REGEX, relation.information)
         columns = []
-        stats_match = re.findall(
-            self.INFORMATION_STATISTICS_REGEX, relation.information
-        )
+        stats_match = re.findall(self.INFORMATION_STATISTICS_REGEX, relation.information)
         raw_table_stats = stats_match[0] if stats_match else None
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
         for match_num, match in enumerate(matches):
@@ -277,9 +264,7 @@ class SparkAdapter(SQLAdapter):
             columns.append(column)
         return columns
 
-    def _get_columns_for_catalog(
-        self, relation: SparkRelation
-    ) -> Iterable[Dict[str, Any]]:
+    def _get_columns_for_catalog(self, relation: SparkRelation) -> Iterable[Dict[str, Any]]:
         columns = self.parse_columns_from_information(relation)
 
         for column in columns:
@@ -300,8 +285,7 @@ class SparkAdapter(SQLAdapter):
         schema_map = self._get_catalog_schemas(manifest)
         if len(schema_map) > 1:
             dbt.exceptions.raise_compiler_error(
-                f"Expected only one database in get_catalog, found "
-                f"{list(schema_map)}"
+                f"Expected only one database in get_catalog, found " f"{list(schema_map)}"
             )
 
         with executor(self.config) as tpe:
@@ -329,8 +313,7 @@ class SparkAdapter(SQLAdapter):
     ) -> agate.Table:
         if len(schemas) != 1:
             dbt.exceptions.raise_compiler_error(
-                f"Expected only one schema in spark _get_one_catalog, found "
-                f"{schemas}"
+                f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
             )
 
         database = information_schema.database
@@ -343,9 +326,7 @@ class SparkAdapter(SQLAdapter):
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
     def check_schema_exists(self, database, schema):
-        results = self.execute_macro(
-            LIST_SCHEMAS_MACRO_NAME, kwargs={"database": database}
-        )
+        results = self.execute_macro(LIST_SCHEMAS_MACRO_NAME, kwargs={"database": database})
 
         exists = True if schema in [row[0] for row in results] else False
         return exists
@@ -409,14 +390,12 @@ class SparkAdapter(SQLAdapter):
 
         # assuming that for python job running over 1 day user would mannually overwrite this
         if not timeout:
-            timeout = 60*60*24
-        if timeout <= 0 :
-            raise ValueError('Timeout must larger than 0')
+            timeout = 60 * 60 * 24
+        if timeout <= 0:
+            raise ValueError("Timeout must larger than 0")
 
-        auth_header = {
-            "Authorization": f"Bearer {self.connections.profile.credentials.token}"
-        }
-        
+        auth_header = {"Authorization": f"Bearer {self.connections.profile.credentials.token}"}
+
         # create new dir
         if not self.connections.profile.credentials.user:
             raise ValueError("Need to supply user in profile to submit python job")
@@ -430,7 +409,9 @@ class SparkAdapter(SQLAdapter):
             },
         )
         if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(f'Error creating work_dir for python notebooks\n {response.content}')
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating work_dir for python notebooks\n {response.content}"
+            )
 
         # add notebook
         b64_encoded_content = base64.b64encode(file_contents.encode()).decode()
@@ -446,8 +427,9 @@ class SparkAdapter(SQLAdapter):
             },
         )
         if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(f'Error creating python notebook.\n {response.content}')
-        
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating python notebook.\n {response.content}"
+            )
 
         # submit job
         submit_response = requests.post(
@@ -462,14 +444,15 @@ class SparkAdapter(SQLAdapter):
             },
         )
         if submit_response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(f'Error creating python run.\n {response.content}')
-        
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating python run.\n {response.content}"
+            )
 
         # poll until job finish
         state = None
         start = time.time()
         run_id = submit_response.json()["run_id"]
-        terminal_states = ['TERMINATED', 'SKIPPED', 'INTERNAL_ERROR']
+        terminal_states = ["TERMINATED", "SKIPPED", "INTERNAL_ERROR"]
         while state not in terminal_states and time.time() - start < timeout:
             time.sleep(1)
             resp = requests.get(
@@ -480,7 +463,9 @@ class SparkAdapter(SQLAdapter):
             state = json_resp["state"]["life_cycle_state"]
             logger.debug(f"Polling.... in state: {state}")
         if state != "TERMINATED":
-            raise dbt.exceptions.RuntimeException(f"python model run ended in state {state} with state_message\n {json_resp['state']['state_message']}")
+            raise dbt.exceptions.RuntimeException(
+                f"python model run ended in state {state} with state_message\n{json_resp['state']['state_message']}"
+            )
 
         # get end state to return to user
         run_output = requests.get(
@@ -489,7 +474,7 @@ class SparkAdapter(SQLAdapter):
         )
         json_run_output = run_output.json()
         result_state = json_run_output["metadata"]["state"]["result_state"]
-        if result_state != 'SUCCESS':
+        if result_state != "SUCCESS":
             raise dbt.exceptions.RuntimeException(
                 f"\
 Python model failed with traceback as:\n \
