@@ -1,5 +1,5 @@
 {% macro get_insert_overwrite_sql(source_relation, target_relation) %}
-    
+
     {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
     {%- set dest_cols_csv = dest_columns | map(attribute='quoted') | join(', ') -%}
     insert overwrite table {{ target_relation }}
@@ -21,28 +21,40 @@
 
 {% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
   {# skip dest_columns, use merge_update_columns config if provided, otherwise use "*" #}
+  {%- set predicates = [] if predicates is none else [] + predicates -%}
   {%- set update_columns = config.get("merge_update_columns") -%}
-  
-  {% set merge_condition %}
-    {% if unique_key %}
-        on DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
-    {% else %}
-        on false
-    {% endif %}
-  {% endset %}
-  
-    merge into {{ target }} as DBT_INTERNAL_DEST
+
+  {% if unique_key %}
+      {% if unique_key is sequence and unique_key is not mapping and unique_key is not string %}
+          {% for key in unique_key %}
+              {% set this_key_match %}
+                  DBT_INTERNAL_SOURCE.{{ key }} = DBT_INTERNAL_DEST.{{ key }}
+              {% endset %}
+              {% do predicates.append(this_key_match) %}
+          {% endfor %}
+      {% else %}
+          {% set unique_key_match %}
+              DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
+          {% endset %}
+          {% do predicates.append(unique_key_match) %}
+      {% endif %}
+  {% else %}
+      {% do predicates.append('FALSE') %}
+  {% endif %}
+
+  {{ sql_header if sql_header is not none }}
+
+  merge into {{ target }} as DBT_INTERNAL_DEST
       using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
-      
-      {{ merge_condition }}
-      
+      on {{ predicates | join(' and ') }}
+
       when matched then update set
         {% if update_columns -%}{%- for column_name in update_columns %}
             {{ column_name }} = DBT_INTERNAL_SOURCE.{{ column_name }}
             {%- if not loop.last %}, {%- endif %}
         {%- endfor %}
         {%- else %} * {% endif %}
-    
+
       when not matched then insert *
 {% endmacro %}
 

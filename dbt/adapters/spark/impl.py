@@ -1,7 +1,9 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Union, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Union
+from typing_extensions import TypeAlias
+
 import agate
 from dbt.contracts.relation import RelationType
 
@@ -21,19 +23,19 @@ from dbt.utils import executor
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
-LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
-LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
-DROP_RELATION_MACRO_NAME = 'drop_relation'
-FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
+GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
+LIST_SCHEMAS_MACRO_NAME = "list_schemas"
+LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
+DROP_RELATION_MACRO_NAME = "drop_relation"
+FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 
-KEY_TABLE_OWNER = 'Owner'
-KEY_TABLE_STATISTICS = 'Statistics'
+KEY_TABLE_OWNER = "Owner"
+KEY_TABLE_STATISTICS = "Statistics"
 
 
 @dataclass
 class SparkConfig(AdapterConfig):
-    file_format: str = 'parquet'
+    file_format: str = "parquet"
     location_root: Optional[str] = None
     partition_by: Optional[Union[List[str], str]] = None
     clustered_by: Optional[Union[List[str], str]] = None
@@ -44,48 +46,44 @@ class SparkConfig(AdapterConfig):
 
 class SparkAdapter(SQLAdapter):
     COLUMN_NAMES = (
-        'table_database',
-        'table_schema',
-        'table_name',
-        'table_type',
-        'table_comment',
-        'table_owner',
-        'column_name',
-        'column_index',
-        'column_type',
-        'column_comment',
-
-        'stats:bytes:label',
-        'stats:bytes:value',
-        'stats:bytes:description',
-        'stats:bytes:include',
-
-        'stats:rows:label',
-        'stats:rows:value',
-        'stats:rows:description',
-        'stats:rows:include',
+        "table_database",
+        "table_schema",
+        "table_name",
+        "table_type",
+        "table_comment",
+        "table_owner",
+        "column_name",
+        "column_index",
+        "column_type",
+        "column_comment",
+        "stats:bytes:label",
+        "stats:bytes:value",
+        "stats:bytes:description",
+        "stats:bytes:include",
+        "stats:rows:label",
+        "stats:rows:value",
+        "stats:rows:description",
+        "stats:rows:include",
     )
-    INFORMATION_COLUMNS_REGEX = re.compile(
-        r"^ \|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
+    INFORMATION_COLUMNS_REGEX = re.compile(r"^ \|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
     INFORMATION_OWNER_REGEX = re.compile(r"^Owner: (.*)$", re.MULTILINE)
-    INFORMATION_STATISTICS_REGEX = re.compile(
-        r"^Statistics: (.*)$", re.MULTILINE)
+    INFORMATION_STATISTICS_REGEX = re.compile(r"^Statistics: (.*)$", re.MULTILINE)
     HUDI_METADATA_COLUMNS = [
-        '_hoodie_commit_time',
-        '_hoodie_commit_seqno',
-        '_hoodie_record_key',
-        '_hoodie_partition_path',
-        '_hoodie_file_name'
+        "_hoodie_commit_time",
+        "_hoodie_commit_seqno",
+        "_hoodie_record_key",
+        "_hoodie_partition_path",
+        "_hoodie_file_name",
     ]
 
-    Relation = SparkRelation
-    Column = SparkColumn
-    ConnectionManager = SparkConnectionManager
-    AdapterSpecificConfigs = SparkConfig
+    Relation: TypeAlias = SparkRelation
+    Column: TypeAlias = SparkColumn
+    ConnectionManager: TypeAlias = SparkConnectionManager
+    AdapterSpecificConfigs: TypeAlias = SparkConfig
 
     @classmethod
     def date_function(cls) -> str:
-        return 'current_timestamp()'
+        return "current_timestamp()"
 
     @classmethod
     def convert_text_type(cls, agate_table, col_idx):
@@ -109,31 +107,28 @@ class SparkAdapter(SQLAdapter):
         return "timestamp"
 
     def quote(self, identifier):
-        return '`{}`'.format(identifier)
+        return "`{}`".format(identifier)
 
     def add_schema_to_cache(self, schema) -> str:
         """Cache a new schema in dbt. It will show up in `list relations`."""
         if schema is None:
             name = self.nice_connection_name()
             dbt.exceptions.raise_compiler_error(
-                'Attempted to cache a null schema for {}'.format(name)
+                "Attempted to cache a null schema for {}".format(name)
             )
         if dbt.flags.USE_CACHE:
             self.cache.add_schema(None, schema)
         # so jinja doesn't render things
-        return ''
+        return ""
 
     def list_relations_without_caching(
         self, schema_relation: SparkRelation
     ) -> List[SparkRelation]:
-        kwargs = {'schema_relation': schema_relation}
+        kwargs = {"schema_relation": schema_relation}
         try:
-            results = self.execute_macro(
-                LIST_RELATIONS_MACRO_NAME,
-                kwargs=kwargs
-            )
+            results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
         except dbt.exceptions.RuntimeException as e:
-            errmsg = getattr(e, 'msg', '')
+            errmsg = getattr(e, "msg", "")
             if f"Database '{schema_relation}' not found" in errmsg:
                 return []
             else:
@@ -146,13 +141,12 @@ class SparkAdapter(SQLAdapter):
             if len(row) != 4:
                 raise dbt.exceptions.RuntimeException(
                     f'Invalid value from "show table extended ...", '
-                    f'got {len(row)} values, expected 4'
+                    f"got {len(row)} values, expected 4"
                 )
             _schema, name, _, information = row
-            rel_type = RelationType.View \
-                if 'Type: VIEW' in information else RelationType.Table
-            is_delta = 'Provider: delta' in information
-            is_hudi = 'Provider: hudi' in information
+            rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
+            is_delta = "Provider: delta" in information
+            is_hudi = "Provider: hudi" in information
             relation = self.Relation.create(
                 schema=_schema,
                 identifier=name,
@@ -166,7 +160,7 @@ class SparkAdapter(SQLAdapter):
         return relations
 
     def get_relation(
-        self, database: str, schema: str, identifier: str
+        self, database: Optional[str], schema: str, identifier: str
     ) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
             database = None
@@ -174,9 +168,7 @@ class SparkAdapter(SQLAdapter):
         return super().get_relation(database, schema, identifier)
 
     def parse_describe_extended(
-            self,
-            relation: Relation,
-            raw_rows: List[agate.Row]
+        self, relation: Relation, raw_rows: List[agate.Row]
     ) -> List[SparkColumn]:
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
@@ -185,44 +177,45 @@ class SparkAdapter(SQLAdapter):
         pos = self.find_table_information_separator(dict_rows)
 
         # Remove rows that start with a hash, they are comments
-        rows = [
-            row for row in raw_rows[0:pos]
-            if not row['col_name'].startswith('#')
-        ]
-        metadata = {
-            col['col_name']: col['data_type'] for col in raw_rows[pos + 1:]
-        }
+        rows = [row for row in raw_rows[0:pos] if not row["col_name"].startswith("#")]
+        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1 :]}
 
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
-        return [SparkColumn(
-            table_database=None,
-            table_schema=relation.schema,
-            table_name=relation.name,
-            table_type=relation.type,
-            table_owner=str(metadata.get(KEY_TABLE_OWNER)),
-            table_stats=table_stats,
-            column=column['col_name'],
-            column_index=idx,
-            dtype=column['data_type'],
-        ) for idx, column in enumerate(rows)]
+        return [
+            SparkColumn(
+                table_database=None,
+                table_schema=relation.schema,
+                table_name=relation.name,
+                table_type=relation.type,
+                table_owner=str(metadata.get(KEY_TABLE_OWNER)),
+                table_stats=table_stats,
+                column=column["col_name"],
+                column_index=idx,
+                dtype=column["data_type"],
+            )
+            for idx, column in enumerate(rows)
+        ]
 
     @staticmethod
     def find_table_information_separator(rows: List[dict]) -> int:
         pos = 0
         for row in rows:
-            if not row['col_name'] or row['col_name'].startswith('#'):
+            if not row["col_name"] or row["col_name"].startswith("#"):
                 break
             pos += 1
         return pos
 
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
-        cached_relations = self.cache.get_relations(
-            relation.database, relation.schema)
-        cached_relation = next((cached_relation
-                                for cached_relation in cached_relations
-                                if str(cached_relation) == str(relation)),
-                               None)
+        cached_relations = self.cache.get_relations(relation.database, relation.schema)
+        cached_relation = next(
+            (
+                cached_relation
+                for cached_relation in cached_relations
+                if str(cached_relation) == str(relation)
+            ),
+            None,
+        )
         columns = []
         if cached_relation and cached_relation.information:
             columns = self.parse_columns_from_information(cached_relation)
@@ -231,25 +224,30 @@ class SparkAdapter(SQLAdapter):
             # return relation's schema. if columns are empty from cache,
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
-            rows: List[agate.Row] = super().get_columns_in_relation(relation)
-            columns = self.parse_describe_extended(relation, rows)
+            try:
+                rows: List[agate.Row] = self.execute_macro(
+                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+                )
+                columns = self.parse_describe_extended(relation, rows)
+            except dbt.exceptions.RuntimeException as e:
+                # spark would throw error when table doesn't exist, where other
+                # CDW would just return and empty list, normalizing the behavior here
+                errmsg = getattr(e, "msg", "")
+                if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
+                    pass
+                else:
+                    raise e
 
         # strip hudi metadata columns.
-        columns = [x for x in columns
-                   if x.name not in self.HUDI_METADATA_COLUMNS]
+        columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
         return columns
 
-    def parse_columns_from_information(
-            self, relation: SparkRelation
-    ) -> List[SparkColumn]:
-        owner_match = re.findall(
-            self.INFORMATION_OWNER_REGEX, relation.information)
+    def parse_columns_from_information(self, relation: SparkRelation) -> List[SparkColumn]:
+        owner_match = re.findall(self.INFORMATION_OWNER_REGEX, relation.information)
         owner = owner_match[0] if owner_match else None
-        matches = re.finditer(
-            self.INFORMATION_COLUMNS_REGEX, relation.information)
+        matches = re.finditer(self.INFORMATION_COLUMNS_REGEX, relation.information)
         columns = []
-        stats_match = re.findall(
-            self.INFORMATION_STATISTICS_REGEX, relation.information)
+        stats_match = re.findall(self.INFORMATION_STATISTICS_REGEX, relation.information)
         raw_table_stats = stats_match[0] if stats_match else None
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
         for match_num, match in enumerate(matches):
@@ -263,28 +261,25 @@ class SparkAdapter(SQLAdapter):
                 table_owner=owner,
                 column=column_name,
                 dtype=column_type,
-                table_stats=table_stats
+                table_stats=table_stats,
             )
             columns.append(column)
         return columns
 
-    def _get_columns_for_catalog(
-        self, relation: SparkRelation
-    ) -> Iterable[Dict[str, Any]]:
+    def _get_columns_for_catalog(self, relation: SparkRelation) -> Iterable[Dict[str, Any]]:
         columns = self.parse_columns_from_information(relation)
 
         for column in columns:
             # convert SparkColumns into catalog dicts
             as_dict = column.to_column_dict()
-            as_dict['column_name'] = as_dict.pop('column', None)
-            as_dict['column_type'] = as_dict.pop('dtype')
-            as_dict['table_database'] = None
+            as_dict["column_name"] = as_dict.pop("column", None)
+            as_dict["column_type"] = as_dict.pop("dtype")
+            as_dict["table_database"] = None
             yield as_dict
 
     def get_properties(self, relation: Relation) -> Dict[str, str]:
         properties = self.execute_macro(
-            FETCH_TBL_PROPERTIES_MACRO_NAME,
-            kwargs={'relation': relation}
+            FETCH_TBL_PROPERTIES_MACRO_NAME, kwargs={"relation": relation}
         )
         return dict(properties)
 
@@ -292,28 +287,30 @@ class SparkAdapter(SQLAdapter):
         schema_map = self._get_catalog_schemas(manifest)
         if len(schema_map) > 1:
             dbt.exceptions.raise_compiler_error(
-                f'Expected only one database in get_catalog, found '
-                f'{list(schema_map)}'
+                f"Expected only one database in get_catalog, found " f"{list(schema_map)}"
             )
 
         with executor(self.config) as tpe:
             futures: List[Future[agate.Table]] = []
             for info, schemas in schema_map.items():
                 for schema in schemas:
-                    futures.append(tpe.submit_connected(
-                        self, schema,
-                        self._get_one_catalog, info, [schema], manifest
-                    ))
+                    futures.append(
+                        tpe.submit_connected(
+                            self, schema, self._get_one_catalog, info, [schema], manifest
+                        )
+                    )
             catalogs, exceptions = catch_as_completed(futures)
         return catalogs, exceptions
 
     def _get_one_catalog(
-        self, information_schema, schemas, manifest,
+        self,
+        information_schema,
+        schemas,
+        manifest,
     ) -> agate.Table:
         if len(schemas) != 1:
             dbt.exceptions.raise_compiler_error(
-                f'Expected only one schema in spark _get_one_catalog, found '
-                f'{schemas}'
+                f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
             )
 
         database = information_schema.database
@@ -323,15 +320,10 @@ class SparkAdapter(SQLAdapter):
         for relation in self.list_relations(database, schema):
             logger.debug("Getting table schema for relation {}", relation)
             columns.extend(self._get_columns_for_catalog(relation))
-        return agate.Table.from_object(
-            columns, column_types=DEFAULT_TYPE_TESTER
-        )
+        return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
     def check_schema_exists(self, database, schema):
-        results = self.execute_macro(
-            LIST_SCHEMAS_MACRO_NAME,
-            kwargs={'database': database}
-        )
+        results = self.execute_macro(LIST_SCHEMAS_MACRO_NAME, kwargs={"database": database})
 
         exists = True if schema in [row[0] for row in results] else False
         return exists
@@ -341,7 +333,7 @@ class SparkAdapter(SQLAdapter):
         relation_a: BaseRelation,
         relation_b: BaseRelation,
         column_names: Optional[List[str]] = None,
-        except_operator: str = 'EXCEPT',
+        except_operator: str = "EXCEPT",
     ) -> str:
         """Generate SQL for a query that returns a single row with a two
         columns: the number of rows that are different between the two
@@ -354,7 +346,7 @@ class SparkAdapter(SQLAdapter):
             names = sorted((self.quote(c.name) for c in columns))
         else:
             names = sorted((self.quote(n) for n in column_names))
-        columns_csv = ', '.join(names)
+        columns_csv = ", ".join(names)
 
         sql = COLUMNS_EQUAL_SQL.format(
             columns=columns_csv,
@@ -364,13 +356,37 @@ class SparkAdapter(SQLAdapter):
 
         return sql
 
+    # This is for use in the test suite
+    # Spark doesn't have 'commit' and 'rollback', so this override
+    # doesn't include those commands.
+    def run_sql_for_tests(self, sql, fetch, conn):
+        cursor = conn.handle.cursor()
+        try:
+            cursor.execute(sql)
+            if fetch == "one":
+                if hasattr(cursor, "fetchone"):
+                    return cursor.fetchone()
+                else:
+                    # AttributeError: 'PyhiveConnectionWrapper' object has no attribute 'fetchone'
+                    return cursor.fetchall()[0]
+            elif fetch == "all":
+                return cursor.fetchall()
+            else:
+                return
+        except BaseException as e:
+            print(sql)
+            print(e)
+            raise
+        finally:
+            conn.transaction_open = False
+
 
 # spark does something interesting with joins when both tables have the same
 # static values for the join condition and complains that the join condition is
 # "trivial". Which is true, though it seems like an unreasonable cause for
 # failure! It also doesn't like the `from foo, bar` syntax as opposed to
 # `from foo cross join bar`.
-COLUMNS_EQUAL_SQL = '''
+COLUMNS_EQUAL_SQL = """
 with diff_count as (
     SELECT
         1 as id,
@@ -397,4 +413,4 @@ select
     diff_count.num_missing as num_mismatched
 from row_count_diff
 cross join diff_count
-'''.strip()
+""".strip()

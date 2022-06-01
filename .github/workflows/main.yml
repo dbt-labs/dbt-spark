@@ -37,18 +37,9 @@ defaults:
 
 jobs:
   code-quality:
-    name: ${{ matrix.toxenv }}
+    name: code-quality
 
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [flake8]
-
-    env:
-      TOXENV: ${{ matrix.toxenv }}
-      PYTEST_ADDOPTS: "-v --color=yes"
 
     steps:
       - name: Check out the repository
@@ -58,18 +49,19 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v2
-        with: 
+        with:
           python-version: '3.8'
 
       - name: Install python dependencies
         run: |
           sudo apt-get install libsasl2-dev
           pip install --user --upgrade pip
-          pip install tox
-          pip --version
-          tox --version
-      - name: Run tox
-        run: tox
+          pip install -r dev-requirements.txt
+          pre-commit --version
+          mypy --version
+          dbt --version
+      - name: pre-commit hooks
+        run: pre-commit run --all-files --show-diff-on-failure
 
   unit:
     name: unit test / python ${{ matrix.python-version }}
@@ -122,6 +114,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    outputs:
+      is_alpha: ${{ steps.check-is-alpha.outputs.is_alpha }}
+
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
@@ -150,6 +145,14 @@ jobs:
       - name: Check wheel contents
         run: |
           check-wheel-contents dist/*.whl --ignore W007,W008
+
+      - name: Check if this is an alpha version
+        id: check-is-alpha
+        run: |
+          export is_alpha=0
+          if [[ "$(ls -lh dist/)" == *"a1"* ]]; then export is_alpha=1; fi
+          echo "::set-output name=is_alpha::$is_alpha"
+
       - uses: actions/upload-artifact@v2
         with:
           name: dist
@@ -157,6 +160,8 @@ jobs:
 
   test-build:
     name: verify packages / python ${{ matrix.python-version }} / ${{ matrix.os }}
+
+    if: needs.build.outputs.is_alpha == 0
 
     needs: build
 

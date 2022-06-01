@@ -1,17 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+env*/
+dbt_env/
+dist/
+*.egg-info
+logs/
+
+
+# Unit test
+.tox/
+.env
+test.env
+
+
+# Django stuff
+*.log
+
+# Mypy
+*.pytest_cache/
+
+# Vim
+*.sw*
+
+# Pyenv
+.python-version
+
+# pycharm
+.idea/
+
+# MacOS
+.DS_Store
+
+# vscode
+.vscode
+
+# other
 .hive-metastore/
 .spark-warehouse/
-*.egg-info
-env/
-*.pyc
-__pycache__
-.tox/
-.idea/
-build/
-dist/
-test.env
 dbt-integration-tests
 test/integration/.user.yml
-.DS_Store
-.vscode
-*.log
-logs/
