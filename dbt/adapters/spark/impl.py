@@ -178,7 +178,7 @@ class SparkAdapter(SQLAdapter):
 
         # Remove rows that start with a hash, they are comments
         rows = [row for row in raw_rows[0:pos] if not row["col_name"].startswith("#")]
-        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1 :]}
+        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1:]}
 
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
@@ -456,7 +456,8 @@ class SparkAdapter(SQLAdapter):
         while state not in terminal_states and time.time() - start < timeout:
             time.sleep(1)
             resp = requests.get(
-                f"https://{self.connections.profile.credentials.host}/api/2.1/jobs/runs/get?run_id={run_id}",
+                f"https://{self.connections.profile.credentials.host}"
+                f"/api/2.1/jobs/runs/get?run_id={run_id}",
                 headers=auth_header,
             )
             json_resp = resp.json()
@@ -464,22 +465,24 @@ class SparkAdapter(SQLAdapter):
             logger.debug(f"Polling.... in state: {state}")
         if state != "TERMINATED":
             raise dbt.exceptions.RuntimeException(
-                f"python model run ended in state {state} with state_message\n{json_resp['state']['state_message']}"
+                "python model run ended in state"
+                f"{state} with state_message\n{json_resp['state']['state_message']}"
             )
 
         # get end state to return to user
         run_output = requests.get(
-            f"https://{self.connections.profile.credentials.host}/api/2.1/jobs/runs/get-output?run_id={run_id}",
+            f"https://{self.connections.profile.credentials.host}"
+            f"/api/2.1/jobs/runs/get-output?run_id={run_id}",
             headers=auth_header,
         )
         json_run_output = run_output.json()
         result_state = json_run_output["metadata"]["state"]["result_state"]
         if result_state != "SUCCESS":
             raise dbt.exceptions.RuntimeException(
-                f"\
-Python model failed with traceback as:\n \
-(Note that the line number here does not match the line number in your code due to dbt templating)\n \
-{json_run_output['error_trace']}"
+                "Python model failed with traceback as:\n"
+                "(Note that the line number here does not "
+                "match the line number in your code due to dbt templating)\n"
+                f"{json_run_output['error_trace']}"
             )
         return result_state
 
