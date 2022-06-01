@@ -17,7 +17,7 @@ For those wishing to contribute we highly suggest reading the dbt-core's [contri
 Please note that all contributors to `dbt-spark` must sign the [Contributor License Agreement](https://docs.getdbt.com/docs/contributor-license-agreements) to have their Pull Request merged into an `dbt-spark` codebase. If you are unable to sign the CLA, then the `dbt-spark` maintainers will unfortunately be unable to merge your Pull Request. You are, however, welcome to open issues and comment on existing ones.
 
 
-## Getting the code 
+## Getting the code
 
 You will need `git` in order to download and modify the `dbt-spark` source code. You can find directions [here](https://github.com/git-guides/install-git) on how to install `git`.
 
@@ -90,7 +90,7 @@ Many changes will require and update to the `dbt-spark` docs here are some usefu
 
 ## Submitting a Pull Request
 
-dbt Labs provides a CI environment to test changes to the `dbt-spark` adapter, and periodic checks against the development version of `dbt-core` through Github Actions.  
+dbt Labs provides a CI environment to test changes to the `dbt-spark` adapter, and periodic checks against the development version of `dbt-core` through Github Actions.
 
 A `dbt-spark` maintainer will review your PR. They may suggest code revision for style or clarity, or request that you add unit or integration test(s). These are good things! We believe that, with a little bit of help, anyone can contribute high-quality code.
 
