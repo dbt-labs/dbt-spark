@@ -413,7 +413,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     dbt_spark_version = __version__.version
                     dbt_invocation_env = os.getenv(DBT_INVOCATION_ENV) or "manual"
-                    user_agent_entry = f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks) ({dbt_invocation_env})"  # noqa
+                    user_agent_entry = f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks, {dbt_invocation_env})"  # noqa
 
                     # http://simba.wpengine.com/products/Spark/doc/ODBC_InstallGuide/unix/content/odbc/hi/configuring/serverside.htm
                     ssp = {f"SSP_{k}": f"{{{v}}}" for k, v in creds.server_side_parameters.items()}
