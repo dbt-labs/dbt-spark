@@ -91,6 +91,7 @@ def databricks_http_cluster_target():
         "connect_retries": 5,
         "connect_timeout": 60, 
         "retry_all": bool(os.getenv('DBT_DATABRICKS_RETRY_ALL', False)),
+        "user": os.getenv('DBT_DATABRICKS_USER')
     }
 
 
