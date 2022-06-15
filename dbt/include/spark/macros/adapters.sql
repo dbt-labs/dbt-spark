@@ -168,11 +168,19 @@
   {%- endcall -%}
 {% endmacro %}
 
-{% macro spark__get_columns_in_relation(relation) -%}
-  {% call statement('get_columns_in_relation', fetch_result=True) %}
+{% macro get_columns_in_relation_raw(relation) -%}
+  {{ return(adapter.dispatch('get_columns_in_relation_raw', 'dbt')(relation)) }}
+{%- endmacro -%}
+
+{% macro spark__get_columns_in_relation_raw(relation) -%}
+  {% call statement('get_columns_in_relation_raw', fetch_result=True) %}
       describe extended {{ relation.include(schema=(schema is not none)) }}
   {% endcall %}
-  {% do return(load_result('get_columns_in_relation').table) %}
+  {% do return(load_result('get_columns_in_relation_raw').table) %}
+{% endmacro %}
+
+{% macro spark__get_columns_in_relation(relation) -%}
+  {{ return(adapter.get_columns_in_relation(relation)) }}
 {% endmacro %}
 
 {% macro spark__list_relations_without_caching(relation) %}
@@ -231,7 +239,7 @@
       {% set comment = column_dict[column_name]['description'] %}
       {% set escaped_comment = comment | replace('\'', '\\\'') %}
       {% set comment_query %}
-        alter table {{ relation }} change column 
+        alter table {{ relation }} change column
             {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }}
             comment '{{ escaped_comment }}';
       {% endset %}
@@ -260,25 +268,25 @@
 
 
 {% macro spark__alter_relation_add_remove_columns(relation, add_columns, remove_columns) %}
-  
+
   {% if remove_columns %}
     {% set platform_name = 'Delta Lake' if relation.is_delta else 'Apache Spark' %}
     {{ exceptions.raise_compiler_error(platform_name + ' does not support dropping columns from tables') }}
   {% endif %}
-  
+
   {% if add_columns is none %}
     {% set add_columns = [] %}
   {% endif %}
-  
+
   {% set sql -%}
-     
+
      alter {{ relation.type }} {{ relation }}
-       
+
        {% if add_columns %} add columns {% endif %}
             {% for column in add_columns %}
                {{ column.name }} {{ column.data_type }}{{ ',' if not loop.last }}
             {% endfor %}
-  
+
   {%- endset -%}
 
   {% do run_query(sql) %}

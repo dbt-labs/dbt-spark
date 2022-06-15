@@ -1,18 +1,23 @@
-## dbt-spark 1.1.1 (TBD)
+## dbt-spark 1.2.0 (tbd)
 
 ### Fixes
+- `adapter.get_columns_in_relation` (method) and `get_columns_in_relation` (macro) now return identical responses. The previous behavior of `get_columns_in_relation` (macro) is now represented by a new macro, `get_columns_in_relation_raw` ([#354](https://github.com/dbt-labs/dbt-spark/issues/354), [#355](https://github.com/dbt-labs/dbt-spark/pull/355))
 - Incremental materialization updated to not drop table first if full refresh for delta lake format, as it already runs _create or replace table_ ([#286](https://github.com/dbt-labs/dbt-spark/issues/286), [#287](https://github.com/dbt-labs/dbt-spark/pull/287/))
+
+### Under the hood
+- Add `DBT_INVOCATION_ENV` environment variable to ODBC user agent string ([#366](https://github.com/dbt-labs/dbt-spark/pull/366))
 
 ### Contributors
 - [@grindheim](https://github.com/grindheim) ([#287](https://github.com/dbt-labs/dbt-spark/pull/287/))
 
-## dbt-spark 1.1.0
+## dbt-spark 1.1.0 (April 28, 2022)
 
 ### Features
 - Add session connection method ([#272](https://github.com/dbt-labs/dbt-spark/issues/272), [#279](https://github.com/dbt-labs/dbt-spark/pull/279))
 - rename file to match reference to dbt-core ([#344](https://github.com/dbt-labs/dbt-spark/pull/344))
 
 ### Under the hood
+- Add precommit tooling to this repo ([#356](https://github.com/dbt-labs/dbt-spark/pull/356))
 - Use dbt.tests.adapter.basic in test suite ([#298](https://github.com/dbt-labs/dbt-spark/issues/298), [#299](https://github.com/dbt-labs/dbt-spark/pull/299))
 - Make internal macros use macro dispatch to be overridable in child adapters ([#319](https://github.com/dbt-labs/dbt-spark/issues/319), [#320](https://github.com/dbt-labs/dbt-spark/pull/320))
 - Override adapter method 'run_sql_for_tests' ([#323](https://github.com/dbt-labs/dbt-spark/issues/323), [#324](https://github.com/dbt-labs/dbt-spark/pull/324))
