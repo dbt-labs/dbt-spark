@@ -1,32 +1,33 @@
 {% materialization incremental, adapter='spark' -%}
-  
+
   {#-- Validate early so we don't run SQL if the file_format + strategy combo is invalid --#}
   {%- set raw_file_format = config.get('file_format', default='parquet') -%}
   {%- set raw_strategy = config.get('incremental_strategy', default='append') -%}
-  
   {%- set file_format = dbt_spark_validate_get_file_format(raw_file_format) -%}
   {%- set strategy = dbt_spark_validate_get_incremental_strategy(raw_strategy, file_format) -%}
-  
+
+  {#-- Set vars --#}
   {%- set unique_key = config.get('unique_key', none) -%}
-  {%- set partition_by = config.get('partition_by', none) -%}
+  {%- set partition_by = config.get('partition_by', none) -%}  
+  {%- set language = config.get('language') -%}
+  {%- set on_schema_change = incremental_validate_on_schema_change(config.get('on_schema_change'), default='ignore') -%}
+  {%- set target_relation = this -%}
+  {%- set existing_relation = load_relation(this) -%}
+  {%- set tmp_relation = make_temp_relation(this) -%}
 
-  {%- set full_refresh_mode = (should_full_refresh()) -%}
-  
-  {% set on_schema_change = incremental_validate_on_schema_change(config.get('on_schema_change'), default='ignore') %}
-
-  {% set target_relation = this %}
-  {% set existing_relation = load_relation(this) %}
-  {% set tmp_relation = make_temp_relation(this) %}
-
-  {% if strategy == 'insert_overwrite' and partition_by %}
-    {% call statement() %}
+  {%- if strategy == 'insert_overwrite' and partition_by -%}
+    {%- call statement() -%}
       set spark.sql.sources.partitionOverwriteMode = DYNAMIC
-    {% endcall %}
-  {% endif %}
+    {%- endcall -%}
+  {%- endif -%}
 
-  {% set language = config.get('language') %}
-
+  {#-- Run pre-hooks --#}
   {{ run_hooks(pre_hooks) }}
+
+  {#-- Incremental run logic --#}
+
+
+
 
   {% if existing_relation is none %}
     {{ log("#-- Relation must be created --#") }}
@@ -42,7 +43,7 @@
         -- python model return run result --
       {% endcall %}
     {% endif %}
-  {% elif existing_relation.is_view or full_refresh_mode %}
+  {% elif existing_relation.is_view or should_full_refresh() %}
     {{ log("#-- Relation must be dropped & recreated --#") }}
     {% do adapter.drop_relation(existing_relation) %}
     {% if language == 'sql'%}
