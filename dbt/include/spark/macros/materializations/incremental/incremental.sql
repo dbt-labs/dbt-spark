@@ -24,22 +24,61 @@
     {% endcall %}
   {% endif %}
 
+  {% set language = config.get('language') %}
+
   {{ run_hooks(pre_hooks) }}
 
   {% if existing_relation is none %}
-    {% set build_sql = create_table_as(False, target_relation, sql) %}
+    {{ log("#-- Relation must be created --#") }}
+    {% if language == 'sql'%}
+      {%- call statement('main') -%}
+        {{ create_table_as(False, target_relation, sql) }}
+      {%- endcall -%}
+    {% elif language == 'python' %}
+      {%- set python_code = py_complete_script(python_code=sql, target_relation=target_relation) -%}
+      {{ log("python code: " ~ python_code ) }}
+      {% set result = adapter.submit_python_job(schema, model['alias'], python_code) %}
+      {% call noop_statement('main', result, 'OK', 1) %}
+        -- python model return run result --
+      {% endcall %}
+    {% endif %}
   {% elif existing_relation.is_view or full_refresh_mode %}
+    {{ log("#-- Relation must be dropped & recreated --#") }}
     {% do adapter.drop_relation(existing_relation) %}
-    {% set build_sql = create_table_as(False, target_relation, sql) %}
+    {% if language == 'sql'%}
+      {%- call statement('main') -%}
+        {{ create_table_as(False, target_relation, sql) }}
+      {%- endcall -%}
+    {% elif language == 'python' %}
+      {%- set python_code = py_complete_script(python_code=sql, target_relation=target_relation) -%}
+      {{ log("python code " ~ python_code ) }}
+      {% set result = adapter.submit_python_job(schema, model['alias'], python_code) %}
+      {% call noop_statement('main', result, 'OK', 1) %}
+        -- python model return run result --
+      {% endcall %}
+    {% endif %}
   {% else %}
-    {% do run_query(create_table_as(True, tmp_relation, sql)) %}
-    {% do process_schema_changes(on_schema_change, tmp_relation, existing_relation) %}
-    {% set build_sql = dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) %}
+    {{ log("#-- Relation must be merged --#") }}
+    {% if language == 'sql'%}
+      {% do run_query(create_table_as(True, tmp_relation, sql)) %}
+      {% do process_schema_changes(on_schema_change, tmp_relation, existing_relation) %}
+      {%- call statement('main') -%}
+        {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) }}
+      {%- endcall -%}
+    {% elif language == 'python' %}
+      {%- set python_code = py_complete_script(python_code=sql, target_relation=tmp_relation) -%}
+      {% set result = adapter.submit_python_job(schema, model['alias'], python_code) %}
+      {{ log("python code " ~ python_code ) }}
+      {% call noop_statement('main', result, 'OK', 1) %}
+        -- python model return run result --
+      {% endcall %}
+      {{ log("XXXXXX-" ~ result) }}
+      {% do process_schema_changes(on_schema_change, tmp_relation, existing_relation) %}
+      {%- call statement('main') -%}
+        {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) }}
+      {%- endcall -%}
+    {% endif %}
   {% endif %}
-
-  {%- call statement('main') -%}
-    {{ build_sql }}
-  {%- endcall -%}
 
   {% do persist_docs(target_relation, model) %}
   
