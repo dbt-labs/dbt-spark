@@ -80,6 +80,6 @@ class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
         }
 
 
-@pytest.mark.xfail('spark_session')
+@pytest.mark.skip_profile('spark_session')
 class TestBaseAdapterMethod(BaseAdapterMethod):
     pass
