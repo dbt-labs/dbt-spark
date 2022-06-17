@@ -156,7 +156,7 @@ jobs:
           DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
           DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
           DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
-          DBT_DATABRICKS_RETRY_ALL: ${{ secrets.DBT_DATABRICKS_RETRY_ALL }}
+          DBT_DATABRICKS_RETRY_ALL: true
 
       - name: Get current date
         if: always()
