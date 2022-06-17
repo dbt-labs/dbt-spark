@@ -105,7 +105,7 @@ jobs:
 
   integration:
     name: integration test / python ${{ matrix.python-version }} / ${{ matrix.os }}
-    
+
 #    container: fishtownanalytics/test-container:10
 
     runs-on: ${{ matrix.os }}
@@ -152,6 +152,11 @@ jobs:
 
       - name: Run tests
         run: tox -e ${{ matrix.tox-env }}
+        env:
+          DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
+          DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
+          DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
+          DBT_DATABRICKS_RETRY_ALL: ${{ secrets.DBT_DATABRICKS_RETRY_ALL }}
 
       - name: Get current date
         if: always()
