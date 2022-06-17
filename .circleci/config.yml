@@ -39,7 +39,6 @@ jobs:
         command: >
           --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
           --name Thrift JDBC/ODBC Server
-
       - image: postgres:9.6.17-alpine
         environment:
           POSTGRES_USER: dbt
