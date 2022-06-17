@@ -64,7 +64,7 @@ class TestSnapshotCheckColsSpark(BaseSnapshotCheckCols):
         }
 
 
-#hese tests were not enabled in the dbtspec files, so skipping here.
+# These tests were not enabled in the dbtspec files, so skipping here.
 # Error encountered was: Error running query: java.lang.ClassNotFoundException: delta.DefaultSource
 @pytest.mark.skip_profile('apache_spark', 'spark_session')
 class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
@@ -79,5 +79,7 @@ class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
             }
         }
 
+
+@pytest.mark.skip_profile('spark_session')
 class TestBaseAdapterMethod(BaseAdapterMethod):
     pass
