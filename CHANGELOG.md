@@ -1,3 +1,8 @@
+## dbt-spark-livy 1.1.0
+Forking dbt-spark to dbt-spark-livy to support Livy based connection to Cloudera Data Platform.
+
+- Added a new connection type 'livy' to support Livy based connection to Cloudera Data Platform
+
 ## dbt-spark 1.2.0 (April 28, 2022)
 
 ### Fixes
