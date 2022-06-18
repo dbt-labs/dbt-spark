@@ -1,12 +1,11 @@
-from dbt.adapters.spark.connections import SparkConnectionManager  # noqa
-from dbt.adapters.spark.connections import SparkCredentials
-from dbt.adapters.spark.relation import SparkRelation  # noqa
-from dbt.adapters.spark.column import SparkColumn  # noqa
-from dbt.adapters.spark.impl import SparkAdapter
+from dbt.adapters.spark_livy.connections import SparkConnectionManager  # noqa
+from dbt.adapters.spark_livy.connections import SparkCredentials
+from dbt.adapters.spark_livy.relation import SparkRelation  # noqa
+from dbt.adapters.spark_livy.column import SparkColumn  # noqa
+from dbt.adapters.spark_livy.impl import SparkAdapter
 
 from dbt.adapters.base import AdapterPlugin
-from dbt.include import spark
+from dbt.include import spark_livy
 
 Plugin = AdapterPlugin(
-    adapter=SparkAdapter, credentials=SparkCredentials, include_path=spark.PACKAGE_PATH
-)
+    adapter=SparkAdapter, credentials=SparkCredentials, include_path=spark_livy.PACKAGE_PATH)

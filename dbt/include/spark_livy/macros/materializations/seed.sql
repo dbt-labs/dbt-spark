@@ -1,9 +1,9 @@
-{% macro spark__get_binding_char() %}
+{% macro spark_livy__get_binding_char() %}
   {{ return('?' if target.method == 'odbc' else '%s') }}
 {% endmacro %}
 
 
-{% macro spark__reset_csv_table(model, full_refresh, old_relation, agate_table) %}
+{% macro spark_livy__reset_csv_table(model, full_refresh, old_relation, agate_table) %}
     {% if old_relation %}
         {{ adapter.drop_relation(old_relation) }}
     {% endif %}
@@ -12,7 +12,7 @@
 {% endmacro %}
 
 
-{% macro spark__load_csv_rows(model, agate_table) %}
+{% macro spark_livy__load_csv_rows(model, agate_table) %}
 
   {% set batch_size = get_batch_size() %}
   {% set column_override = model['config'].get('column_types', {}) %}
@@ -51,7 +51,7 @@
 {% endmacro %}
 
 
-{% macro spark__create_csv_table(model, agate_table) %}
+{% macro spark_livy__create_csv_table(model, agate_table) %}
   {%- set column_override = model['config'].get('column_types', {}) -%}
   {%- set quote_seed_column = model['config'].get('quote_columns', None) -%}
 

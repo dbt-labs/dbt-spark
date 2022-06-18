@@ -13,9 +13,9 @@ import dbt.exceptions
 from dbt.adapters.base import AdapterConfig
 from dbt.adapters.base.impl import catch_as_completed
 from dbt.adapters.sql import SQLAdapter
-from dbt.adapters.spark import SparkConnectionManager
-from dbt.adapters.spark import SparkRelation
-from dbt.adapters.spark import SparkColumn
+from dbt.adapters.spark_livy import SparkConnectionManager
+from dbt.adapters.spark_livy import SparkRelation
+from dbt.adapters.spark_livy import SparkColumn
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.events import AdapterLogger
@@ -23,7 +23,6 @@ from dbt.utils import executor
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
 DROP_RELATION_MACRO_NAME = "drop_relation"
@@ -225,15 +224,13 @@ class SparkAdapter(SQLAdapter):
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
             try:
-                rows: List[agate.Row] = self.execute_macro(
-                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
-                )
+                rows: List[agate.Row] = super().get_columns_in_relation(relation)
                 columns = self.parse_describe_extended(relation, rows)
             except dbt.exceptions.RuntimeException as e:
                 # spark would throw error when table doesn't exist, where other
                 # CDW would just return and empty list, normalizing the behavior here
                 errmsg = getattr(e, "msg", "")
-                if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
+                if f"Table or view not found: {relation}" in errmsg or "NoSuchTableException" in errmsg:
                     pass
                 else:
                     raise e

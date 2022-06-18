@@ -1,5 +1,5 @@
 fixed:
-  type: spark
+  type: spark_livy
 prompts:
   host:
     hint: yourorg.sparkhost.com

@@ -19,7 +19,7 @@
 {% endmacro %}
 
 
-{% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
+{% macro spark_livy__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
   {# skip dest_columns, use merge_update_columns config if provided, otherwise use "*" #}
   {%- set predicates = [] if predicates is none else [] + predicates -%}
   {%- set update_columns = config.get("merge_update_columns") -%}

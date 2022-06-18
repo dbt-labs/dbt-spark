@@ -5,7 +5,7 @@ import dbt.flags as flags
 from dbt.exceptions import RuntimeException
 from agate import Row
 from pyhive import hive
-from dbt.adapters.spark import SparkAdapter, SparkRelation
+from dbt.adapters.spark_livy import SparkAdapter, SparkRelation
 from .utils import config_from_parts_or_dicts
 
 
