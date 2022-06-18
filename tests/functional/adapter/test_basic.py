@@ -79,5 +79,7 @@ class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
             }
         }
 
+
+@pytest.mark.skip_profile('spark_session')
 class TestBaseAdapterMethod(BaseAdapterMethod):
     pass
