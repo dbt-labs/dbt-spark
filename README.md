@@ -39,6 +39,7 @@ demo_project:
 ### Caveats
 - While using livy , in the Livy UI if you notice sessions change state to dead from starting instead of idle, make sure there is a proper mapping for the user in the IDBroker mapping section 
 - Actions > Manage Access > IDBroker Mappings . [Reference](https://docs.cloudera.com/cdf-datahub/7.2.15/flink-analyzing-data/topics/cdf-datahub-sa-create-idbroker-mapping.html)
+- Also make sure the workload password is set either through UI or CLI. [Reference](https://docs.cloudera.com/management-console/cloud/user-management/topics/mc-setting-the-ipa-password.html)
 
 ## Supported features
 Please see the original adapter documentation: https://github.com/dbt-labs/dbt-spark and https://docs.getdbt.com/reference/warehouse-profiles/spark-profile
