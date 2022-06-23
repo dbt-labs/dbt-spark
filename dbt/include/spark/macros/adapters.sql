@@ -117,34 +117,42 @@
 {%- endmacro %}
 
 
-{% macro create_temporary_view(relation, sql) -%}
-  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, sql)) }}
+{% macro create_temporary_view(relation, model_code, language) -%}
+  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, model_code, language)) }}
 {%- endmacro -%}
 
-{#-- We can't use temporary tables with `create ... as ()` syntax #}
-{% macro spark__create_temporary_view(relation, sql) -%}
-  create temporary view {{ relation.include(schema=false) }} as
-    {{ sql }}
-{% endmacro %}
+{#-- We can't use temporary tables with `create ... as ()` syntax --#}
+{% macro spark__create_temporary_view(relation, model_code, language='sql') -%}
+  {%- if language == 'sql' -%}
+    create temporary view {{ relation.include(schema=false) }} as
+      {{ model_code }}
+  {%- elif language == 'python' -%}
+    {{ py_complete_script(python_code=model_code, target_relation=relation, is_tmp_view=True) }}
+  {%- endif -%}
+{%- endmacro -%}
 
 
-{% macro spark__create_table_as(temporary, relation, sql) -%}
-  {% if temporary -%}
-    {{ create_temporary_view(relation, sql) }}
+{%- macro spark__create_table_as(temporary, relation, model_code, language='sql') -%}
+  {%- if temporary -%}
+    {{ create_temporary_view(relation, model_code, language) }}
   {%- else -%}
-    {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
-      create or replace table {{ relation }}
-    {% else %}
-      create table {{ relation }}
-    {% endif %}
-    {{ file_format_clause() }}
-    {{ options_clause() }}
-    {{ partition_cols(label="partitioned by") }}
-    {{ clustered_cols(label="clustered by") }}
-    {{ location_clause() }}
-    {{ comment_clause() }}
-    as
-      {{ sql }}
+    {%- if language == 'sql' -%}
+      {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
+        create or replace table {{ relation }}
+      {% else %}
+        create table {{ relation }}
+      {% endif %}
+      {{ file_format_clause() }}
+      {{ options_clause() }}
+      {{ partition_cols(label="partitioned by") }}
+      {{ clustered_cols(label="clustered by") }}
+      {{ location_clause() }}
+      {{ comment_clause() }}
+      as
+      {{ model_code }}
+    {%- elif language == 'python' -%}
+      {{ py_complete_script(python_code=model_code, target_relation=relation) }}
+    {%- endif -%}
   {%- endif %}
 {%- endmacro -%}
 

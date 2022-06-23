@@ -14,7 +14,9 @@
   {%- set target_relation = this -%}
   {%- set existing_relation = load_relation(this) -%}
   {%- set tmp_relation = make_temp_relation(this) -%}
+  {%- set model_code = sql -%}
 
+  {#-- Set Overwrite Mode --#}
   {%- if strategy == 'insert_overwrite' and partition_by -%}
     {%- call statement() -%}
       set spark.sql.sources.partitionOverwriteMode = DYNAMIC
@@ -25,62 +27,33 @@
   {{ run_hooks(pre_hooks) }}
 
   {#-- Incremental run logic --#}
-
-
-
-
-  {% if existing_relation is none %}
-    {{ log("#-- Relation must be created --#") }}
-    {% if language == 'sql'%}
-      {%- call statement('main') -%}
-        {{ create_table_as(False, target_relation, sql) }}
-      {%- endcall -%}
-    {% elif language == 'python' %}
-      {%- set python_code = py_complete_script(python_code=sql, target_relation=target_relation) -%}
-      {{ log("python code: " ~ python_code ) }}
-      {% set result = adapter.submit_python_job(schema, model['alias'], python_code) %}
-      {% call noop_statement('main', result, 'OK', 1) %}
-        -- python model return run result --
-      {% endcall %}
-    {% endif %}
-  {% elif existing_relation.is_view or should_full_refresh() %}
-    {{ log("#-- Relation must be dropped & recreated --#") }}
-    {% do adapter.drop_relation(existing_relation) %}
-    {% if language == 'sql'%}
-      {%- call statement('main') -%}
-        {{ create_table_as(False, target_relation, sql) }}
-      {%- endcall -%}
-    {% elif language == 'python' %}
-      {%- set python_code = py_complete_script(python_code=sql, target_relation=target_relation) -%}
-      {{ log("python code " ~ python_code ) }}
-      {% set result = adapter.submit_python_job(schema, model['alias'], python_code) %}
-      {% call noop_statement('main', result, 'OK', 1) %}
-        -- python model return run result --
-      {% endcall %}
-    {% endif %}
-  {% else %}
-    {{ log("#-- Relation must be merged --#") }}
-    {% if language == 'sql'%}
-      {% do run_query(create_table_as(True, tmp_relation, sql)) %}
-      {% do process_schema_changes(on_schema_change, tmp_relation, existing_relation) %}
-      {%- call statement('main') -%}
-        {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) }}
-      {%- endcall -%}
-    {% elif language == 'python' %}
-      {%- set python_code = py_complete_script(python_code=sql, target_relation=tmp_relation) -%}
-      {% set result = adapter.submit_python_job(schema, model['alias'], python_code) %}
-      {{ log("python code " ~ python_code ) }}
-      {% call noop_statement('main', result, 'OK', 1) %}
-        -- python model return run result --
-      {% endcall %}
-      {{ log("XXXXXX-" ~ result) }}
-      {% do process_schema_changes(on_schema_change, tmp_relation, existing_relation) %}
-      {%- call statement('main') -%}
-        {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) }}
-      {%- endcall -%}
-    {% endif %}
-  {% endif %}
-
+  {%- if existing_relation is none -%}
+    {#-- Relation must be created --#}
+    {{log("make rel")}}
+    {%- call statement('main', language=language) -%}
+      {{ create_table_as(False, target_relation, model_code, language) }}
+    {%- endcall -%}
+  {%- elif existing_relation.is_view or should_full_refresh() -%}
+    {#-- Relation must be dropped & recreated --#}
+    {{log("remake rel")}}
+    {%- do adapter.drop_relation(existing_relation) -%}
+    {%- call statement('main', language=language) -%}
+      {{ create_table_as(False, target_relation, model_code, language) }}
+    {%- endcall -%}
+  {%- else -%}
+    {#-- Relation must be merged --#}
+    {{log("merge rel")}}
+    {%- call statement('create_tmp_relation', language=language) -%}
+      {{ create_table_as(True, tmp_relation, model_code, language) }}
+    {%- endcall -%}
+    {%- do process_schema_changes(on_schema_change, tmp_relation, existing_relation) -%}
+    {%- call statement('main') -%}
+      {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) }}
+    {%- endcall -%}
+  {%- endif -%}
+  
+  {{ log("Inc logic complete") }}
+  
   {% do persist_docs(target_relation, model) %}
   
   {{ run_hooks(post_hooks) }}
