@@ -1,4 +1,4 @@
-{% macro spark__listagg(measure, delimiter_text, order_by_clause, limit_num) -%}
+{% macro spark_livy__listagg(measure, delimiter_text, order_by_clause, limit_num) -%}
 
   {% if order_by_clause %}
     {{ exceptions.warn("order_by_clause is not supported for listagg on Spark/Databricks") }}

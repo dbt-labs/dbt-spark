@@ -1,4 +1,4 @@
-{% macro spark__split_part(string_text, delimiter_text, part_number) %}
+{% macro spark_livy__split_part(string_text, delimiter_text, part_number) %}
 
     {% set delimiter_expr %}
 
