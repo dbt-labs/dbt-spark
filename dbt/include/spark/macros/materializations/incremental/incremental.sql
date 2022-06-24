@@ -50,6 +50,18 @@
     {%- call statement('main') -%}
       {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key) }}
     {%- endcall -%}
+    {%- if language == 'python' -%}
+      {#--
+      This is yucky.  
+      See note in dbt-spark/dbt/include/spark/macros/adapters.sql
+      re: python models and temporary views.
+
+      Also, why doesn't either drop_relation or adapter.drop_relation work here?!
+      --#}
+      {% call statement('drop_relation') -%}
+        drop table if exists {{ tmp_relation }}
+      {%- endcall %}
+    {%- endif -%}
   {%- endif -%}
   
   {{ log("Inc logic complete") }}
