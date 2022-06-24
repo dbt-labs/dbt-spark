@@ -29,20 +29,17 @@
   {#-- Incremental run logic --#}
   {%- if existing_relation is none -%}
     {#-- Relation must be created --#}
-    {{log("make rel")}}
     {%- call statement('main', language=language) -%}
       {{ create_table_as(False, target_relation, model_code, language) }}
     {%- endcall -%}
   {%- elif existing_relation.is_view or should_full_refresh() -%}
     {#-- Relation must be dropped & recreated --#}
-    {{log("remake rel")}}
     {%- do adapter.drop_relation(existing_relation) -%}
     {%- call statement('main', language=language) -%}
       {{ create_table_as(False, target_relation, model_code, language) }}
     {%- endcall -%}
   {%- else -%}
     {#-- Relation must be merged --#}
-    {{log("merge rel")}}
     {%- call statement('create_tmp_relation', language=language) -%}
       {{ create_table_as(True, tmp_relation, model_code, language) }}
     {%- endcall -%}
