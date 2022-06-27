@@ -117,35 +117,46 @@
 {%- endmacro %}
 
 
-{% macro create_temporary_view(relation, sql) -%}
-  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, sql)) }}
+{% macro create_temporary_view(relation, model_code) -%}
+  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, model_code)) }}
 {%- endmacro -%}
 
-{#-- We can't use temporary tables with `create ... as ()` syntax #}
-{% macro spark__create_temporary_view(relation, sql) -%}
-  create temporary view {{ relation.include(schema=false) }} as
-    {{ sql }}
-{% endmacro %}
+{#-- We can't use temporary tables with `create ... as ()` syntax --#}
+{% macro spark__create_temporary_view(relation, model_code) -%}
+    create temporary view {{ relation.include(schema=false) }} as
+      {{ model_code }}
+{%- endmacro -%}
 
 
-{% macro spark__create_table_as(temporary, relation, sql) -%}
-  {% if temporary -%}
-    {{ create_temporary_view(relation, sql) }}
-  {%- else -%}
-    {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
-      create or replace table {{ relation }}
-    {% else %}
-      create table {{ relation }}
-    {% endif %}
-    {{ file_format_clause() }}
-    {{ options_clause() }}
-    {{ partition_cols(label="partitioned by") }}
-    {{ clustered_cols(label="clustered by") }}
-    {{ location_clause() }}
-    {{ comment_clause() }}
-    as
-      {{ sql }}
-  {%- endif %}
+{%- macro spark__create_table_as(temporary, relation, model_code, language='sql') -%}
+  {%- if language == 'sql' -%}
+    {%- if temporary -%}
+      {{ create_temporary_view(relation, model_code) }}
+    {%- else -%}
+      {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
+        create or replace table {{ relation }}
+      {% else %}
+        create table {{ relation }}
+      {% endif %}
+      {{ file_format_clause() }}
+      {{ options_clause() }}
+      {{ partition_cols(label="partitioned by") }}
+      {{ clustered_cols(label="clustered by") }}
+      {{ location_clause() }}
+      {{ comment_clause() }}
+      as
+      {{ model_code }}
+    {%- endif -%}
+  {%- elif language == 'python' -%}
+    {#-- 
+    N.B. Python models _can_ write to temp views HOWEVER they use a different session
+    and have already expired by the time they need to be used (I.E. in merges for incremental models)
+     
+    TODO: Deep dive into spark sessions to see if we can reuse a single session for an entire 
+    dbt invocation.
+     --#}
+    {{ py_complete_script(python_code=model_code, target_relation=relation) }}
+  {%- endif -%}
 {%- endmacro -%}
 
 
