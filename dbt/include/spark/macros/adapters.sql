@@ -117,8 +117,8 @@
 {%- endmacro %}
 
 
-{% macro create_temporary_view(relation, model_code, language) -%}
-  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, model_code, language)) }}
+{% macro create_temporary_view(relation, model_code) -%}
+  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, model_code)) }}
 {%- endmacro -%}
 
 {#-- We can't use temporary tables with `create ... as ()` syntax --#}
@@ -131,7 +131,7 @@
 {%- macro spark__create_table_as(temporary, relation, model_code, language='sql') -%}
   {%- if language == 'sql' -%}
     {%- if temporary -%}
-      {{ create_temporary_view(relation, model_code, language) }}
+      {{ create_temporary_view(relation, model_code) }}
     {%- else -%}
       {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
         create or replace table {{ relation }}
