@@ -61,8 +61,6 @@
     {%- endif -%}
   {%- endif -%}
   
-  {{ log("Inc logic complete") }}
-  
   {% do persist_docs(target_relation, model) %}
   
   {{ run_hooks(post_hooks) }}
