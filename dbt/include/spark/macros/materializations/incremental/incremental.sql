@@ -26,12 +26,12 @@
 
   {{ run_hooks(pre_hooks) }}
 
+  {% set is_delta = (file_format == 'delta' and existing_relation.is_delta) %}
+
   {% if existing_relation is none %}
     {% set build_sql = create_table_as(False, target_relation, sql) %}
-  {% elif existing_relation.is_view or full_refresh_mode %}
-    {% if existing_relation.is_view or file_format != 'delta' %}
-      {% do adapter.drop_relation(existing_relation) %}
-    {% endif %}
+  {% elif existing_relation.is_view or (full_refresh_mode and not is_delta) %}
+    {% do adapter.drop_relation(existing_relation) %}
     {% set build_sql = create_table_as(False, target_relation, sql) %}
   {% else %}
     {% do run_query(create_table_as(True, tmp_relation, sql)) %}
