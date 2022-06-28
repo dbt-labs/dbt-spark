@@ -383,7 +383,7 @@ class SparkAdapter(SQLAdapter):
         finally:
             conn.transaction_open = False
 
-    @available
+    @available.parse_none
     def submit_python_job(self, schema: str, identifier: str, file_contents: str, timeout=None):
         # TODO improve the typing here.  N.B. Jinja returns a `jinja2.runtime.Undefined` instead
         # of `None` which evaluates to True!
