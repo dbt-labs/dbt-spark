@@ -14,7 +14,6 @@
   {%- set target_relation = this -%}
   {%- set existing_relation = load_relation(this) -%}
   {%- set tmp_relation = make_temp_relation(this) -%}
-  {%- set model_code = sql -%}
 
   {#-- Set Overwrite Mode --#}
   {%- if strategy == 'insert_overwrite' and partition_by -%}
@@ -30,18 +29,18 @@
   {%- if existing_relation is none -%}
     {#-- Relation must be created --#}
     {%- call statement('main', language=language) -%}
-      {{ create_table_as(False, target_relation, model_code, language) }}
+      {{ create_table_as(False, target_relation, compiled_code, language) }}
     {%- endcall -%}
   {%- elif existing_relation.is_view or should_full_refresh() -%}
     {#-- Relation must be dropped & recreated --#}
     {%- do adapter.drop_relation(existing_relation) -%}
     {%- call statement('main', language=language) -%}
-      {{ create_table_as(False, target_relation, model_code, language) }}
+      {{ create_table_as(False, target_relation, compiled_code, language) }}
     {%- endcall -%}
   {%- else -%}
     {#-- Relation must be merged --#}
     {%- call statement('create_tmp_relation', language=language) -%}
-      {{ create_table_as(True, tmp_relation, model_code, language) }}
+      {{ create_table_as(True, tmp_relation, compiled_code, language) }}
     {%- endcall -%}
     {%- do process_schema_changes(on_schema_change, tmp_relation, existing_relation) -%}
     {%- call statement('main') -%}
