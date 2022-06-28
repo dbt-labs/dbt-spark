@@ -18,6 +18,7 @@
 ### Features
 - Add session connection method ([#272](https://github.com/dbt-labs/dbt-spark/issues/272), [#279](https://github.com/dbt-labs/dbt-spark/pull/279))
 - rename file to match reference to dbt-core ([#344](https://github.com/dbt-labs/dbt-spark/pull/344))
+- Upgrade Spark version to 3.1.1 ([#348](https://github.com/dbt-labs/dbt-spark/issues/348), [#349](https://github.com/dbt-labs/dbt-spark/pull/349))
 
 ### Under the hood
 - Add precommit tooling to this repo ([#356](https://github.com/dbt-labs/dbt-spark/pull/356))
@@ -29,6 +30,7 @@
 ### Contributors
 - [@JCZuurmond](https://github.com/dbt-labs/dbt-spark/pull/279) ( [#279](https://github.com/dbt-labs/dbt-spark/pull/279))
 - [@ueshin](https://github.com/ueshin) ([#320](https://github.com/dbt-labs/dbt-spark/pull/320))
+- [@nssalian](https://github.com/nssalian) ([#349](https://github.com/dbt-labs/dbt-spark/pull/349))
 
 ## dbt-spark 1.1.0b1 (March 23, 2022)
 
