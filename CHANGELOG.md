@@ -1,4 +1,4 @@
-## dbt-spark 1.2.0 (tbd)
+## dbt-spark 1.2.0b1 (June 24, 2022)
 
 ### Fixes
 - `adapter.get_columns_in_relation` (method) and `get_columns_in_relation` (macro) now return identical responses. The previous behavior of `get_columns_in_relation` (macro) is now represented by a new macro, `get_columns_in_relation_raw` ([#354](https://github.com/dbt-labs/dbt-spark/issues/354), [#355](https://github.com/dbt-labs/dbt-spark/pull/355))
