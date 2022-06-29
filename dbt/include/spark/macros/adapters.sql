@@ -117,21 +117,21 @@
 {%- endmacro %}
 
 
-{% macro create_temporary_view(relation, model_code) -%}
-  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, model_code)) }}
+{% macro create_temporary_view(relation, compiled_code) -%}
+  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, compiled_code)) }}
 {%- endmacro -%}
 
 {#-- We can't use temporary tables with `create ... as ()` syntax --#}
-{% macro spark__create_temporary_view(relation, model_code) -%}
+{% macro spark__create_temporary_view(relation, compiled_code) -%}
     create temporary view {{ relation.include(schema=false) }} as
-      {{ model_code }}
+      {{ compiled_code }}
 {%- endmacro -%}
 
 
-{%- macro spark__create_table_as(temporary, relation, model_code, language='sql') -%}
+{%- macro spark__create_table_as(temporary, relation, compiled_code, language='sql') -%}
   {%- if language == 'sql' -%}
     {%- if temporary -%}
-      {{ create_temporary_view(relation, model_code) }}
+      {{ create_temporary_view(relation, compiled_code) }}
     {%- else -%}
       {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
         create or replace table {{ relation }}
@@ -145,7 +145,7 @@
       {{ location_clause() }}
       {{ comment_clause() }}
       as
-      {{ model_code }}
+      {{ compiled_code }}
     {%- endif -%}
   {%- elif language == 'python' -%}
     {#-- 
@@ -155,7 +155,7 @@
     TODO: Deep dive into spark sessions to see if we can reuse a single session for an entire 
     dbt invocation.
      --#}
-    {{ py_complete_script(python_code=model_code, target_relation=relation) }}
+    {{ py_complete_script(compiled_code=compiled_code, target_relation=relation) }}
   {%- endif -%}
 {%- endmacro -%}
 

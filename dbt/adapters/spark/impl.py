@@ -384,13 +384,15 @@ class SparkAdapter(SQLAdapter):
             conn.transaction_open = False
 
     @available.parse_none
-    def submit_python_job(self, schema: str, identifier: str, file_contents: str, timeout=None):
+    def submit_python_job(self, parsed_model:dict, compiled_code: str, timeout=None):
         # TODO improve the typing here.  N.B. Jinja returns a `jinja2.runtime.Undefined` instead
         # of `None` which evaluates to True!
 
         # TODO limit this function to run only when doing the materialization of python nodes
 
         # assuming that for python job running over 1 day user would mannually overwrite this
+        schema = getattr(parsed_model, "schema", self.config.credentials.schema)
+        identifier = parsed_model['alias']
         if not timeout:
             timeout = 60 * 60 * 24
         if timeout <= 0:
@@ -416,7 +418,7 @@ class SparkAdapter(SQLAdapter):
             )
 
         # add notebook
-        b64_encoded_content = base64.b64encode(file_contents.encode()).decode()
+        b64_encoded_content = base64.b64encode(compiled_code.encode()).decode()
         response = requests.post(
             f"https://{self.connections.profile.credentials.host}/api/2.0/workspace/import",
             headers=auth_header,
