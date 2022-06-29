@@ -1,5 +1,5 @@
 {% materialization table, adapter = 'spark' %}
-
+  {{debug()}}
   {%- set language = config.get('language') -%}
   {%- set identifier = model['alias'] -%}
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
@@ -30,7 +30,7 @@
 {% endmaterialization %}
 
 
-{% macro py_complete_script(python_code, target_relation) %}
+{% macro py_complete_script(compiled_code, target_relation) %}
 {{ python_code }}
 
 

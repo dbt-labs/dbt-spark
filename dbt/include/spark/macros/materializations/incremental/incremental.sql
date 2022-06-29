@@ -1,5 +1,4 @@
 {% materialization incremental, adapter='spark' -%}
-
   {#-- Validate early so we don't run SQL if the file_format + strategy combo is invalid --#}
   {%- set raw_file_format = config.get('file_format', default='parquet') -%}
   {%- set raw_strategy = config.get('incremental_strategy', default='append') -%}
