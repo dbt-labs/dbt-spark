@@ -1,13 +1,24 @@
-## dbt-spark 1.2.0 (April 28, 2022)
+## dbt-spark 1.2.0b1 (June 24, 2022)
 
 ### Fixes
 - `adapter.get_columns_in_relation` (method) and `get_columns_in_relation` (macro) now return identical responses. The previous behavior of `get_columns_in_relation` (macro) is now represented by a new macro, `get_columns_in_relation_raw` ([#354](https://github.com/dbt-labs/dbt-spark/issues/354), [#355](https://github.com/dbt-labs/dbt-spark/pull/355))
+
+### Under the hood
+- Add `DBT_INVOCATION_ENV` environment variable to ODBC user agent string ([#366](https://github.com/dbt-labs/dbt-spark/pull/366))
+- Initialize lift + shift for cross-db macros ([#359](https://github.com/dbt-labs/dbt-spark/pull/359))
+- Add invocation env to user agent string ([#367](https://github.com/dbt-labs/dbt-spark/pull/367))
+- Use dispatch pattern for get_columns_in_relation_raw macro ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
+
+### Contributors
+- [@ueshin](https://github.com/dbt-labs/dbt-spark/commits?author=ueshin) ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
+- [@dbeatty10](https://github.com/dbeatty10) ([#359](https://github.com/dbt-labs/dbt-spark/pull/359))
 
 ## dbt-spark 1.1.0 (April 28, 2022)
 
 ### Features
 - Add session connection method ([#272](https://github.com/dbt-labs/dbt-spark/issues/272), [#279](https://github.com/dbt-labs/dbt-spark/pull/279))
 - rename file to match reference to dbt-core ([#344](https://github.com/dbt-labs/dbt-spark/pull/344))
+- Upgrade Spark version to 3.1.1 ([#348](https://github.com/dbt-labs/dbt-spark/issues/348), [#349](https://github.com/dbt-labs/dbt-spark/pull/349))
 
 ### Under the hood
 - Add precommit tooling to this repo ([#356](https://github.com/dbt-labs/dbt-spark/pull/356))
@@ -19,6 +30,7 @@
 ### Contributors
 - [@JCZuurmond](https://github.com/dbt-labs/dbt-spark/pull/279) ( [#279](https://github.com/dbt-labs/dbt-spark/pull/279))
 - [@ueshin](https://github.com/ueshin) ([#320](https://github.com/dbt-labs/dbt-spark/pull/320))
+- [@nssalian](https://github.com/nssalian) ([#349](https://github.com/dbt-labs/dbt-spark/pull/349))
 
 ## dbt-spark 1.1.0b1 (March 23, 2022)
 
