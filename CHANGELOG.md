@@ -4,13 +4,12 @@
 - `adapter.get_columns_in_relation` (method) and `get_columns_in_relation` (macro) now return identical responses. The previous behavior of `get_columns_in_relation` (macro) is now represented by a new macro, `get_columns_in_relation_raw` ([#354](https://github.com/dbt-labs/dbt-spark/issues/354), [#355](https://github.com/dbt-labs/dbt-spark/pull/355))
 
 ### Under the hood
-- Add `DBT_INVOCATION_ENV` environment variable to ODBC user agent string ([#366](https://github.com/dbt-labs/dbt-spark/pull/366))
 - Initialize lift + shift for cross-db macros ([#359](https://github.com/dbt-labs/dbt-spark/pull/359))
 - Add invocation env to user agent string ([#367](https://github.com/dbt-labs/dbt-spark/pull/367))
 - Use dispatch pattern for get_columns_in_relation_raw macro ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
 
 ### Contributors
-- [@ueshin](https://github.com/dbt-labs/dbt-spark/commits?author=ueshin) ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
+- [@ueshin](https://github.com/ueshin) ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
 - [@dbeatty10](https://github.com/dbeatty10) ([#359](https://github.com/dbt-labs/dbt-spark/pull/359))
 
 ## dbt-spark 1.1.0 (April 28, 2022)
