@@ -48,7 +48,8 @@ class TestDateAdd(BaseDateAdd):
     pass
 
 
-@pytest.mark.skip_profile('spark_session')
+# this generates too much SQL to run successfully in our testing environments :(
+@pytest.mark.skip_profile('apache_spark', 'spark_session')
 class TestDateDiff(BaseDateDiff):
     pass
 
