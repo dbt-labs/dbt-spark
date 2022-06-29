@@ -2,6 +2,7 @@
 
 ### Fixes
 - `adapter.get_columns_in_relation` (method) and `get_columns_in_relation` (macro) now return identical responses. The previous behavior of `get_columns_in_relation` (macro) is now represented by a new macro, `get_columns_in_relation_raw` ([#354](https://github.com/dbt-labs/dbt-spark/issues/354), [#355](https://github.com/dbt-labs/dbt-spark/pull/355))
+- Handled inconsistent Bigint/Long datatype returned by Spark using `describe` and `show table extended`.
 
 ### Under the hood
 - Add `DBT_INVOCATION_ENV` environment variable to ODBC user agent string ([#366](https://github.com/dbt-labs/dbt-spark/pull/366))
@@ -12,6 +13,8 @@
 ### Contributors
 - [@ueshin](https://github.com/dbt-labs/dbt-spark/commits?author=ueshin) ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
 - [@dbeatty10](https://github.com/dbeatty10) ([#359](https://github.com/dbt-labs/dbt-spark/pull/359))
+- [@francescomucio](https://github.com/francescomucio) ([#357](https://github.com/dbt-labs/dbt-spark/pull/357))
+
 
 ## dbt-spark 1.1.0 (April 28, 2022)
 
