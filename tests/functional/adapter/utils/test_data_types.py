@@ -55,7 +55,8 @@ class TestTypeInt(BaseTypeInt):
 
     
 class TestTypeNumeric(BaseTypeNumeric):
-    pass
+    def numeric_fixture_type(self):
+        return "decimal(28,6)"
 
     
 class TestTypeString(BaseTypeString):

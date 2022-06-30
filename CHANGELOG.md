@@ -1,3 +1,8 @@
+## dbt-spark 1.2.0rc1 (Release TBD)
+
+### Under the hood
+- Update `SparkColumn.numeric_type` to return `decimal` instead of `numeric`, since SparkSQL exclusively supports the former ([#380](https://github.com/dbt-labs/dbt-spark/pull/380))
+
 ## dbt-spark 1.2.0b1 (June 24, 2022)
 
 ### Fixes
