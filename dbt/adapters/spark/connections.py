@@ -1,5 +1,3 @@
-import os
-
 from contextlib import contextmanager
 
 import dbt.exceptions
@@ -9,7 +7,6 @@ from dbt.contracts.connection import ConnectionState, AdapterResponse
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
 from dbt.adapters.spark import __version__
-from dbt.tracking import DBT_INVOCATION_ENV
 
 try:
     from TCLIService.ttypes import TOperationState as ThriftState
@@ -412,8 +409,9 @@ class SparkConnectionManager(SQLConnectionManager):
                     cls.validate_creds(creds, required_fields)
 
                     dbt_spark_version = __version__.version
-                    dbt_invocation_env = os.getenv(DBT_INVOCATION_ENV) or "manual"
-                    user_agent_entry = f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks, {dbt_invocation_env})"  # noqa
+                    user_agent_entry = (
+                        f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
+                    )
 
                     # http://simba.wpengine.com/products/Spark/doc/ODBC_InstallGuide/unix/content/odbc/hi/configuring/serverside.htm
                     ssp = {f"SSP_{k}": f"{{{v}}}" for k, v in creds.server_side_parameters.items()}
