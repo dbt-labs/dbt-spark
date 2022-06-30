@@ -191,8 +191,8 @@ class LivyCursor:
                 # print("rows", self._rows)
                 # print("schema", self._schema)
             else:
-                self._rows = []
-                self._schema = []
+                self._rows = None
+                self._schema = None
         else:
             self._rows = None
             self._schema = None 
