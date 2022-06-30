@@ -180,8 +180,6 @@ class LivyCursor:
 
         res = self._getLivyResult(self._submitLivyCode(self._getLivySQL(sql)))
         
-        # print(res)
-        
         if (res['output']['status'] == 'ok'):
             # values = res['output']['data']['application/json']
             values = res['output']['data']['application/json']
@@ -191,11 +189,15 @@ class LivyCursor:
                 # print("rows", self._rows)
                 # print("schema", self._schema)
             else:
-                self._rows = None
-                self._schema = None
+                self._rows = []
+                self._schema = []
         else:
             self._rows = None
-            self._schema = None 
+            self._schema = None
+
+            raise dbt.exceptions.raise_database_error(
+                        'Error while executing query: ' + res['output']['evalue']
+                    ) 
 
     def fetchall(self):
         """
