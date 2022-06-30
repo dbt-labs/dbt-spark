@@ -22,6 +22,8 @@
     {{ create_table_as(False, target_relation, sql) }}
   {%- endcall %}
 
+  {% set grant_config = config.get('grants') %}
+  {% do apply_grants(target_relation, grant_config, should_revoke=True) %}
   {% do persist_docs(target_relation, model) %}
 
   {{ run_hooks(post_hooks) }}
