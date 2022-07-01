@@ -7,7 +7,7 @@ with open('README.md') as f:
 
 package_name = "dbt-spark-livy"
 # make sure this always matches dbt/adapters/dbt-spark-livy/__version__.py
-package_version = "1.1.1"
+package_version = "1.1.2"
 description = """The dbt-spark-livy adapter plugin for Spark in Cloudera DataHub with Livy interface"""
 
 setup(
