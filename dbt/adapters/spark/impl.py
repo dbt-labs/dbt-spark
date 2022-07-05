@@ -380,6 +380,18 @@ class SparkAdapter(SQLAdapter):
         finally:
             conn.transaction_open = False
 
+    @available        
+    def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
+        grants_dict = {}      
+        for row in grants_table:
+            grantee = row["recipient"]  # Is this case significant?
+            privilege = row["privilege"]  # Should this be lowered?
+            if privilege in grants_dict.keys():                 
+                grants_dict[privilege].append(grantee)                           
+            else:            
+                grants_dict.update({privilege: [grantee]})
+        return grants_dict        
+
 
 # spark does something interesting with joins when both tables have the same
 # static values for the join condition and complains that the join condition is
