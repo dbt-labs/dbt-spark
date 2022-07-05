@@ -1,7 +1,13 @@
 ## dbt-spark 1.2.0rc1 (Release TBD)
 
+### Fixes
+- Incremental materialization updated to not drop table first if full refresh for delta lake format, as it already runs _create or replace table_ ([#286](https://github.com/dbt-labs/dbt-spark/issues/286), [#287](https://github.com/dbt-labs/dbt-spark/pull/287/))
+
 ### Under the hood
 - Update `SparkColumn.numeric_type` to return `decimal` instead of `numeric`, since SparkSQL exclusively supports the former ([#380](https://github.com/dbt-labs/dbt-spark/pull/380))
+
+### Contributors
+- [@grindheim](https://github.com/grindheim) ([#287](https://github.com/dbt-labs/dbt-spark/pull/287/))
 
 ## dbt-spark 1.2.0b1 (June 24, 2022)
 
