@@ -1,6 +1,7 @@
 {% materialization table, adapter = 'spark' %}
 
   {%- set identifier = model['alias'] -%}
+  {%- set grant_config = config.get('grants') -%}
 
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
   {%- set target_relation = api.Relation.create(identifier=identifier,
@@ -22,8 +23,9 @@
     {{ create_table_as(False, target_relation, sql) }}
   {%- endcall %}
 
-  {% set grant_config = config.get('grants') %}
-  {% do apply_grants(target_relation, grant_config, should_revoke=True) %}
+  {% set should_revoke = should_revoke(old_relation, full_refresh_mode=True) %}
+  {% do apply_grants(target_relation, grant_config, should_revoke) %}
+
   {% do persist_docs(target_relation, model) %}
 
   {{ run_hooks(post_hooks) }}

@@ -380,17 +380,22 @@ class SparkAdapter(SQLAdapter):
         finally:
             conn.transaction_open = False
 
-    @available        
     def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
-        grants_dict = {}      
+        grants_dict = {}
         for row in grants_table:
-            grantee = row["recipient"]  # Is this case significant?
-            privilege = row["privilege"]  # Should this be lowered?
-            if privilege in grants_dict.keys():                 
-                grants_dict[privilege].append(grantee)                           
-            else:            
-                grants_dict.update({privilege: [grantee]})
-        return grants_dict        
+            grantee = row["Principal"]
+            privilege = row["ActionType"]
+            object_type = row["ObjectType"]
+
+            # we only want to consider grants on this object
+            # (view or table both appear as 'TABLE')
+            # and we don't want to consider the OWN privilege
+            if object_type == "TABLE" and privilege != "OWN":
+                if privilege in grants_dict.keys():
+                    grants_dict[privilege].append(grantee)
+                else:
+                    grants_dict.update({privilege: [grantee]})
+        return grants_dict
 
 
 # spark does something interesting with joins when both tables have the same
