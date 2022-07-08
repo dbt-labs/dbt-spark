@@ -381,7 +381,7 @@ class SparkAdapter(SQLAdapter):
             conn.transaction_open = False
 
     def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
-        grants_dict = {}
+        grants_dict: Dict[str, List[str]] = {}
         for row in grants_table:
             grantee = row["Principal"]
             privilege = row["ActionType"]
