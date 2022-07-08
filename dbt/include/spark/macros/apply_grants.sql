@@ -3,14 +3,14 @@
     {% if config.materialized == 'view' %}
         {#-- Spark views don't copy grants when they're replaced --#}
         {{ return(False) }}
-    
+
     {% else %}
       {#-- This depends on how we're replacing the table, which depends on its file format
         -- Just play it safe by assuming that grants have been copied over, and need to be checked / possibly revoked
         -- We can make this more efficient in the future
       #}
         {{ return(True) }}
-        
+
     {% endif %}
 {% endmacro %}
 
