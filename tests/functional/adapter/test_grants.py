@@ -8,7 +8,9 @@ from dbt.tests.adapter.grants.test_snapshot_grants import BaseSnapshotGrants
 
 @pytest.mark.skip_profile("apache_spark", "spark_session")
 class TestModelGrantsSpark(BaseModelGrants):
-    pass
+    # insert --> modify
+    def privilege_names(self):
+        return {"select": "select", "insert": "modify", "fake_privilege": "fake_privilege"}
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session")
@@ -33,7 +35,7 @@ class TestSnapshotGrantsSpark(BaseSnapshotGrants):
     @pytest.fixture(scope="class")
     def project_config_update(self):
         return {
-            "models": {
+            "snapshots": {
                 "+file_format": "delta",
                 "+incremental_strategy": "merge",
             }
@@ -41,10 +43,9 @@ class TestSnapshotGrantsSpark(BaseSnapshotGrants):
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session")
-class TestInvalidGrantsSpark(BaseModelGrants):
+class TestInvalidGrantsSpark(BaseInvalidGrants):
     def grantee_does_not_exist_error(self):
         return "RESOURCE_DOES_NOT_EXIST"
         
     def privilege_does_not_exist_error(self):
-        # TODO fix this one
-        return "unrecognized privilege"
+        return "Action Unknown"
