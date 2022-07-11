@@ -1,7 +1,7 @@
 # install latest changes in dbt-core
 # TODO: how to automate switching from develop to version branches?
-git+https://github.com/dbt-labs/dbt-core.git@ct-808-more_grant_adapter_tests#egg=dbt-core&subdirectory=core
-git+https://github.com/dbt-labs/dbt-core.git@ct-808-more_grant_adapter_tests#egg=dbt-tests-adapter&subdirectory=tests/adapter
+git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-core&subdirectory=core
+git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-tests-adapter&subdirectory=tests/adapter
 
 black==22.3.0
 bumpversion

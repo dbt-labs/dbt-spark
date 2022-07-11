@@ -1,3 +1,8 @@
+## dbt-spark (Release TBD)
+
+### Features
+- Add grants to materializations ([#366](https://github.com/dbt-labs/dbt-spark/issues/366), [#381](https://github.com/dbt-labs/dbt-spark/pull/381))
+
 ## dbt-spark 1.2.0b1 (June 24, 2022)
 
 ### Fixes
