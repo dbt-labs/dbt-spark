@@ -22,7 +22,9 @@
 {% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
   {# skip dest_columns, use merge_update_columns config if provided, otherwise use "*" #}
   {%- set predicates = [] if predicates is none else [] + predicates -%}
-  {%- set update_columns = config.get("merge_update_columns") -%}
+  {%- set merge_update_columns = config.get('merge_update_columns') -%}
+  {%- set merge_exclude_columns = config.get('merge_exclude_columns') -%}
+  {%- set update_columns = get_merge_update_columns(merge_update_columns, merge_exclude_columns, dest_columns) -%}
 
   {% if unique_key %}
       {% if unique_key is sequence and unique_key is not mapping and unique_key is not string %}
