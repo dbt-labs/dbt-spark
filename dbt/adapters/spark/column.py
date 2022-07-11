@@ -37,6 +37,14 @@ class SparkColumn(dbtClassMixin, Column):
     def data_type(self) -> str:
         return self.dtype
 
+    @classmethod
+    def numeric_type(cls, dtype: str, precision: Any, scale: Any) -> str:
+        # SparkSQL does not support 'numeric' or 'number', only 'decimal'
+        if precision is None or scale is None:
+            return "decimal"
+        else:
+            return "{}({},{})".format("decimal", precision, scale)
+
     def __repr__(self) -> str:
         return "<SparkColumn {} ({})>".format(self.name, self.data_type)
 
