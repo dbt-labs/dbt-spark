@@ -1,4 +1,4 @@
-## dbt-spark 1.2.0rc1 (Release TBD)
+## dbt-spark 1.2.0rc1 (July 12, 2022)
 
 ### Fixes
 - Incremental materialization updated to not drop table first if full refresh for delta lake format, as it already runs _create or replace table_ ([#286](https://github.com/dbt-labs/dbt-spark/issues/286), [#287](https://github.com/dbt-labs/dbt-spark/pull/287/))
