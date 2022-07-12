@@ -108,4 +108,4 @@ def skip_by_profile_type(request):
     if request.node.get_closest_marker("skip_profile"):
         for skip_profile_type in request.node.get_closest_marker("skip_profile").args:
             if skip_profile_type == profile_type:
-                pytest.skip("skipped on '{profile_type}' profile")
+                pytest.skip(f"skipped on '{profile_type}' profile")
