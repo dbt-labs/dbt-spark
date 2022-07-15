@@ -296,6 +296,3 @@
 
 {% endmacro %}
 
-{% macro load_df_def() %}
-  load_df_function = spark.table
-{% endmacro %}
