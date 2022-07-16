@@ -8,14 +8,14 @@
   {%- elif merge_update_columns -%}
     {%- set update_columns = merge_update_columns -%}
   {%- elif merge_exclude_columns -%}
-    {%- set update_columns = [] -%}  
+    {%- set update_columns = [] -%}
     {%- for column in dest_columns -%}
       {% if column.column | lower not in merge_exclude_columns | map("lower") | list %}
         {%- do update_columns.append(column.quoted) -%}
       {% endif %}
     {%- endfor -%}
   {%- else -%}
-    {%- set update_columns = default_cols -%}  
+    {%- set update_columns = default_cols -%}
   {%- endif -%}
 
   {{ return(update_columns) }}
