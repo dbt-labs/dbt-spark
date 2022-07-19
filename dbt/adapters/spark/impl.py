@@ -488,7 +488,8 @@ class SparkAdapter(SQLAdapter):
                 "match the line number in your code due to dbt templating)\n"
                 f"{json_run_output['error_trace']}"
             )
-        return result_state
+        return self.connections.get_response(None)
+
 
 
 # spark does something interesting with joins when both tables have the same
