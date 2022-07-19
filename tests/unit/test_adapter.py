@@ -154,12 +154,13 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_thrift(self.project_cfg)
         adapter = SparkAdapter(config)
 
-        def hive_thrift_connect(host, port, username, auth, kerberos_service_name):
+        def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password):
             self.assertEqual(host, 'myorg.sparkhost.com')
             self.assertEqual(port, 10001)
             self.assertEqual(username, 'dbt')
             self.assertIsNone(auth)
             self.assertIsNone(kerberos_service_name)
+            self.assertIsNone(password)
 
         with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
             connection = adapter.acquire_connection('dummy')
@@ -193,12 +194,13 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_thrift_kerberos(self.project_cfg)
         adapter = SparkAdapter(config)
 
-        def hive_thrift_connect(host, port, username, auth, kerberos_service_name):
+        def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password):
             self.assertEqual(host, 'myorg.sparkhost.com')
             self.assertEqual(port, 10001)
             self.assertEqual(username, 'dbt')
             self.assertEqual(auth, 'KERBEROS')
             self.assertEqual(kerberos_service_name, 'hive')
+            self.assertIsNone(password)
 
         with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
             connection = adapter.acquire_connection('dummy')
