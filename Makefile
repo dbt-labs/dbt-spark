@@ -34,7 +34,7 @@ linecheck: ## Checks for all Python lines 100 characters or more
 .PHONY: unit
 unit: ## Runs unit tests with py38.
 	@\
-	tox -e py38
+	tox unit
 
 .PHONY: test
 test: ## Runs unit tests with py38 and code checks against staged changes.
