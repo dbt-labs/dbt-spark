@@ -12,7 +12,7 @@ import dbt
 import dbt.exceptions
 
 from dbt.adapters.base import AdapterConfig
-from dbt.adapters.base.impl import catch_as_completed
+from dbt.adapters.base.impl import catch_as_completed, log_code_execution
 from dbt.adapters.base.meta import available
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
@@ -178,7 +178,7 @@ class SparkAdapter(SQLAdapter):
 
         # Remove rows that start with a hash, they are comments
         rows = [row for row in raw_rows[0:pos] if not row["col_name"].startswith("#")]
-        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1:]}
+        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1 :]}
 
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
@@ -384,7 +384,8 @@ class SparkAdapter(SQLAdapter):
             conn.transaction_open = False
 
     @available.parse_none
-    def submit_python_job(self, parsed_model:dict, compiled_code: str, timeout=None):
+    @log_code_execution
+    def submit_python_job(self, parsed_model: dict, compiled_code: str, timeout=None):
         # TODO improve the typing here.  N.B. Jinja returns a `jinja2.runtime.Undefined` instead
         # of `None` which evaluates to True!
 
@@ -392,7 +393,7 @@ class SparkAdapter(SQLAdapter):
 
         # assuming that for python job running over 1 day user would mannually overwrite this
         schema = getattr(parsed_model, "schema", self.config.credentials.schema)
-        identifier = parsed_model['alias']
+        identifier = parsed_model["alias"]
         if not timeout:
             timeout = 60 * 60 * 24
         if timeout <= 0:
@@ -466,7 +467,7 @@ class SparkAdapter(SQLAdapter):
             )
             json_resp = resp.json()
             state = json_resp["state"]["life_cycle_state"]
-            logger.debug(f"Polling.... in state: {state}")
+            # logger.debug(f"Polling.... in state: {state}")
         if state != "TERMINATED":
             raise dbt.exceptions.RuntimeException(
                 "python model run ended in state"
@@ -489,7 +490,6 @@ class SparkAdapter(SQLAdapter):
                 f"{json_run_output['error_trace']}"
             )
         return self.connections.get_response(None)
-
 
 
 # spark does something interesting with joins when both tables have the same
