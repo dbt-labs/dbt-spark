@@ -3,7 +3,7 @@ import pytest
 from dbt.tests.util import run_dbt, write_file, run_dbt_and_capture
 from dbt.tests.adapter.python_model.test_python_model import BasePythonModelTests
 
-
+@pytest.skip("Need to supply extra config", allow_module_level=True)
 class TestPythonModelSpark(BasePythonModelTests):
     pass
 
@@ -30,6 +30,8 @@ def model(dbt, spark):
 """
 
 
+
+@pytest.skip("Need to supply extra config", allow_module_level=True)
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestChangingSchemaSpark:
     @pytest.fixture(scope="class")
@@ -49,5 +51,5 @@ class TestChangingSchemaSpark:
             log = f.read()
             # validate #5510 log_code_execution works
             assert "On model.test.simple_python_model:" in log
-            assert "dbt = dbtObj(spark.table)" in log
+            assert "spark.createDataFrame(data, schema=['test1', 'test3'])" in log
             assert "Execution status: OK in" in log
