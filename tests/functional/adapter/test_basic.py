@@ -78,6 +78,6 @@ class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
                 "+file_format": "delta",
             }
         }
-
+@pytest.mark.skip_profile('spark_session')
 class TestBaseAdapterMethod(BaseAdapterMethod):
     pass
