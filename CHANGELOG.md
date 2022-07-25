@@ -1,3 +1,11 @@
+## dbt-spark 1.2.0 (Release TBD)
+
+### Fixes
+- Pin `pyodbc` to version 4.0.32 to prevent overwriting `libodbc.so` and `libltdl.so` on Linux ([#397](https://github.com/dbt-labs/dbt-spark/issues/397/), [#398](https://github.com/dbt-labs/dbt-spark/pull/398/))
+
+### Contributors
+- [@barberscott](https://github.com/barberscott)  ([#398](https://github.com/dbt-labs/dbt-spark/pull/398/))
+
 ## dbt-spark 1.2.0rc1 (July 12, 2022)
 
 ### Fixes
