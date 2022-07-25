@@ -17,6 +17,7 @@
 
 ### Under the hood
 - Update `SparkColumn.numeric_type` to return `decimal` instead of `numeric`, since SparkSQL exclusively supports the former ([#380](https://github.com/dbt-labs/dbt-spark/pull/380))
+- Make minimal changes to support dbt Core incremental materialization refactor ([#402](https://github.com/dbt-labs/dbt-spark/issue/402), [#394](httpe://github.com/dbt-labs/dbt-spark/pull/394))
 
 ### Contributors
 - [@grindheim](https://github.com/grindheim) ([#287](https://github.com/dbt-labs/dbt-spark/pull/287/))
