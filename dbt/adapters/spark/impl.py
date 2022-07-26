@@ -163,7 +163,6 @@ class SparkAdapter(SQLAdapter):
 
         return relations
 
-
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
             database = None  # type: ignore
