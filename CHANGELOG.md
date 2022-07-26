@@ -2,9 +2,11 @@
 
 ### Fixes
 - Pin `pyodbc` to version 4.0.32 to prevent overwriting `libodbc.so` and `libltdl.so` on Linux ([#397](https://github.com/dbt-labs/dbt-spark/issues/397/), [#398](https://github.com/dbt-labs/dbt-spark/pull/398/))
+- Handled inconsistent Bigint/Long datatype returned by Spark using `describe` and `show table extended`.
 
 ### Contributors
 - [@barberscott](https://github.com/barberscott)  ([#398](https://github.com/dbt-labs/dbt-spark/pull/398/))
+- [@francescomucio](https://github.com/francescomucio) ([#357](https://github.com/dbt-labs/dbt-spark/pull/357))
 
 ## dbt-spark 1.2.0rc1 (July 12, 2022)
 
@@ -27,7 +29,6 @@
 
 ### Fixes
 - `adapter.get_columns_in_relation` (method) and `get_columns_in_relation` (macro) now return identical responses. The previous behavior of `get_columns_in_relation` (macro) is now represented by a new macro, `get_columns_in_relation_raw` ([#354](https://github.com/dbt-labs/dbt-spark/issues/354), [#355](https://github.com/dbt-labs/dbt-spark/pull/355))
-- Handled inconsistent Bigint/Long datatype returned by Spark using `describe` and `show table extended`.
 
 ### Under the hood
 - Initialize lift + shift for cross-db macros ([#359](https://github.com/dbt-labs/dbt-spark/pull/359))
@@ -37,7 +38,6 @@
 ### Contributors
 - [@ueshin](https://github.com/ueshin) ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
 - [@dbeatty10](https://github.com/dbeatty10) ([#359](https://github.com/dbt-labs/dbt-spark/pull/359))
-- [@francescomucio](https://github.com/francescomucio) ([#357](https://github.com/dbt-labs/dbt-spark/pull/357))
 
 
 ## dbt-spark 1.1.0 (April 28, 2022)
