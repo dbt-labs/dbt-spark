@@ -19,6 +19,7 @@ pytest-xdist
 pytest>=6.0.2
 pytz
 tox>=3.2.0
+requests
 
 # Test requirements
 sasl>=0.2.1
