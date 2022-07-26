@@ -19,6 +19,7 @@
   {%- endif %}
 
   -- build model
+
   {%- call statement('main', language=language) -%}
     {{ create_table_as(False, target_relation, compiled_code, language) }}
   {%- endcall -%}
