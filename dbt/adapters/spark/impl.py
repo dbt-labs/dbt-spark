@@ -419,7 +419,7 @@ class SparkAdapter(SQLAdapter):
         )
         if response.status_code != 200:
             raise dbt.exceptions.RuntimeException(
-                f"Error creating work_dir for python notebooks\n {response.content}"
+                f"Error creating work_dir for python notebooks\n {response.content!r}"
             )
 
         # add notebook
@@ -437,7 +437,7 @@ class SparkAdapter(SQLAdapter):
         )
         if response.status_code != 200:
             raise dbt.exceptions.RuntimeException(
-                f"Error creating python notebook.\n {response.content}"
+                f"Error creating python notebook.\n {response.content!r}"
             )
 
         # submit job
@@ -454,7 +454,7 @@ class SparkAdapter(SQLAdapter):
         )
         if submit_response.status_code != 200:
             raise dbt.exceptions.RuntimeException(
-                f"Error creating python run.\n {response.content}"
+                f"Error creating python run.\n {response.content!r}"
             )
 
         # poll until job finish
