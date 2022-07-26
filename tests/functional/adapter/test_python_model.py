@@ -3,7 +3,7 @@ import pytest
 from dbt.tests.util import run_dbt, write_file, run_dbt_and_capture
 from dbt.tests.adapter.python_model.test_python_model import BasePythonModelTests
 
-@pytest.skip("Need to supply extra config", allow_module_level=True)
+@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestPythonModelSpark(BasePythonModelTests):
     pass
 
@@ -30,8 +30,6 @@ def model(dbt, spark):
 """
 
 
-
-@pytest.skip("Need to supply extra config", allow_module_level=True)
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestChangingSchemaSpark:
     @pytest.fixture(scope="class")
