@@ -33,29 +33,12 @@ jobs:
       DBT_INVOCATION_ENV: circle
     docker:
       - image: fishtownanalytics/test-container:10
-      - image: godatadriven/spark:2
+      - image: godatadriven/spark:3.1.1
         environment:
           WAIT_FOR: localhost:5432
         command: >
           --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
           --name Thrift JDBC/ODBC Server
-          --conf spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:postgresql://localhost/metastore
-          --conf spark.hadoop.javax.jdo.option.ConnectionUserName=dbt
-          --conf spark.hadoop.javax.jdo.option.ConnectionPassword=dbt
-          --conf spark.hadoop.javax.jdo.option.ConnectionDriverName=org.postgresql.Driver
-          --conf spark.serializer=org.apache.spark.serializer.KryoSerializer
-          --conf spark.jars.packages=org.apache.hudi:hudi-spark-bundle_2.11:0.9.0
-          --conf spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension
-          --conf spark.driver.userClassPathFirst=true
-          --conf spark.hadoop.datanucleus.autoCreateTables=true
-          --conf spark.hadoop.datanucleus.schema.autoCreateTables=true
-          --conf spark.hadoop.datanucleus.fixedDatastore=false
-          --conf spark.sql.hive.convertMetastoreParquet=false
-          --hiveconf hoodie.datasource.hive_sync.use_jdbc=false
-          --hiveconf hoodie.datasource.hive_sync.mode=hms
-          --hiveconf datanucleus.schema.autoCreateAll=true
-          --hiveconf hive.metastore.schema.verification=false
-
       - image: postgres:9.6.17-alpine
         environment:
           POSTGRES_USER: dbt
@@ -80,6 +63,9 @@ jobs:
     environment:
       DBT_INVOCATION_ENV: circle
       DBT_DATABRICKS_RETRY_ALL: True
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
     docker:
       - image: fishtownanalytics/test-container:10
     steps:
@@ -95,6 +81,9 @@ jobs:
     environment:
       DBT_INVOCATION_ENV: circle
       ODBC_DRIVER: Simba # TODO: move env var to Docker image
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
     docker:
       # image based on `fishtownanalytics/test-container` w/ Simba ODBC Spark driver installed
       - image: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest

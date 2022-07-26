@@ -1,14 +1,16 @@
 {% materialization incremental, adapter='spark' -%}
   {#-- Validate early so we don't run SQL if the file_format + strategy combo is invalid --#}
   {%- set raw_file_format = config.get('file_format', default='parquet') -%}
-  {%- set raw_strategy = config.get('incremental_strategy', default='append') -%}
+  {%- set raw_strategy = config.get('incremental_strategy') or 'append' -%}
+  {%- set grant_config = config.get('grants') -%}
+
   {%- set file_format = dbt_spark_validate_get_file_format(raw_file_format) -%}
   {%- set strategy = dbt_spark_validate_get_incremental_strategy(raw_strategy, file_format) -%}
 
   {#-- Set vars --#}
   {%- set unique_key = config.get('unique_key', none) -%}
-  {%- set partition_by = config.get('partition_by', none) -%}  
-  {%- set language = config.get('language') -%}
+  {%- set partition_by = config.get('partition_by', none) -%}
+  {%- set language = model['language'] -%}
   {%- set on_schema_change = incremental_validate_on_schema_change(config.get('on_schema_change'), default='ignore') -%}
   {%- set target_relation = this -%}
   {%- set existing_relation = load_relation(this) -%}
@@ -47,7 +49,7 @@
     {%- endcall -%}
     {%- if language == 'python' -%}
       {#--
-      This is yucky.  
+      This is yucky.
       See note in dbt-spark/dbt/include/spark/macros/adapters.sql
       re: python models and temporary views.
 
@@ -58,9 +60,12 @@
       {%- endcall %}
     {%- endif -%}
   {%- endif -%}
-  
+
+  {% set should_revoke = should_revoke(existing_relation, full_refresh_mode) %}
+  {% do apply_grants(target_relation, grant_config, should_revoke) %}
+
   {% do persist_docs(target_relation, model) %}
-  
+
   {{ run_hooks(post_hooks) }}
 
   {{ return({'relations': [target_relation]}) }}

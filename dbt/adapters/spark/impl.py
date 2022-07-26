@@ -4,7 +4,9 @@ import time
 import base64
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Union, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Union
+from typing_extensions import TypeAlias
+
 import agate
 from dbt.contracts.relation import RelationType
 
@@ -12,7 +14,7 @@ import dbt
 import dbt.exceptions
 
 from dbt.adapters.base import AdapterConfig
-from dbt.adapters.base.impl import catch_as_completed
+from dbt.adapters.base.impl import catch_as_completed, log_code_execution
 from dbt.adapters.base.meta import available
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
@@ -25,7 +27,7 @@ from dbt.utils import executor
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_MACRO_NAME = "get_columns_in_relation"
+GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
 DROP_RELATION_MACRO_NAME = "drop_relation"
@@ -78,10 +80,10 @@ class SparkAdapter(SQLAdapter):
         "_hoodie_file_name",
     ]
 
-    Relation = SparkRelation
-    Column = SparkColumn
-    ConnectionManager = SparkConnectionManager
-    AdapterSpecificConfigs = SparkConfig
+    Relation: TypeAlias = SparkRelation
+    Column: TypeAlias = SparkColumn
+    ConnectionManager: TypeAlias = SparkConnectionManager
+    AdapterSpecificConfigs: TypeAlias = SparkConfig
 
     @classmethod
     def date_function(cls) -> str:
@@ -163,7 +165,7 @@ class SparkAdapter(SQLAdapter):
 
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
-            database = None
+            database = None  # type: ignore
 
         return super().get_relation(database, schema, identifier)
 
@@ -178,7 +180,7 @@ class SparkAdapter(SQLAdapter):
 
         # Remove rows that start with a hash, they are comments
         rows = [row for row in raw_rows[0:pos] if not row["col_name"].startswith("#")]
-        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1:]}
+        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1 :]}
 
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
@@ -225,7 +227,9 @@ class SparkAdapter(SQLAdapter):
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
             try:
-                rows: List[agate.Row] = super().get_columns_in_relation(relation)
+                rows: List[agate.Row] = self.execute_macro(
+                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+                )
                 columns = self.parse_describe_extended(relation, rows)
             except dbt.exceptions.RuntimeException as e:
                 # spark would throw error when table doesn't exist, where other
@@ -384,7 +388,8 @@ class SparkAdapter(SQLAdapter):
             conn.transaction_open = False
 
     @available.parse_none
-    def submit_python_job(self, parsed_model:dict, compiled_code: str, timeout=None):
+    @log_code_execution
+    def submit_python_job(self, parsed_model: dict, compiled_code: str, timeout=None):
         # TODO improve the typing here.  N.B. Jinja returns a `jinja2.runtime.Undefined` instead
         # of `None` which evaluates to True!
 
@@ -392,7 +397,7 @@ class SparkAdapter(SQLAdapter):
 
         # assuming that for python job running over 1 day user would mannually overwrite this
         schema = getattr(parsed_model, "schema", self.config.credentials.schema)
-        identifier = parsed_model['alias']
+        identifier = parsed_model["alias"]
         if not timeout:
             timeout = 60 * 60 * 24
         if timeout <= 0:
@@ -414,7 +419,7 @@ class SparkAdapter(SQLAdapter):
         )
         if response.status_code != 200:
             raise dbt.exceptions.RuntimeException(
-                f"Error creating work_dir for python notebooks\n {response.content}"
+                f"Error creating work_dir for python notebooks\n {response.content!r}"
             )
 
         # add notebook
@@ -432,7 +437,7 @@ class SparkAdapter(SQLAdapter):
         )
         if response.status_code != 200:
             raise dbt.exceptions.RuntimeException(
-                f"Error creating python notebook.\n {response.content}"
+                f"Error creating python notebook.\n {response.content!r}"
             )
 
         # submit job
@@ -449,7 +454,7 @@ class SparkAdapter(SQLAdapter):
         )
         if submit_response.status_code != 200:
             raise dbt.exceptions.RuntimeException(
-                f"Error creating python run.\n {response.content}"
+                f"Error creating python run.\n {response.content!r}"
             )
 
         # poll until job finish
@@ -466,7 +471,7 @@ class SparkAdapter(SQLAdapter):
             )
             json_resp = resp.json()
             state = json_resp["state"]["life_cycle_state"]
-            logger.debug(f"Polling.... in state: {state}")
+            # logger.debug(f"Polling.... in state: {state}")
         if state != "TERMINATED":
             raise dbt.exceptions.RuntimeException(
                 "python model run ended in state"
@@ -490,6 +495,22 @@ class SparkAdapter(SQLAdapter):
             )
         return self.connections.get_response(None)
 
+    def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
+        grants_dict: Dict[str, List[str]] = {}
+        for row in grants_table:
+            grantee = row["Principal"]
+            privilege = row["ActionType"]
+            object_type = row["ObjectType"]
+
+            # we only want to consider grants on this object
+            # (view or table both appear as 'TABLE')
+            # and we don't want to consider the OWN privilege
+            if object_type == "TABLE" and privilege != "OWN":
+                if privilege in grants_dict.keys():
+                    grants_dict[privilege].append(grantee)
+                else:
+                    grants_dict.update({privilege: [grantee]})
+        return grants_dict
 
 
 # spark does something interesting with joins when both tables have the same
