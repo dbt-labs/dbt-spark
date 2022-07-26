@@ -1,18 +1,47 @@
-.hive-metastore/
-.spark-warehouse/
-*.egg-info
-env/
-*.pyc
+# Byte-compiled / optimized / DLL files
 __pycache__
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+env*/
+dbt_env/
+dist/
+*.egg-info
+logs/
+
+
+# Unit test
 .tox/
 .env
+test.env
+
+
+# Django stuff
+*.log
+
+# Mypy
+*.pytest_cache/
+
+# Vim
+*.sw*
+
+# Pyenv
+.python-version
+
+# pycharm
 .idea/
-build/
-dist/
+
+# MacOS
+.DS_Store
+
+# vscode
+.vscode
+
+# other
+.hive-metastore/
+.spark-warehouse/
 dbt-integration-tests
 test/integration/.user.yml
-.DS_Store
-test.env
-.vscode
-*.log
-logs/

@@ -4,7 +4,9 @@ import time
 import base64
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Union, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Union
+from typing_extensions import TypeAlias
+
 import agate
 from dbt.contracts.relation import RelationType
 
@@ -25,7 +27,7 @@ from dbt.utils import executor
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_MACRO_NAME = "get_columns_in_relation"
+GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
 DROP_RELATION_MACRO_NAME = "drop_relation"
@@ -78,10 +80,10 @@ class SparkAdapter(SQLAdapter):
         "_hoodie_file_name",
     ]
 
-    Relation = SparkRelation
-    Column = SparkColumn
-    ConnectionManager = SparkConnectionManager
-    AdapterSpecificConfigs = SparkConfig
+    Relation: TypeAlias = SparkRelation
+    Column: TypeAlias = SparkColumn
+    ConnectionManager: TypeAlias = SparkConnectionManager
+    AdapterSpecificConfigs: TypeAlias = SparkConfig
 
     @classmethod
     def date_function(cls) -> str:
@@ -225,7 +227,9 @@ class SparkAdapter(SQLAdapter):
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
             try:
-                rows: List[agate.Row] = super().get_columns_in_relation(relation)
+                rows: List[agate.Row] = self.execute_macro(
+                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+                )
                 columns = self.parse_describe_extended(relation, rows)
             except dbt.exceptions.RuntimeException as e:
                 # spark would throw error when table doesn't exist, where other
@@ -490,6 +494,24 @@ class SparkAdapter(SQLAdapter):
                 f"{json_run_output['error_trace']}"
             )
         return self.connections.get_response(None)
+
+    def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
+        grants_dict: Dict[str, List[str]] = {}
+        for row in grants_table:
+            grantee = row["Principal"]
+            privilege = row["ActionType"]
+            object_type = row["ObjectType"]
+
+            # we only want to consider grants on this object
+            # (view or table both appear as 'TABLE')
+            # and we don't want to consider the OWN privilege
+            if object_type == "TABLE" and privilege != "OWN":
+                if privilege in grants_dict.keys():
+                    grants_dict[privilege].append(grantee)
+                else:
+                    grants_dict.update({privilege: [grantee]})
+        return grants_dict
+
 
 
 # spark does something interesting with joins when both tables have the same

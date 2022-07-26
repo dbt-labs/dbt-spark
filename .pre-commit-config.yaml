@@ -1,8 +1,7 @@
-# Configuration for pre-commit hooks (see https://pre-commit.com/).
-# Eventually the hooks described here will be run as tests before merging each PR.
+# For more on configuring pre-commit hooks (see https://pre-commit.com/)
 
 # TODO: remove global exclusion of tests when testing overhaul is complete
-exclude: ^test/
+exclude: '^tests/.*'
 
 # Force all unspecified python hooks to run python 3.8
 default_language_version:
@@ -17,19 +16,19 @@ repos:
   - id: check-json
   - id: end-of-file-fixer
   - id: trailing-whitespace
-    exclude_types:
-      - "markdown"
   - id: check-case-conflict
 - repo: https://github.com/psf/black
-  rev: 22.3.0
+  rev: 21.12b0
   hooks:
   - id: black
+    additional_dependencies: ['click==8.0.4']
     args:
     - "--line-length=99"
     - "--target-version=py38"
   - id: black
     alias: black-check
     stages: [manual]
+    additional_dependencies: ['click==8.0.4']
     args:
     - "--line-length=99"
     - "--target-version=py38"
@@ -43,7 +42,7 @@ repos:
     alias: flake8-check
     stages: [manual]
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v0.942
+  rev: v0.950
   hooks:
   - id: mypy
     # N.B.: Mypy is... a bit fragile.
@@ -52,17 +51,16 @@ repos:
     # environment instead of a pre-commit isolated one.  This is needed
     # to ensure mypy correctly parses the project.
 
-    # It may cause trouble
-    # in that it adds environmental variables out of our control to the
-    # mix.  Unfortunately, there's nothing we can do about per pre-commit's
-    # author.
+    # It may cause trouble in that it adds environmental variables out
+    # of our control to the mix.  Unfortunately, there's nothing we can
+    # do about per pre-commit's author.
     # See https://github.com/pre-commit/pre-commit/issues/730 for details.
-    args: [--show-error-codes]
-    files: ^core/dbt/
+    args: [--show-error-codes, --ignore-missing-imports]
+    files: ^dbt/adapters/.*
     language: system
   - id: mypy
     alias: mypy-check
     stages: [manual]
-    args: [--show-error-codes, --pretty]
-    files: ^core/dbt/
+    args: [--show-error-codes, --pretty, --ignore-missing-imports]
+    files: ^dbt/adapters
     language: system

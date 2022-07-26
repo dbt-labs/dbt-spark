@@ -18,7 +18,6 @@ on:
   push:
     branches:
       - "main"
-      - "develop"
       - "*.latest"
       - "releases/*"
   pull_request:
@@ -37,18 +36,10 @@ defaults:
 
 jobs:
   code-quality:
-    name: ${{ matrix.toxenv }}
+    name: code-quality
 
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [flake8]
-
-    env:
-      TOXENV: ${{ matrix.toxenv }}
-      PYTEST_ADDOPTS: "-v --color=yes"
+    timeout-minutes: 10
 
     steps:
       - name: Check out the repository
@@ -58,28 +49,35 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v2
-        with: 
+        with:
           python-version: '3.8'
 
       - name: Install python dependencies
         run: |
           sudo apt-get install libsasl2-dev
-          pip install --user --upgrade pip
-          pip install tox
-          pip --version
-          tox --version
-      - name: Run tox
-        run: tox
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install pre-commit
+          pre-commit --version
+          python -m pip install mypy==0.942
+          mypy --version
+          python -m pip install -r requirements.txt
+          python -m pip install -r dev-requirements.txt
+          dbt --version
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files --show-diff-on-failure
 
   unit:
     name: unit test / python ${{ matrix.python-version }}
 
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8] # TODO: support unit testing for python 3.9 (https://github.com/dbt-labs/dbt/issues/3689)
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     env:
       TOXENV: "unit"
@@ -88,8 +86,6 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
-        with:
-          persist-credentials: false
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -99,9 +95,9 @@ jobs:
       - name: Install python dependencies
         run: |
           sudo apt-get install libsasl2-dev
-          pip install --user --upgrade pip
-          pip install tox
-          pip --version
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install tox
           tox --version
       - name: Run tox
         run: tox
@@ -128,8 +124,6 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
-        with:
-          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -138,9 +132,10 @@ jobs:
 
       - name: Install python dependencies
         run: |
-          pip install --user --upgrade pip
-          pip install --upgrade setuptools wheel twine check-wheel-contents
-          pip --version
+          python -m pip install --user --upgrade pip
+          python -m pip install --upgrade setuptools wheel twine check-wheel-contents
+          python -m pip --version
+
       - name: Build distributions
         run: ./scripts/build-dist.sh
 
@@ -153,7 +148,7 @@ jobs:
       - name: Check wheel contents
         run: |
           check-wheel-contents dist/*.whl --ignore W007,W008
-          
+
       - name: Check if this is an alpha version
         id: check-is-alpha
         run: |
@@ -179,7 +174,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
       - name: Set up Python ${{ matrix.python-version }}
@@ -189,9 +184,9 @@ jobs:
 
       - name: Install python dependencies
         run: |
-          pip install --user --upgrade pip
-          pip install --upgrade wheel
-          pip --version
+          python -m pip install --user --upgrade pip
+          python -m pip install --upgrade wheel
+          python -m pip --version
       - uses: actions/download-artifact@v2
         with:
           name: dist
@@ -202,13 +197,13 @@ jobs:
 
       - name: Install wheel distributions
         run: |
-          find ./dist/*.whl -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+          find ./dist/*.whl -maxdepth 1 -type f | xargs python -m pip install --force-reinstall --find-links=dist/
       - name: Check wheel distributions
         run: |
           dbt --version
       - name: Install source distributions
         run: |
-          find ./dist/*.gz -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+          find ./dist/*.gz -maxdepth 1 -type f | xargs python -m pip install --force-reinstall --find-links=dist/
       - name: Check source distributions
         run: |
           dbt --version

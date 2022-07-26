@@ -26,6 +26,7 @@ import sqlparams
 from hologram.helpers import StrEnum
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
+
 try:
     from thrift.transport.TSSLSocket import TSSLSocket
     import thrift
@@ -33,11 +34,7 @@ try:
     import sasl
     import thrift_sasl
 except ImportError:
-    TSSLSocket = None
-    thrift = None
-    ssl = None
-    sasl = None
-    thrift_sasl = None
+    pass  # done deliberately: setting modules to None explicitly violates MyPy contracts by degrading type semantics
 
 import base64
 import time
@@ -52,10 +49,10 @@ def _build_odbc_connnection_string(**kwargs) -> str:
 
 
 class SparkConnectionMethod(StrEnum):
-    THRIFT = 'thrift'
-    HTTP = 'http'
-    ODBC = 'odbc'
-    SESSION = 'session'
+    THRIFT = "thrift"
+    HTTP = "http"
+    ODBC = "odbc"
+    SESSION = "session"
 
 
 @dataclass
@@ -71,7 +68,7 @@ class SparkCredentials(Credentials):
     port: int = 443
     auth: Optional[str] = None
     kerberos_service_name: Optional[str] = None
-    organization: str = '0'
+    organization: str = "0"
     connect_retries: int = 0
     connect_timeout: int = 10
     use_ssl: bool = False
@@ -81,27 +78,24 @@ class SparkCredentials(Credentials):
     @classmethod
     def __pre_deserialize__(cls, data):
         data = super().__pre_deserialize__(data)
-        if 'database' not in data:
-            data['database'] = None
+        if "database" not in data:
+            data["database"] = None
         return data
 
     def __post_init__(self):
         # spark classifies database and schema as the same thing
-        if (
-            self.database is not None and
-            self.database != self.schema
-        ):
+        if self.database is not None and self.database != self.schema:
             raise dbt.exceptions.RuntimeException(
-                f'    schema: {self.schema} \n'
-                f'    database: {self.database} \n'
-                f'On Spark, database must be omitted or have the same value as'
-                f' schema.'
+                f"    schema: {self.schema} \n"
+                f"    database: {self.database} \n"
+                f"On Spark, database must be omitted or have the same value as"
+                f" schema."
             )
         self.database = None
 
         if self.method == SparkConnectionMethod.ODBC:
             try:
-                import pyodbc    # noqa: F401
+                import pyodbc  # noqa: F401
             except ImportError as e:
                 raise dbt.exceptions.RuntimeException(
                     f"{self.method} connection method requires "
@@ -111,22 +105,16 @@ class SparkCredentials(Credentials):
                     f"ImportError({e.msg})"
                 ) from e
 
-        if (
-            self.method == SparkConnectionMethod.ODBC and
-            self.cluster and
-            self.endpoint
-        ):
+        if self.method == SparkConnectionMethod.ODBC and self.cluster and self.endpoint:
             raise dbt.exceptions.RuntimeException(
                 "`cluster` and `endpoint` cannot both be set when"
                 f" using {self.method} method to connect to Spark"
             )
 
         if (
-            self.method == SparkConnectionMethod.HTTP or
-            self.method == SparkConnectionMethod.THRIFT
-        ) and not (
-            ThriftState and THttpClient and hive
-        ):
+            self.method == SparkConnectionMethod.HTTP
+            or self.method == SparkConnectionMethod.THRIFT
+        ) and not (ThriftState and THttpClient and hive):
             raise dbt.exceptions.RuntimeException(
                 f"{self.method} connection method requires "
                 "additional dependencies. \n"
@@ -148,19 +136,19 @@ class SparkCredentials(Credentials):
 
     @property
     def type(self):
-        return 'spark'
+        return "spark"
 
     @property
     def unique_field(self):
         return self.host
 
     def _connection_keys(self):
-        return ('host', 'port', 'cluster',
-                'endpoint', 'schema', 'organization')
+        return ("host", "port", "cluster", "endpoint", "schema", "organization")
 
 
 class PyhiveConnectionWrapper(object):
     """Wrap a Spark connection in a way that no-ops transactions"""
+
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html  # noqa
 
     def __init__(self, handle):
@@ -178,9 +166,7 @@ class PyhiveConnectionWrapper(object):
             try:
                 self._cursor.cancel()
             except EnvironmentError as exc:
-                logger.debug(
-                    "Exception while cancelling query: {}".format(exc)
-                )
+                logger.debug("Exception while cancelling query: {}".format(exc))
 
     def close(self):
         if self._cursor:
@@ -189,9 +175,7 @@ class PyhiveConnectionWrapper(object):
             try:
                 self._cursor.close()
             except EnvironmentError as exc:
-                logger.debug(
-                    "Exception while closing cursor: {}".format(exc)
-                )
+                logger.debug("Exception while closing cursor: {}".format(exc))
         self.handle.close()
 
     def rollback(self, *args, **kwargs):
@@ -247,23 +231,20 @@ class PyhiveConnectionWrapper(object):
             dbt.exceptions.raise_database_error(poll_state.errorMessage)
 
         elif state not in STATE_SUCCESS:
-            status_type = ThriftState._VALUES_TO_NAMES.get(
-                state,
-                'Unknown<{!r}>'.format(state))
+            status_type = ThriftState._VALUES_TO_NAMES.get(state, "Unknown<{!r}>".format(state))
 
-            dbt.exceptions.raise_database_error(
-                "Query failed with status: {}".format(status_type))
+            dbt.exceptions.raise_database_error("Query failed with status: {}".format(status_type))
 
         logger.debug("Poll status: {}, query complete".format(state))
 
     @classmethod
     def _fix_binding(cls, value):
         """Convert complex datatypes to primitives that can be loaded by
-           the Spark driver"""
+        the Spark driver"""
         if isinstance(value, NUMBERS):
             return float(value)
         elif isinstance(value, datetime):
-            return value.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            return value.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         else:
             return value
 
@@ -273,7 +254,6 @@ class PyhiveConnectionWrapper(object):
 
 
 class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
-
     def execute(self, sql, bindings=None):
         if sql.strip().endswith(";"):
             sql = sql.strip()[:-1]
@@ -282,19 +262,17 @@ class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
             self._cursor.execute(sql)
         else:
             # pyodbc only supports `qmark` sql params!
-            query = sqlparams.SQLParams('format', 'qmark')
+            query = sqlparams.SQLParams("format", "qmark")
             sql, bindings = query.format(sql, bindings)
             self._cursor.execute(sql, *bindings)
 
 
 class SparkConnectionManager(SQLConnectionManager):
-    TYPE = 'spark'
+    TYPE = "spark"
 
     SPARK_CLUSTER_HTTP_PATH = "/sql/protocolv1/o/{organization}/{cluster}"
     SPARK_SQL_ENDPOINT_HTTP_PATH = "/sql/1.0/endpoints/{endpoint}"
-    SPARK_CONNECTION_URL = (
-        "{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
-    )
+    SPARK_CONNECTION_URL = "{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
 
     @contextmanager
     def exception_handler(self, sql):
@@ -308,7 +286,7 @@ class SparkConnectionManager(SQLConnectionManager):
                 raise
 
             thrift_resp = exc.args[0]
-            if hasattr(thrift_resp, 'status'):
+            if hasattr(thrift_resp, "status"):
                 msg = thrift_resp.status.errorMessage
                 raise dbt.exceptions.RuntimeException(msg)
             else:
@@ -320,10 +298,8 @@ class SparkConnectionManager(SQLConnectionManager):
     @classmethod
     def get_response(cls, cursor) -> AdapterResponse:
         # https://github.com/dbt-labs/dbt-spark/issues/142
-        message = 'OK'
-        return AdapterResponse(
-            _message=message
-        )
+        message = "OK"
+        return AdapterResponse(_message=message)
 
     # No transactions on Spark....
     def add_begin_query(self, *args, **kwargs):
@@ -346,12 +322,13 @@ class SparkConnectionManager(SQLConnectionManager):
             if not hasattr(creds, key):
                 raise dbt.exceptions.DbtProfileError(
                     "The config '{}' is required when using the {} method"
-                    " to connect to Spark".format(key, method))
+                    " to connect to Spark".format(key, method)
+                )
 
     @classmethod
     def open(cls, connection):
         if connection.state == ConnectionState.OPEN:
-            logger.debug('Connection is already open, skipping open.')
+            logger.debug("Connection is already open, skipping open.")
             return connection
 
         creds = connection.credentials
@@ -360,19 +337,18 @@ class SparkConnectionManager(SQLConnectionManager):
         for i in range(1 + creds.connect_retries):
             try:
                 if creds.method == SparkConnectionMethod.HTTP:
-                    cls.validate_creds(creds, ['token', 'host', 'port',
-                                               'cluster', 'organization'])
+                    cls.validate_creds(creds, ["token", "host", "port", "cluster", "organization"])
 
                     # Prepend https:// if it is missing
                     host = creds.host
-                    if not host.startswith('https://'):
-                        host = 'https://' + creds.host
+                    if not host.startswith("https://"):
+                        host = "https://" + creds.host
 
                     conn_url = cls.SPARK_CONNECTION_URL.format(
                         host=host,
                         port=creds.port,
                         organization=creds.organization,
-                        cluster=creds.cluster
+                        cluster=creds.cluster,
                     )
 
                     logger.debug("connection url: {}".format(conn_url))
@@ -381,15 +357,12 @@ class SparkConnectionManager(SQLConnectionManager):
 
                     raw_token = "token:{}".format(creds.token).encode()
                     token = base64.standard_b64encode(raw_token).decode()
-                    transport.setCustomHeaders({
-                        'Authorization': 'Basic {}'.format(token)
-                    })
+                    transport.setCustomHeaders({"Authorization": "Basic {}".format(token)})
 
                     conn = hive.connect(thrift_transport=transport)
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.THRIFT:
-                    cls.validate_creds(creds,
-                                       ['host', 'port', 'user', 'schema'])
+                    cls.validate_creds(creds, ["host", "port", "user", "schema"])
 
                     if creds.use_ssl:
                         transport = build_ssl_transport(
@@ -397,26 +370,33 @@ class SparkConnectionManager(SQLConnectionManager):
                             port=creds.port,
                             username=creds.user,
                             auth=creds.auth,
-                            kerberos_service_name=creds.kerberos_service_name)
+                            kerberos_service_name=creds.kerberos_service_name,
+                        )
                         conn = hive.connect(thrift_transport=transport)
                     else:
-                        conn = hive.connect(host=creds.host,
-                                            port=creds.port,
-                                            username=creds.user,
-                                            auth=creds.auth,
-                                            kerberos_service_name=creds.kerberos_service_name)  # noqa
+                        conn = hive.connect(
+                            host=creds.host,
+                            port=creds.port,
+                            username=creds.user,
+                            auth=creds.auth,
+                            kerberos_service_name=creds.kerberos_service_name,
+                        )  # noqa
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
                     if creds.cluster is not None:
-                        required_fields = ['driver', 'host', 'port', 'token',
-                                           'organization', 'cluster']
+                        required_fields = [
+                            "driver",
+                            "host",
+                            "port",
+                            "token",
+                            "organization",
+                            "cluster",
+                        ]
                         http_path = cls.SPARK_CLUSTER_HTTP_PATH.format(
-                            organization=creds.organization,
-                            cluster=creds.cluster
+                            organization=creds.organization, cluster=creds.cluster
                         )
                     elif creds.endpoint is not None:
-                        required_fields = ['driver', 'host', 'port', 'token',
-                                           'endpoint']
+                        required_fields = ["driver", "host", "port", "token", "endpoint"]
                         http_path = cls.SPARK_SQL_ENDPOINT_HTTP_PATH.format(
                             endpoint=creds.endpoint
                         )
@@ -429,13 +409,12 @@ class SparkConnectionManager(SQLConnectionManager):
                     cls.validate_creds(creds, required_fields)
 
                     dbt_spark_version = __version__.version
-                    user_agent_entry = f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
+                    user_agent_entry = (
+                        f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
+                    )
 
                     # http://simba.wpengine.com/products/Spark/doc/ODBC_InstallGuide/unix/content/odbc/hi/configuring/serverside.htm
-                    ssp = {
-                        f"SSP_{k}": f"{{{v}}}"
-                        for k, v in creds.server_side_parameters.items()
-                    }
+                    ssp = {f"SSP_{k}": f"{{{v}}}" for k, v in creds.server_side_parameters.items()}
 
                     # https://www.simba.com/products/Spark/doc/v2/ODBC_InstallGuide/unix/content/odbc/options/driver.htm
                     connection_str = _build_odbc_connnection_string(
@@ -461,6 +440,7 @@ class SparkConnectionManager(SQLConnectionManager):
                         Connection,
                         SessionConnectionWrapper,
                     )
+
                     handle = SessionConnectionWrapper(Connection())
                 else:
                     raise dbt.exceptions.DbtProfileError(
@@ -472,9 +452,9 @@ class SparkConnectionManager(SQLConnectionManager):
                 if isinstance(e, EOFError):
                     # The user almost certainly has invalid credentials.
                     # Perhaps a token expired, or something
-                    msg = 'Failed to connect'
+                    msg = "Failed to connect"
                     if creds.token is not None:
-                        msg += ', is your token valid?'
+                        msg += ", is your token valid?"
                     raise dbt.exceptions.FailedToConnectException(msg) from e
                 retryable_message = _is_retryable_error(e)
                 if retryable_message and creds.connect_retries > 0:
@@ -496,9 +476,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     logger.warning(msg)
                     time.sleep(creds.connect_timeout)
                 else:
-                    raise dbt.exceptions.FailedToConnectException(
-                        'failed to connect'
-                    ) from e
+                    raise dbt.exceptions.FailedToConnectException("failed to connect") from e
         else:
             raise exc
 
@@ -507,56 +485,50 @@ class SparkConnectionManager(SQLConnectionManager):
         return connection
 
 
-def build_ssl_transport(host, port, username, auth,
-                        kerberos_service_name, password=None):
+def build_ssl_transport(host, port, username, auth, kerberos_service_name, password=None):
     transport = None
     if port is None:
         port = 10000
     if auth is None:
-        auth = 'NONE'
+        auth = "NONE"
     socket = TSSLSocket(host, port, cert_reqs=ssl.CERT_NONE)
-    if auth == 'NOSASL':
+    if auth == "NOSASL":
         # NOSASL corresponds to hive.server2.authentication=NOSASL
         # in hive-site.xml
         transport = thrift.transport.TTransport.TBufferedTransport(socket)
-    elif auth in ('LDAP', 'KERBEROS', 'NONE', 'CUSTOM'):
+    elif auth in ("LDAP", "KERBEROS", "NONE", "CUSTOM"):
         # Defer import so package dependency is optional
-        if auth == 'KERBEROS':
+        if auth == "KERBEROS":
             # KERBEROS mode in hive.server2.authentication is GSSAPI
             # in sasl library
-            sasl_auth = 'GSSAPI'
+            sasl_auth = "GSSAPI"
         else:
-            sasl_auth = 'PLAIN'
+            sasl_auth = "PLAIN"
             if password is None:
                 # Password doesn't matter in NONE mode, just needs
                 # to be nonempty.
-                password = 'x'
+                password = "x"
 
         def sasl_factory():
             sasl_client = sasl.Client()
-            sasl_client.setAttr('host', host)
-            if sasl_auth == 'GSSAPI':
-                sasl_client.setAttr('service', kerberos_service_name)
-            elif sasl_auth == 'PLAIN':
-                sasl_client.setAttr('username', username)
-                sasl_client.setAttr('password', password)
+            sasl_client.setAttr("host", host)
+            if sasl_auth == "GSSAPI":
+                sasl_client.setAttr("service", kerberos_service_name)
+            elif sasl_auth == "PLAIN":
+                sasl_client.setAttr("username", username)
+                sasl_client.setAttr("password", password)
             else:
                 raise AssertionError
             sasl_client.init()
             return sasl_client
 
-        transport = thrift_sasl.TSaslClientTransport(sasl_factory,
-                                                     sasl_auth, socket)
+        transport = thrift_sasl.TSaslClientTransport(sasl_factory, sasl_auth, socket)
     return transport
 
 
-def _is_retryable_error(exc: Exception) -> Optional[str]:
-    message = getattr(exc, 'message', None)
-    if message is None:
-        return None
-    message = message.lower()
-    if 'pending' in message:
-        return exc.message
-    if 'temporarily_unavailable' in message:
-        return exc.message
-    return None
+def _is_retryable_error(exc: Exception) -> str:
+    message = str(exc).lower()
+    if "pending" in message or "temporarily_unavailable" in message:
+        return str(exc)
+    else:
+        return ""

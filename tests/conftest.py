@@ -8,7 +8,7 @@ def pytest_addoption(parser):
     parser.addoption("--profile", action="store", default="apache_spark", type=str)
 
 
-# Using @pytest.mark.skip_adapter('apache_spark') uses the 'skip_by_adapter_type'
+# Using @pytest.mark.skip_profile('apache_spark') uses the 'skip_by_profile_type'
 # autouse fixture below
 def pytest_configure(config):
     config.addinivalue_line(
@@ -109,4 +109,4 @@ def skip_by_profile_type(request):
     if request.node.get_closest_marker("skip_profile"):
         for skip_profile_type in request.node.get_closest_marker("skip_profile").args:
             if skip_profile_type == profile_type:
-                pytest.skip("skipped on '{profile_type}' profile")
+                pytest.skip(f"skipped on '{profile_type}' profile")

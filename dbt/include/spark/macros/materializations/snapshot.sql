@@ -32,7 +32,7 @@
 
 {% macro spark_build_snapshot_staging_table(strategy, sql, target_relation) %}
     {% set tmp_identifier = target_relation.identifier ~ '__dbt_tmp' %}
-                                
+
     {%- set tmp_relation = api.Relation.create(identifier=tmp_identifier,
                                                   schema=target_relation.schema,
                                                   database=none,
@@ -75,6 +75,7 @@
   {%- set strategy_name = config.get('strategy') -%}
   {%- set unique_key = config.get('unique_key') %}
   {%- set file_format = config.get('file_format', 'parquet') -%}
+  {%- set grant_config = config.get('grants') -%}
 
   {% set target_relation_exists, target_relation = get_or_create_relation(
           database=none,
@@ -162,6 +163,9 @@
   {% call statement('main') %}
       {{ final_sql }}
   {% endcall %}
+
+  {% set should_revoke = should_revoke(target_relation_exists, full_refresh_mode) %}
+  {% do apply_grants(target_relation, grant_config, should_revoke) %}
 
   {% do persist_docs(target_relation, model) %}
 
