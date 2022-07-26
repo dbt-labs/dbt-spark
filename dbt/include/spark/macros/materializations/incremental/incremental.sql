@@ -10,7 +10,7 @@
   {#-- Set vars --#}
   {%- set unique_key = config.get('unique_key', none) -%}
   {%- set partition_by = config.get('partition_by', none) -%}
-  {%- set language = model['alias'] -%}
+  {%- set language = model['language'] -%}
   {%- set on_schema_change = incremental_validate_on_schema_change(config.get('on_schema_change'), default='ignore') -%}
   {%- set target_relation = this -%}
   {%- set existing_relation = load_relation(this) -%}
