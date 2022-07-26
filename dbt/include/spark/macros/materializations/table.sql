@@ -22,7 +22,7 @@
   {%- call statement('main', language=language) -%}
     {{ create_table_as(False, target_relation, compiled_code, language) }}
   {%- endcall -%}
-  
+
   {% set should_revoke = should_revoke(old_relation, full_refresh_mode=True) %}
   {% do apply_grants(target_relation, grant_config, should_revoke) %}
 

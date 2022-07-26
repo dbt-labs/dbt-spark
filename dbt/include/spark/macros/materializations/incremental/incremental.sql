@@ -9,7 +9,7 @@
 
   {#-- Set vars --#}
   {%- set unique_key = config.get('unique_key', none) -%}
-  {%- set partition_by = config.get('partition_by', none) -%}  
+  {%- set partition_by = config.get('partition_by', none) -%}
   {%- set language = model['alias'] -%}
   {%- set on_schema_change = incremental_validate_on_schema_change(config.get('on_schema_change'), default='ignore') -%}
   {%- set target_relation = this -%}
@@ -49,7 +49,7 @@
     {%- endcall -%}
     {%- if language == 'python' -%}
       {#--
-      This is yucky.  
+      This is yucky.
       See note in dbt-spark/dbt/include/spark/macros/adapters.sql
       re: python models and temporary views.
 
@@ -63,7 +63,7 @@
 
   {% set should_revoke = should_revoke(existing_relation, full_refresh_mode) %}
   {% do apply_grants(target_relation, grant_config, should_revoke) %}
-  
+
   {% do persist_docs(target_relation, model) %}
 
   {{ run_hooks(post_hooks) }}

@@ -165,7 +165,7 @@ class SparkAdapter(SQLAdapter):
 
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
-            database = None
+            database = None  # type: ignore
 
         return super().get_relation(database, schema, identifier)
 
@@ -180,7 +180,7 @@ class SparkAdapter(SQLAdapter):
 
         # Remove rows that start with a hash, they are comments
         rows = [row for row in raw_rows[0:pos] if not row["col_name"].startswith("#")]
-        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1:]}
+        metadata = {col["col_name"]: col["data_type"] for col in raw_rows[pos + 1 :]}
 
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
@@ -511,7 +511,6 @@ class SparkAdapter(SQLAdapter):
                 else:
                     grants_dict.update({privilege: [grantee]})
         return grants_dict
-
 
 
 # spark does something interesting with joins when both tables have the same
