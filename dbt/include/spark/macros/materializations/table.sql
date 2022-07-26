@@ -1,5 +1,5 @@
 {% materialization table, adapter = 'spark' %}
-  {%- set language = config.get('language') -%}
+  {%- set language = model['language'] -%}
   {%- set identifier = model['alias'] -%}
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
   {%- set target_relation = api.Relation.create(identifier=identifier,
