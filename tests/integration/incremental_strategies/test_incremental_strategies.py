@@ -60,10 +60,11 @@ class TestInsertOverwrite(TestIncrementalStrategies):
     def test_insert_overwrite_apache_spark(self):
         self.run_and_test()
 
-    # https://github.com/dbt-labs/dbt-spark/issues/410 tracks it
-    # @use_profile("databricks_cluster")
-    # def test_insert_overwrite_databricks_cluster(self):
-    #     self.run_and_test()
+    # This test requires settings on the test cluster
+    # more info at https://docs.getdbt.com/reference/resource-configs/spark-configs#the-insert_overwrite-strategy
+    @use_profile("databricks_cluster")
+    def test_insert_overwrite_databricks_cluster(self):
+        self.run_and_test()
 
 
 class TestDeltaStrategies(TestIncrementalStrategies):

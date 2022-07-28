@@ -1,11 +1,17 @@
 import os
 import pytest
 from dbt.tests.util import run_dbt, write_file, run_dbt_and_capture
-from dbt.tests.adapter.python_model.test_python_model import BasePythonModelTests
+from dbt.tests.adapter.python_model.test_python_model import BasePythonModelTests, BasePythonIncrementalTests
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestPythonModelSpark(BasePythonModelTests):
     pass
+
+@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+class TestPythonIncrementalModelSpark(BasePythonIncrementalTests):
+    @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {}
 
 
 models__simple_python_model = """
