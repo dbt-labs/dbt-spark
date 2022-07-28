@@ -1,4 +1,6 @@
 PyHive[hive]>=0.6.0,<0.7.0
+requests[python]>=2.28.1
+
 pyodbc==4.0.32
 sqlparams>=3.0.0
 thrift>=0.13.0
