@@ -45,3 +45,5 @@ test.env
 .spark-warehouse/
 dbt-integration-tests
 test/integration/.user.yml
+
+.env

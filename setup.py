@@ -17,13 +17,15 @@ setup(
     long_description_content_type="text/markdown",
     author="Cloudera",
     author_email="innovation-feedback@cloudera.com",
-    url="https://github.com/cloudera/dbt-impala",
+    url="https://github.com/cloudera/dbt-spark-livy",
     packages=find_namespace_packages(include=["dbt", "dbt.*"]),
+    data_files=[('', ['dbt/adapters/spark_livy/.env'])],
     include_package_data=True,
     install_requires=[
         "dbt-core>=1.1.0",
         "pyspark",
-        "sqlparams"
+        "sqlparams",
+        "python-decouple>=3.6"
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
