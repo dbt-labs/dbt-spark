@@ -9,7 +9,7 @@
 - Pin `pyodbc` to version 4.0.32 to prevent overwriting `libodbc.so` and `libltdl.so` on Linux ([#397](https://github.com/dbt-labs/dbt-spark/issues/397/), [#398](https://github.com/dbt-labs/dbt-spark/pull/398/))
 
 ### Under the hood
-- Support core incremental refactor ([#394](https://github.com/dbt-labs/dbt-spark/issues/394)) 
+- Support core incremental refactor ([#394](https://github.com/dbt-labs/dbt-spark/issues/394))
 
 ### Contributors
 - [@barberscott](https://github.com/barberscott)  ([#398](https://github.com/dbt-labs/dbt-spark/pull/398/))
