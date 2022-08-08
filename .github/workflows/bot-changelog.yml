@@ -59,4 +59,3 @@ jobs:
         changie_kind: ${{ matrix.changie_kind }}
         label: ${{ matrix.label }}
         custom_changelog_string: "custom:\n  Author: ${{ github.event.pull_request.user.login }}\n  Issue: 216\n  PR: ${{ github.event.pull_request.number }}\n"
-        
