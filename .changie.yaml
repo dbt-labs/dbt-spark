@@ -13,7 +13,9 @@ kinds:
 - label: Fixes
 - label: Under the Hood
 - label: Dependencies
+  changeFormat: '- {{.Body}} ({{if ne .Custom.Issue ""}}[#{{.Custom.Issue}}](https://github.com/dbt-labs/dbt-spark/issues/{{.Custom.Issue}}), {{end}}[#{{.Custom.PR}}](https://github.com/dbt-labs/dbt-spark/pull/{{.Custom.PR}}))'
 - label: Security
+  changeFormat: '- {{.Body}} ({{if ne .Custom.Issue ""}}[#{{.Custom.Issue}}](https://github.com/dbt-labs/dbt-spark/issues/{{.Custom.Issue}}), {{end}}[#{{.Custom.PR}}](https://github.com/dbt-labs/dbt-spark/pull/{{.Custom.PR}}))'
 custom:
 - key: Author
   label: GitHub Username(s) (separated by a single space if multiple)
