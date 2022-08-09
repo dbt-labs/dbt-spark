@@ -41,7 +41,7 @@ class TestSparkMacros(unittest.TestCase):
         template = self.__get_template('adapters.sql')
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1').strip()
 
-        self.assertEqual(sql, "create table my_table as select 1")
+        self.assertEqual(sql, "create table my_table using parquet as select 1")
 
     def test_macros_create_table_as_file_format(self):
         template = self.__get_template('adapters.sql')
@@ -91,7 +91,7 @@ class TestSparkMacros(unittest.TestCase):
 
         self.config['partition_by'] = 'partition_1'
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1').strip()
-        self.assertEqual(sql, "create table my_table partitioned by (partition_1) as select 1")
+        self.assertEqual(sql, "create table my_table using parquet partitioned by (partition_1) as select 1")
 
     def test_macros_create_table_as_partitions(self):
         template = self.__get_template('adapters.sql')
@@ -99,7 +99,7 @@ class TestSparkMacros(unittest.TestCase):
         self.config['partition_by'] = ['partition_1', 'partition_2']
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1').strip()
         self.assertEqual(sql,
-                         "create table my_table partitioned by (partition_1,partition_2) as select 1")
+                         "create table my_table using parquet partitioned by (partition_1,partition_2) as select 1")
 
     def test_macros_create_table_as_cluster(self):
         template = self.__get_template('adapters.sql')
@@ -107,7 +107,7 @@ class TestSparkMacros(unittest.TestCase):
         self.config['clustered_by'] = 'cluster_1'
         self.config['buckets'] = '1'
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1').strip()
-        self.assertEqual(sql, "create table my_table clustered by (cluster_1) into 1 buckets as select 1")
+        self.assertEqual(sql, "create table my_table using parquet clustered by (cluster_1) into 1 buckets as select 1")
 
     def test_macros_create_table_as_clusters(self):
         template = self.__get_template('adapters.sql')
@@ -115,14 +115,14 @@ class TestSparkMacros(unittest.TestCase):
         self.config['clustered_by'] = ['cluster_1', 'cluster_2']
         self.config['buckets'] = '1'
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1').strip()
-        self.assertEqual(sql, "create table my_table clustered by (cluster_1,cluster_2) into 1 buckets as select 1")
+        self.assertEqual(sql, "create table my_table using parquet clustered by (cluster_1,cluster_2) into 1 buckets as select 1")
 
     def test_macros_create_table_as_location(self):
         template = self.__get_template('adapters.sql')
 
         self.config['location_root'] = '/mnt/root'
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1').strip()
-        self.assertEqual(sql, "create table my_table location '/mnt/root/my_table' as select 1")
+        self.assertEqual(sql, "create table my_table using parquet location '/mnt/root/my_table' as select 1")
 
     def test_macros_create_table_as_comment(self):
         template = self.__get_template('adapters.sql')
@@ -130,7 +130,7 @@ class TestSparkMacros(unittest.TestCase):
         self.config['persist_docs'] = {'relation': True}
         self.default_context['model'].description = 'Description Test'
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1').strip()
-        self.assertEqual(sql, "create table my_table comment 'Description Test' as select 1")
+        self.assertEqual(sql, "create table my_table using parquet comment 'Description Test' as select 1")
 
     def test_macros_create_table_as_all(self):
         template = self.__get_template('adapters.sql')
