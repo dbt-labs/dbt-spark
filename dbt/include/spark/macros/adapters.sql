@@ -3,7 +3,7 @@
 {%- endmacro -%}
 
 {% macro spark__file_format_clause() %}
-  {%- set file_format = config.get('file_format', validator=validation.any[basestring]) -%}
+  {%- set file_format = config.get('file_format', default='parquet', validator=validation.any[basestring]) -%}
   {%- if file_format is not none %}
     using {{ file_format }}
   {%- endif %}
