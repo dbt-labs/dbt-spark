@@ -143,7 +143,7 @@ class SparkCredentials(Credentials):
         return self.host
 
     def _connection_keys(self):
-        return ("host", "port", "cluster", "endpoint", "schema", "organization")
+        return ("host", "port", "cluster", "endpoint", "schema", "organization", "method")
 
 
 class PyhiveConnectionWrapper(object):

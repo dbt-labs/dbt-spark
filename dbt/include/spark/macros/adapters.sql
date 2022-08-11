@@ -3,7 +3,8 @@
 {%- endmacro -%}
 
 {% macro spark__file_format_clause() %}
-  {%- set file_format = config.get('file_format', validator=validation.any[basestring]) or 'parquet' -%}
+  {%- set default_format = 'delta' if target.method == 'ODBC' else 'parquet' -%}
+  {%- set file_format = config.get('file_format', default_format) -%}
   {%- if file_format is not none %}
     using {{ file_format }}
   {%- endif %}

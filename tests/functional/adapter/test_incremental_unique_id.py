@@ -6,6 +6,9 @@ class TestUniqueKeySpark(BaseIncrementalUniqueKey):
     @pytest.fixture(scope="class")
     def project_config_update(self):
         return {
+            "seeds": {
+                "+file_format": "delta",
+            },
             "models": {
                 "+file_format": "delta",
                 "+incremental_strategy": "merge",
