@@ -16,6 +16,7 @@ class TestSparkMacros(unittest.TestCase):
             'model': mock.Mock(),
             'exceptions': mock.Mock(),
             'config': mock.Mock(),
+            'target': mock.Mock(),
             'adapter': mock.Mock(),
             'return': lambda r: r,
         }
