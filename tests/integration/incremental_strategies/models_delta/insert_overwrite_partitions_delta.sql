@@ -1,7 +1,8 @@
 {{ config(
-    materialized = 'incremental',
-    incremental_strategy = 'insert_overwrite',
-    file_format = 'delta',
+    materialized='incremental',
+    incremental_strategy='insert_overwrite',
+    partition_by='id'
+    file_format='delta'
 ) }}
 
 {% if not is_incremental() %}
