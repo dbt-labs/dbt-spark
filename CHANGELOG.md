@@ -22,11 +22,12 @@
 - Use dispatch pattern for get_columns_in_relation_raw macro ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
 
 ### Contributors
-- [@barberscott](https://github.com/barberscott)  ([#398](https://github.com/dbt-labs/dbt-spark/pull/398/))
+- [@barberscott](https://github.com/barberscott) ([#398](https://github.com/dbt-labs/dbt-spark/pull/398/))
 - [@grindheim](https://github.com/grindheim) ([#287](https://github.com/dbt-labs/dbt-spark/pull/287/))
 - [@nssalian](https://github.com/nssalian) ([#349](https://github.com/dbt-labs/dbt-spark/pull/349))
 - [@ueshin](https://github.com/ueshin) ([#365](https://github.com/dbt-labs/dbt-spark/pull/365))
 - [@dbeatty10](https://github.com/dbeatty10) ([#359](https://github.com/dbt-labs/dbt-spark/pull/359))
+
 ## Previous Releases
 For information on prior major and minor releases, see their changelogs:
 - [1.1](https://github.com/dbt-labs/dbt-spark/blob/1.1.latest/CHANGELOG.md)
