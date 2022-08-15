@@ -37,4 +37,6 @@
 ## Previous Releases
 For information on prior releases of dbt-spark prior to 1.0.0 please see
 - [0.21](https://github.com/dbt-labs/dbt-spark/blob/0.21.latest/CHANGELOG.md)
+- [0.20](https://github.com/dbt-labs/dbt-spark/blob/0.20.latest/CHANGELOG.md)
+- [0.19 and earlier](https://github.com/dbt-labs/dbt-spark/blob/0.19.latest/CHANGELOG.md)
 
