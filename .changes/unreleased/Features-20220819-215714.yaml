@@ -1,0 +1,7 @@
+kind: Features
+body: Faster caching at run start. **Note:** Requires Spark v3
+time: 2022-08-19T21:57:14.56716+02:00
+custom:
+  Author: TalkWIthKeyboard
+  Issue: "228"
+  PR: "342"
