@@ -274,14 +274,14 @@ class SparkAdapter(SQLAdapter):
         # )
 
         # For now, just always invalidate the cache
-        updated_relation = self._get_updated_relation(relation)
+        updated_relation, columns = self._get_updated_relation(relation)
         if updated_relation:
             self.cache.add(updated_relation)
-            return updated_relation.columns
-        else:
-            return []
+        return columns
 
-    def _get_updated_relation(self, relation: BaseRelation) -> Optional[SparkRelation]:
+    def _get_updated_relation(
+        self, relation: BaseRelation
+    ) -> Tuple[Optional[SparkRelation], List[SparkColumn]]:
         metadata = None
         columns: List[SparkColumn] = []
 
@@ -303,19 +303,23 @@ class SparkAdapter(SQLAdapter):
         columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
 
         if not metadata:
-            return None
+            # this is a temporary view, not worth caching -- just return columns
+            return None, columns
 
         provider = metadata.get(KEY_TABLE_PROVIDER)
-        return self.Relation.create(
-            database=None,
-            schema=relation.schema,
-            identifier=relation.identifier,
-            type=relation.type,
-            is_delta=(provider == "delta"),
-            is_hudi=(provider == "hudi"),
-            owner=metadata.get(KEY_TABLE_OWNER),
-            stats=metadata.get(KEY_TABLE_STATISTICS),
-            columns=columns,
+        return (
+            self.Relation.create(
+                database=None,
+                schema=relation.schema,
+                identifier=relation.identifier,
+                type=relation.type,
+                is_delta=(provider == "delta"),
+                is_hudi=(provider == "hudi"),
+                owner=metadata.get(KEY_TABLE_OWNER),
+                stats=metadata.get(KEY_TABLE_STATISTICS),
+                columns=columns,
+            ),
+            columns,
         )
 
     def _set_relation_information(self, relation: SparkRelation) -> SparkRelation:
@@ -323,7 +327,7 @@ class SparkAdapter(SQLAdapter):
         if relation.has_information():
             return relation
 
-        updated_relation = self._get_updated_relation(relation)
+        updated_relation, _ = self._get_updated_relation(relation)
 
         self.cache.update_relation(updated_relation)
         return updated_relation
