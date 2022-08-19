@@ -186,6 +186,7 @@ class SparkAdapter(SQLAdapter):
             if try_show_tables:
                 _, name, _ = row
                 information = self.use_show_tables(name)
+                _schema = schema_relation.schema
             else:
                 _schema, name, _, information = row
             is_delta = "Provider: delta" in information
@@ -194,7 +195,7 @@ class SparkAdapter(SQLAdapter):
             rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
 
             relation = self.Relation.create(
-                schema=schema_relation.schema,
+                schema=_schema,
                 identifier=name,
                 type=rel_type,
                 information=information,
