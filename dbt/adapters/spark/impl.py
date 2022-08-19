@@ -221,7 +221,7 @@ class SparkAdapter(SQLAdapter):
 
     def parse_describe_extended(
         self, relation: Relation, raw_rows: List[agate.Row]
-    ) -> Tuple[Dict[str, any], List[SparkColumn]]:
+    ) -> Tuple[Dict[str, Any], List[SparkColumn]]:
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
         # Find the separator between the rows and the metadata provided
@@ -283,7 +283,7 @@ class SparkAdapter(SQLAdapter):
 
     def _get_updated_relation(self, relation: BaseRelation) -> Optional[SparkRelation]:
         metadata = None
-        columns = []
+        columns: List[SparkColumn] = []
 
         try:
             rows: List[agate.Row] = self.execute_macro(
