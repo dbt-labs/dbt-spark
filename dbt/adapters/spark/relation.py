@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Hashable
+from typing import Optional, List
 
 from dataclasses import dataclass, field
 
@@ -46,6 +46,4 @@ class SparkRelation(BaseRelation):
         return super().render()
 
     def has_information(self) -> bool:
-        return self.owner is not None and \
-               self.stats is not None and \
-               len(self.columns) > 0
+        return self.owner is not None and self.stats is not None and len(self.columns) > 0

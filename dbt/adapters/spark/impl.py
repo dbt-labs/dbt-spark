@@ -180,14 +180,8 @@ class SparkAdapter(SQLAdapter):
     ) -> List[SparkRelation]:
         kwargs = {"relation": schema_relation}
         try:
-            tables = self.execute_macro(
-                LIST_TABLES_MACRO_NAME,
-                kwargs=kwargs
-            )
-            views = self.execute_macro(
-                LIST_VIEWS_MACRO_NAME,
-                kwargs=kwargs
-            )
+            tables = self.execute_macro(LIST_TABLES_MACRO_NAME, kwargs=kwargs)
+            views = self.execute_macro(LIST_VIEWS_MACRO_NAME, kwargs=kwargs)
         except dbt.exceptions.RuntimeException as e:
             errmsg = getattr(e, "msg", "")
             if f"Database '{schema_relation}' not found" in errmsg:
@@ -196,7 +190,6 @@ class SparkAdapter(SQLAdapter):
                 description = "Error while retrieving information about"
                 logger.debug(f"{description} {schema_relation}: {e.msg}")
                 return []
-
 
         relations = []
         view_names = views.columns["viewName"].values()
@@ -214,11 +207,7 @@ class SparkAdapter(SQLAdapter):
         return relations
 
     def get_relation(
-        self,
-        database: Optional[str],
-        schema: str,
-        identifier: str,
-        needs_information=False
+        self, database: Optional[str], schema: str, identifier: str, needs_information=False
     ) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
             database = None  # type: ignore
@@ -245,17 +234,20 @@ class SparkAdapter(SQLAdapter):
 
         raw_table_stats = metadata.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
-        return metadata, [SparkColumn(
-            table_database=None,
-            table_schema=relation.schema,
-            table_name=relation.name,
-            table_type=relation.type,
-            table_owner=str(metadata.get(KEY_TABLE_OWNER)),
-            table_stats=table_stats,
-            column=column['col_name'],
-            column_index=idx,
-            dtype=column['data_type'],
-        ) for idx, column in enumerate(rows)]
+        return metadata, [
+            SparkColumn(
+                table_database=None,
+                table_schema=relation.schema,
+                table_name=relation.name,
+                table_type=relation.type,
+                table_owner=str(metadata.get(KEY_TABLE_OWNER)),
+                table_stats=table_stats,
+                column=column["col_name"],
+                column_index=idx,
+                dtype=column["data_type"],
+            )
+            for idx, column in enumerate(rows)
+        ]
 
     @staticmethod
     def find_table_information_separator(rows: List[dict]) -> int:
@@ -270,7 +262,7 @@ class SparkAdapter(SQLAdapter):
         # We shouldn't access columns from the cache, until we've implemented
         # proper cache update or invalidation at the column level
         # https://github.com/dbt-labs/dbt-spark/issues/431
-        
+
         # cached_relations = self.cache.get_relations(relation.database, relation.schema)
         # cached_relation = next(
         #     (
@@ -280,13 +272,14 @@ class SparkAdapter(SQLAdapter):
         #     ),
         #     None,
         # )
-        
+
         # For now, just always invalidate the cache
         updated_relation = self._get_updated_relation(relation)
         if updated_relation:
             self.cache.add(updated_relation)
-
-        return updated_relation.columns
+            return updated_relation.columns
+        else:
+            return []
 
     def _get_updated_relation(self, relation: BaseRelation) -> Optional[SparkRelation]:
         metadata = None
@@ -294,17 +287,14 @@ class SparkAdapter(SQLAdapter):
 
         try:
             rows: List[agate.Row] = self.execute_macro(
-                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
-                )
+                GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+            )
             metadata, columns = self.parse_describe_extended(relation, rows)
         except dbt.exceptions.RuntimeException as e:
             # spark would throw error when table doesn't exist, where other
             # CDW would just return and empty list, normalizing the behavior here
             errmsg = getattr(e, "msg", "")
-            if (
-                    "Table or view not found" in errmsg or
-                    "NoSuchTableException" in errmsg
-            ):
+            if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
                 pass
             else:
                 raise e
@@ -321,11 +311,11 @@ class SparkAdapter(SQLAdapter):
             schema=relation.schema,
             identifier=relation.identifier,
             type=relation.type,
-            is_delta=(provider == 'delta'),
-            is_hudi=(provider == 'hudi'),
+            is_delta=(provider == "delta"),
+            is_hudi=(provider == "hudi"),
             owner=metadata.get(KEY_TABLE_OWNER),
             stats=metadata.get(KEY_TABLE_STATISTICS),
-            columns=columns
+            columns=columns,
         )
 
     def _set_relation_information(self, relation: SparkRelation) -> SparkRelation:
@@ -338,9 +328,7 @@ class SparkAdapter(SQLAdapter):
         self.cache.update_relation(updated_relation)
         return updated_relation
 
-    def _get_columns_for_catalog(
-        self, relation: SparkRelation
-    ) -> Iterable[Dict[str, Any]]:
+    def _get_columns_for_catalog(self, relation: SparkRelation) -> Iterable[Dict[str, Any]]:
         updated_relation = self._set_relation_information(relation)
 
         for column in updated_relation.columns:
