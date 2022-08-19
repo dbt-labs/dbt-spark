@@ -206,7 +206,7 @@
 {% endmacro %}
 
 {% macro list_views_without_caching(relation) %}
-  {{ return(adapter.dispatch('list_tables_without_caching', 'dbt')(relation)) }}
+  {{ return(adapter.dispatch('list_views_without_caching', 'dbt')(relation)) }}
 {%- endmacro -%}
 
 {% macro spark__list_views_without_caching(relation) %}

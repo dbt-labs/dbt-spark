@@ -2,14 +2,14 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, TypeVar, Union
 
 from dbt.adapters.base.column import Column
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.contracts.relation import FakeAPIObject
 from hologram import JsonDict
 
 Self = TypeVar("Self", bound="SparkColumn")
 
 
 @dataclass
-class SparkColumn(dbtClassMixin, Column):
+class SparkColumn(FakeAPIObject, Column):
     table_database: Optional[str] = None
     table_schema: Optional[str] = None
     table_name: Optional[str] = None

@@ -267,22 +267,24 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
-        cached_relations = self.cache.get_relations(relation.database, relation.schema)
-        cached_relation = next(
-            (
-                cached_relation
-                for cached_relation in cached_relations
-                if str(cached_relation) == str(relation)
-            ),
-            None,
-        )
-
-        if not cached_relation:
-            updated_relation = self._get_updated_relation(relation)
-            if updated_relation:
-                self.cache.add(updated_relation)
-        else:
-            updated_relation = self._set_relation_information(cached_relation)
+        # We shouldn't access columns from the cache, until we've implemented
+        # proper cache update or invalidation at the column level
+        # https://github.com/dbt-labs/dbt-spark/issues/431
+        
+        # cached_relations = self.cache.get_relations(relation.database, relation.schema)
+        # cached_relation = next(
+        #     (
+        #         cached_relation
+        #         for cached_relation in cached_relations
+        #         if str(cached_relation) == str(relation)
+        #     ),
+        #     None,
+        # )
+        
+        # For now, just always invalidate the cache
+        updated_relation = self._get_updated_relation(relation)
+        if updated_relation:
+            self.cache.add(updated_relation)
 
         return updated_relation.columns
 
@@ -291,7 +293,9 @@ class SparkAdapter(SQLAdapter):
         columns = []
 
         try:
-            rows: List[agate.Row] = super().get_columns_in_relation(relation)
+            rows: List[agate.Row] = self.execute_macro(
+                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+                )
             metadata, columns = self.parse_describe_extended(relation, rows)
         except dbt.exceptions.RuntimeException as e:
             # spark would throw error when table doesn't exist, where other
