@@ -77,11 +77,18 @@
   {%- set file_format = config.get('file_format', 'parquet') -%}
   {%- set grant_config = config.get('grants') -%}
 
-  {% set target_relation_exists, target_relation = get_or_create_relation(
-          database=none,
-          schema=model.schema,
-          identifier=target_table,
-          type='table') -%}
+  {%- set existing_relation = adapter.get_relation(database=database, schema=schema, identifier=target_table, needs_information=True) -%}
+  {%- if existing_relation -%}
+    {%- set target_relation_exists, target_relation = True, existing_relation -%}
+  {%- else -%}
+    {%- set target_relation_exists = False -%}
+    {%- set target_relation = api.Relation.create(
+        database=none,
+        schema=model.schema,
+        identifier=target_table,
+        type='table'
+    ) -%}
+  {%- endif -%}
 
   {%- if file_format not in ['delta', 'hudi'] -%}
     {% set invalid_format_msg -%}
@@ -98,10 +105,6 @@
       {%- endset %}
       {% do exceptions.raise_compiler_error(invalid_format_msg) %}
     {% endif %}
-  {% endif %}
-
-  {% if not adapter.check_schema_exists(model.database, model.schema) %}
-    {% do create_schema(model.database, model.schema) %}
   {% endif %}
 
   {%- if not target_relation.is_table -%}
