@@ -170,8 +170,7 @@ class SparkAdapter(SQLAdapter):
             dbt.exceptions.raise_compiler_error(
                 "Attempted to cache a null schema for {}".format(name)
             )
-        if dbt.flags.USE_CACHE:
-            self.cache.add_schema(None, schema)
+        self.cache.add_schema(None, schema)
         # so jinja doesn't render things
         return ""
 
