@@ -28,7 +28,7 @@ demo_project:
   target: dev
   outputs:
     dev:
-     type: spark
+     type: spark_livy
      method: livy
      schema: my_db
      host: https://spark-livy-gateway.my.org.com/dbt-spark/cdp-proxy-api/livy_for_spark3/
