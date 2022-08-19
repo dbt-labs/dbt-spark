@@ -23,9 +23,6 @@ class TestSingularTestsSpark(BaseSingularTests):
     pass
 
 
-# The local cluster currently tests on spark 2.x, which does not support this
-# if we upgrade it to 3.x, we can enable this test
-@pytest.mark.skip_profile('apache_spark')
 class TestSingularTestsEphemeralSpark(BaseSingularTestsEphemeral):
     pass
 
@@ -48,8 +45,7 @@ class TestGenericTestsSpark(BaseGenericTests):
     pass
 
 
-# These tests were not enabled in the dbtspec files, so skipping here.
-# Error encountered was: Error running query: java.lang.ClassNotFoundException: delta.DefaultSource
+# Snapshots require Delta
 @pytest.mark.skip_profile('apache_spark', 'spark_session')
 class TestSnapshotCheckColsSpark(BaseSnapshotCheckCols):
     @pytest.fixture(scope="class")
@@ -64,8 +60,7 @@ class TestSnapshotCheckColsSpark(BaseSnapshotCheckCols):
         }
 
 
-# These tests were not enabled in the dbtspec files, so skipping here.
-# Error encountered was: Error running query: java.lang.ClassNotFoundException: delta.DefaultSource
+# Snapshots require Delta
 @pytest.mark.skip_profile('apache_spark', 'spark_session')
 class TestSnapshotTimestampSpark(BaseSnapshotTimestamp):
     @pytest.fixture(scope="class")
