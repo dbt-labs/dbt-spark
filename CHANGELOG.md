@@ -9,15 +9,21 @@
 
 ### Features
 - Support python model through notebook, currently supported materializations are table and incremental ([#417](https://github.com/dbt-labs/dbt-spark/issues/417), [#377](https://github.com/dbt-labs/dbt-spark/pull/377))
+
 ### Fixes
 - Pin pyodbc to version 4.0.32 to prevent overwriting libodbc.so and libltdl.so on Linux ([#397](https://github.com/dbt-labs/dbt-spark/issues/397), [#398](https://github.com/dbt-labs/dbt-spark/pull/398))
+
 ### Under the Hood
 - Support core incremental refactor ([#4402](https://github.com/dbt-labs/dbt-spark/issues/4402), [#394](https://github.com/dbt-labs/dbt-spark/pull/394))
 
 ### Contributors
 - [@barberscot](https://github.com/barberscot) ([#398](https://github.com/dbt-labs/dbt-spark/pull/398))
+
 ## Previous Releases
 For information on prior major and minor releases, see their changelogs:
 - [1.2](https://github.com/dbt-labs/dbt-spark/blob/1.2.latest/CHANGELOG.md)
 - [1.1](https://github.com/dbt-labs/dbt-spark/blob/1.1.latest/CHANGELOG.md)
 - [1.0](https://github.com/dbt-labs/dbt-spark/blob/1.0.latest/CHANGELOG.md)
+- [0.21](https://github.com/dbt-labs/dbt-spark/blob/0.21.latest/CHANGELOG.md)
+- [0.20](https://github.com/dbt-labs/dbt-spark/blob/0.20.latest/CHANGELOG.md)
+- [0.19 and earlier](https://github.com/dbt-labs/dbt-spark/blob/0.19.latest/CHANGELOG.md)
