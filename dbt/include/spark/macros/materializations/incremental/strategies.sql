@@ -19,9 +19,9 @@
 {% endmacro %}
 
 
-{% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
+{% macro spark__get_merge_sql(target, source, unique_key, dest_columns, incremental_predicates) %}
   {# skip dest_columns, use merge_update_columns config if provided, otherwise use "*" #}
-  {%- set predicates = [] if predicates is none else [] + predicates -%}
+  {%- set predicates = [] if incremental_predicates is none else [] + incremental_predicates -%}
   {%- set update_columns = config.get("merge_update_columns") -%}
 
   {% if unique_key %}
@@ -59,7 +59,7 @@
 {% endmacro %}
 
 
-{% macro dbt_spark_get_incremental_sql(strategy, source, target, unique_key) %}
+{% macro dbt_spark_get_incremental_sql(strategy, source, target, unique_key, incremental_predicates) %}
   {%- if strategy == 'append' -%}
     {#-- insert new records into existing table, without updating or overwriting #}
     {{ get_insert_into_sql(source, target) }}
@@ -68,7 +68,7 @@
     {{ get_insert_overwrite_sql(source, target) }}
   {%- elif strategy == 'merge' -%}
   {#-- merge all columns with databricks delta - schema changes are handled for us #}
-    {{ get_merge_sql(target, source, unique_key, dest_columns=none, predicates=none) }}
+    {{ get_merge_sql(target, source, unique_key, dest_columns=none, incremental_predicates=incremental_predicates) }}
   {%- else -%}
     {% set no_sql_for_strategy_msg -%}
       No known SQL for the incremental strategy provided: {{ strategy }}
