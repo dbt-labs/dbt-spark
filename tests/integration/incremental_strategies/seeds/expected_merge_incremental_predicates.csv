@@ -1,5 +1,5 @@
-id,msg
-1,hello
-2,goodbye
-2,yo
-3,anyway
+id,msg,color
+1,hello,blue
+2,goodbye,red
+2,yo,green
+3,anyway,purple
