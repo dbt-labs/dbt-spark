@@ -1,0 +1,7 @@
+kind: Fixes
+body: Fix hudi model run failed when unique key is a list
+time: 2022-08-25T18:15:52.10967+08:00
+custom:
+  Author: cadl
+  Issue: "438"
+  PR: "439"
