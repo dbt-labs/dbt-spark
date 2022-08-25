@@ -81,6 +81,18 @@ class TestSparkMacros(unittest.TestCase):
         self.assertEqual(sql, 'create table my_table using hudi options (primaryKey "id" ) as select 1 as id')
 
         self.config['file_format'] = 'hudi'
+        self.config['unique_key'] = ['a', 'b']
+        self.config['options'] = {}
+        sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1 as a, 1 as b').strip()
+        self.assertEqual(sql, 'create table my_table using hudi options (primaryKey "a,b" ) as select 1 as a, 1 as b')
+
+        self.config['file_format'] = 'hudi'
+        self.config['unique_key'] = ['a', 'b']
+        self.config['options'] = {'primaryKey': 'a,b'}
+        sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1 as a, 1 as b').strip()
+        self.assertEqual(sql, 'create table my_table using hudi options (primaryKey "a,b" ) as select 1 as a, 1 as b')
+
+        self.config['file_format'] = 'hudi'
         self.config['unique_key'] = 'uuid'
         self.config['options'] = {'primaryKey': 'id'}
         sql = self.__run_macro(template, 'spark__create_table_as', False, 'my_table', 'select 1 as id')
