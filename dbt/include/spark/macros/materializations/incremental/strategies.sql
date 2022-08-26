@@ -20,8 +20,9 @@
 
 
 {% macro spark__get_merge_sql(target, source, unique_key, dest_columns, predicates=none) %}
-  {# skip dest_columns, use merge_update_columns config if provided, otherwise use "*" #}
+  {# need dest_columns for merge_exclude_columns, default to use "*" #}
   {%- set predicates = [] if predicates is none else [] + predicates -%}
+  {%- set dest_columns = adapter.get_columns_in_relation(target) -%}
   {%- set merge_update_columns = config.get('merge_update_columns') -%}
   {%- set merge_exclude_columns = config.get('merge_exclude_columns') -%}
   {%- set update_columns = get_merge_update_columns(merge_update_columns, merge_exclude_columns, dest_columns) -%}
