@@ -1,4 +1,7 @@
 import re
+import requests
+import time
+import base64
 from concurrent.futures import Future
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Union
@@ -11,7 +14,8 @@ import dbt
 import dbt.exceptions
 
 from dbt.adapters.base import AdapterConfig
-from dbt.adapters.base.impl import catch_as_completed
+from dbt.adapters.base.impl import catch_as_completed, log_code_execution
+from dbt.adapters.base.meta import available
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
@@ -159,11 +163,9 @@ class SparkAdapter(SQLAdapter):
 
         return relations
 
-    def get_relation(
-        self, database: Optional[str], schema: str, identifier: str
-    ) -> Optional[BaseRelation]:
+    def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
-            database = None
+            database = None  # type: ignore
 
         return super().get_relation(database, schema, identifier)
 
@@ -296,7 +298,12 @@ class SparkAdapter(SQLAdapter):
                 for schema in schemas:
                     futures.append(
                         tpe.submit_connected(
-                            self, schema, self._get_one_catalog, info, [schema], manifest
+                            self,
+                            schema,
+                            self._get_one_catalog,
+                            info,
+                            [schema],
+                            manifest,
                         )
                     )
             catalogs, exceptions = catch_as_completed(futures)
@@ -379,6 +386,114 @@ class SparkAdapter(SQLAdapter):
             raise
         finally:
             conn.transaction_open = False
+
+    @available.parse_none
+    @log_code_execution
+    def submit_python_job(self, parsed_model: dict, compiled_code: str, timeout=None):
+        # TODO improve the typing here.  N.B. Jinja returns a `jinja2.runtime.Undefined` instead
+        # of `None` which evaluates to True!
+
+        # TODO limit this function to run only when doing the materialization of python nodes
+
+        # assuming that for python job running over 1 day user would mannually overwrite this
+        schema = getattr(parsed_model, "schema", self.config.credentials.schema)
+        identifier = parsed_model["alias"]
+        if not timeout:
+            timeout = 60 * 60 * 24
+        if timeout <= 0:
+            raise ValueError("Timeout must larger than 0")
+
+        auth_header = {"Authorization": f"Bearer {self.connections.profile.credentials.token}"}
+
+        # create new dir
+        if not self.connections.profile.credentials.user:
+            raise ValueError("Need to supply user in profile to submit python job")
+        # it is safe to call mkdirs even if dir already exists and have content inside
+        work_dir = f"/Users/{self.connections.profile.credentials.user}/{schema}"
+        response = requests.post(
+            f"https://{self.connections.profile.credentials.host}/api/2.0/workspace/mkdirs",
+            headers=auth_header,
+            json={
+                "path": work_dir,
+            },
+        )
+        if response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating work_dir for python notebooks\n {response.content!r}"
+            )
+
+        # add notebook
+        b64_encoded_content = base64.b64encode(compiled_code.encode()).decode()
+        response = requests.post(
+            f"https://{self.connections.profile.credentials.host}/api/2.0/workspace/import",
+            headers=auth_header,
+            json={
+                "path": f"{work_dir}/{identifier}",
+                "content": b64_encoded_content,
+                "language": "PYTHON",
+                "overwrite": True,
+                "format": "SOURCE",
+            },
+        )
+        if response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating python notebook.\n {response.content!r}"
+            )
+
+        # submit job
+        submit_response = requests.post(
+            f"https://{self.connections.profile.credentials.host}/api/2.1/jobs/runs/submit",
+            headers=auth_header,
+            json={
+                "run_name": "debug task",
+                "existing_cluster_id": self.connections.profile.credentials.cluster,
+                "notebook_task": {
+                    "notebook_path": f"{work_dir}/{identifier}",
+                },
+            },
+        )
+        if submit_response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating python run.\n {response.content!r}"
+            )
+
+        # poll until job finish
+        state = None
+        start = time.time()
+        run_id = submit_response.json()["run_id"]
+        terminal_states = ["TERMINATED", "SKIPPED", "INTERNAL_ERROR"]
+        while state not in terminal_states and time.time() - start < timeout:
+            time.sleep(1)
+            resp = requests.get(
+                f"https://{self.connections.profile.credentials.host}"
+                f"/api/2.1/jobs/runs/get?run_id={run_id}",
+                headers=auth_header,
+            )
+            json_resp = resp.json()
+            state = json_resp["state"]["life_cycle_state"]
+            # logger.debug(f"Polling.... in state: {state}")
+        if state != "TERMINATED":
+            raise dbt.exceptions.RuntimeException(
+                "python model run ended in state"
+                f"{state} with state_message\n{json_resp['state']['state_message']}"
+            )
+
+        # get end state to return to user
+        run_output = requests.get(
+            f"https://{self.connections.profile.credentials.host}"
+            f"/api/2.1/jobs/runs/get-output?run_id={run_id}",
+            headers=auth_header,
+        )
+        json_run_output = run_output.json()
+        result_state = json_run_output["metadata"]["state"]["result_state"]
+        if result_state != "SUCCESS":
+            raise dbt.exceptions.RuntimeException(
+                "Python model failed with traceback as:\n"
+                "(Note that the line number here does not "
+                "match the line number in your code due to dbt templating)\n"
+                f"{json_run_output['error_trace']}"
+            )
+        return self.connections.get_response(None)
 
     def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
         grants_dict: Dict[str, List[str]] = {}
