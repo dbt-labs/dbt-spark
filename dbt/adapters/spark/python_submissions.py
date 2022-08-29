@@ -2,6 +2,7 @@ import base64
 import time
 import requests
 from typing import Any, Dict
+import uuid
 
 import dbt.exceptions
 
@@ -72,7 +73,9 @@ class DBNotebookPythonJobHelper(BasePythonJobHelper):
 
     def check_credentials(self, credentials):
         if not credentials.user:
-            raise ValueError("Databricks user is required for notebook submission method.")
+            raise ValueError(
+                "Databricks user is required for notebook submission method."
+            )
 
     def _create_work_dir(self, path):
         response = requests.post(
@@ -110,7 +113,7 @@ class DBNotebookPythonJobHelper(BasePythonJobHelper):
             f"https://{self.credentials.host}/api/2.1/jobs/runs/submit",
             headers=self.auth_header,
             json={
-                "run_name": self.identifier,  # should there be an UUID, or also add schema
+                "run_name": f"{self.schema}-{self.identifier}-{uuid.uuid4()}",
                 "existing_cluster_id": self.credentials.cluster,
                 "notebook_task": {
                     "notebook_path": path,
@@ -141,15 +144,20 @@ class DBNotebookPythonJobHelper(BasePythonJobHelper):
                 "url": f"https://{self.credentials.host}/api/2.1/jobs/runs/get?run_id={run_id}",
                 "headers": self.auth_header,
             },
-            get_state_func=lambda response: response.json()["state"]["life_cycle_state"],
+            get_state_func=lambda response: response.json()["state"][
+                "life_cycle_state"
+            ],
             terminal_states=("TERMINATED", "SKIPPED", "INTERNAL_ERROR"),
             expected_end_state="TERMINATED",
-            get_state_msg_func=lambda response: response.json()["state"]["state_message"],
+            get_state_msg_func=lambda response: response.json()["state"][
+                "state_message"
+            ],
         )
 
         # get end state to return to user
         run_output = requests.get(
-            f"https://{self.credentials.host}" f"/api/2.1/jobs/runs/get-output?run_id={run_id}",
+            f"https://{self.credentials.host}"
+            f"/api/2.1/jobs/runs/get-output?run_id={run_id}",
             headers=self.auth_header,
         )
         json_run_output = run_output.json()
@@ -247,7 +255,9 @@ class DBCommand:
 class DBCommandsApiPythonJobHelper(BasePythonJobHelper):
     def check_credentials(self, credentials):
         if not credentials.cluster:
-            raise ValueError("Databricks cluster is required for commands submission method.")
+            raise ValueError(
+                "Databricks cluster is required for commands submission method."
+            )
 
     def submit(self, compiled_code):
         context = DBContext(self.credentials)
@@ -269,7 +279,8 @@ class DBCommandsApiPythonJobHelper(BasePythonJobHelper):
             )
             if response["results"]["resultType"] == "error":
                 raise dbt.exceptions.RuntimeException(
-                    f"Python model failed with traceback as:\n" f"{response['results']['cause']}"
+                    f"Python model failed with traceback as:\n"
+                    f"{response['results']['cause']}"
                 )
         finally:
             context.destroy(context_id)
