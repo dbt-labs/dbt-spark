@@ -7,6 +7,8 @@ import uuid
 import dbt.exceptions
 
 DEFAULT_POLLING_INTERVAL = 3
+SUBMISSION_LANGUAGE = "python"
+DEFAULT_TIMEOUT = 60 * 60 * 24
 
 
 class BasePythonJobHelper:
@@ -20,7 +22,7 @@ class BasePythonJobHelper:
         self.polling_interval = DEFAULT_POLLING_INTERVAL
 
     def get_timeout(self):
-        timeout = self.parsed_model["config"].get("timeout", 60 * 60 * 24)
+        timeout = self.parsed_model["config"].get("timeout", DEFAULT_TIMEOUT)
         if timeout <= 0:
             raise ValueError("Timeout must be a positive integer")
         return timeout
@@ -177,7 +179,7 @@ class DBContext:
             headers=self.auth_header,
             json={
                 "clusterId": self.cluster,
-                "language": "python",
+                "language": SUBMISSION_LANGUAGE,
             },
         )
         if response.status_code != 200:
@@ -217,7 +219,7 @@ class DBCommand:
             json={
                 "clusterId": self.cluster,
                 "contextId": context_id,
-                "language": "python",
+                "language": SUBMISSION_LANGUAGE,
                 "command": command,
             },
         )
@@ -276,7 +278,7 @@ class DBCommandsApiPythonJobHelper(BasePythonJobHelper):
             context.destroy(context_id)
 
 
-python_submission_helpers = {
+PYTHON_SUBMISSION_HELPERS = {
     "notebook": DBNotebookPythonJobHelper,
     "commands": DBCommandsApiPythonJobHelper,
 }

@@ -17,7 +17,7 @@ from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
-from dbt.adapters.spark.python_submissions import python_submission_helpers
+from dbt.adapters.spark.python_submissions import PYTHON_SUBMISSION_HELPERS
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.events import AdapterLogger
@@ -394,11 +394,11 @@ class SparkAdapter(SQLAdapter):
         # TODO limit this function to run only when doing the materialization of python nodes
         # assuming that for python job running over 1 day user would mannually overwrite this
         submission_method = parsed_model["config"].get("submission_method", "commands")
-        if submission_method not in python_submission_helpers:
+        if submission_method not in PYTHON_SUBMISSION_HELPERS:
             raise NotImplementedError(
                 "Submission method {} is not supported".format(submission_method)
             )
-        job_helper = python_submission_helpers[submission_method](
+        job_helper = PYTHON_SUBMISSION_HELPERS[submission_method](
             parsed_model, self.connections.profile.credentials
         )
         job_helper.submit(compiled_code)
