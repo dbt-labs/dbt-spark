@@ -17,6 +17,11 @@
   {%- set existing_relation = load_relation(this) -%}
   {%- set tmp_relation = make_temp_relation(this) -%}
 
+  {#-- for SQL model we will create temp view that doesn't have database and schema --#}
+  {%- if language == 'sql'-%}
+    {%- set tmp_relation = tmp_relation.include(database=false, schema=false) -%}
+  {%- endif -%}
+
   {#-- Set Overwrite Mode --#}
   {%- if strategy == 'insert_overwrite' and partition_by -%}
     {%- call statement() -%}

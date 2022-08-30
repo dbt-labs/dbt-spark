@@ -123,7 +123,7 @@
 
 {#-- We can't use temporary tables with `create ... as ()` syntax --#}
 {% macro spark__create_temporary_view(relation, compiled_code) -%}
-    create temporary view {{ relation.include(schema=false) }} as
+    create temporary view {{ relation }} as
       {{ compiled_code }}
 {%- endmacro -%}
 
@@ -185,7 +185,7 @@
 
 {% macro spark__get_columns_in_relation_raw(relation) -%}
   {% call statement('get_columns_in_relation_raw', fetch_result=True) %}
-      describe extended {{ relation.include(schema=(schema is not none)) }}
+      describe extended {{ relation }}
   {% endcall %}
   {% do return(load_result('get_columns_in_relation_raw').table) %}
 {% endmacro %}
@@ -263,8 +263,7 @@
 {% macro spark__make_temp_relation(base_relation, suffix) %}
     {% set tmp_identifier = base_relation.identifier ~ suffix %}
     {% set tmp_relation = base_relation.incorporate(path = {
-        "identifier": tmp_identifier,
-        "schema": None
+        "identifier": tmp_identifier
     }) -%}
 
     {% do return(tmp_relation) %}
