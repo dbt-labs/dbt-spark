@@ -10,24 +10,6 @@ jobs:
       - checkout
       - run: tox -e flake8,unit
 
-  integration-spark-session:
-    environment:
-      DBT_INVOCATION_ENV: circle
-    docker:
-      - image: godatadriven/pyspark:3.1
-    steps:
-      - checkout
-      - run: apt-get update
-      - run: python3 -m pip install --upgrade pip
-      - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
-      - run: python3 -m pip install tox
-      - run:
-          name: Run integration tests
-          command: tox -e integration-spark-session
-          no_output_timeout: 1h
-      - store_artifacts:
-          path: ./logs
-
   integration-spark-thrift:
     environment:
       DBT_INVOCATION_ENV: circle
@@ -55,24 +37,6 @@ jobs:
       - run:
           name: Run integration tests
           command: tox -e integration-spark-thrift
-          no_output_timeout: 1h
-      - store_artifacts:
-          path: ./logs
-
-  integration-spark-databricks-http:
-    environment:
-      DBT_INVOCATION_ENV: circle
-      DBT_DATABRICKS_RETRY_ALL: True
-      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
-      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
-      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
-    docker:
-      - image: fishtownanalytics/test-container:10
-    steps:
-      - checkout
-      - run:
-          name: Run integration tests
-          command: tox -e integration-spark-databricks-http
           no_output_timeout: 1h
       - store_artifacts:
           path: ./logs
@@ -115,15 +79,9 @@ workflows:
   test-everything:
     jobs:
       - unit
-      - integration-spark-session:
-          requires:
-            - unit
       - integration-spark-thrift:
           requires:
             - unit
-      - integration-spark-databricks-http:
-          requires:
-            - integration-spark-thrift
       - integration-spark-databricks-odbc-cluster:
           requires:
             - integration-spark-thrift
