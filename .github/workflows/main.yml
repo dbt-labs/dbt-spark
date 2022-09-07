@@ -114,6 +114,68 @@ jobs:
           name: unit_results_${{ matrix.python-version }}-${{ steps.date.outputs.date }}.csv
           path: unit_results.csv
 
+  integration-spark-session:
+    name: integration test (spark-session)
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      TOXENV: "integration-spark-session"
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install python dependencies
+        run: |
+          sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install tox
+          tox --version
+
+      - name: Run tox
+        run: tox
+
+  integration-spark-databricks-http:
+    name: integration test (spark-databricks-http)
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      TOXENV: "integration-spark-databricks-http"
+      DBT_DATABRICKS_RETRY_ALL: True
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
+      DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
+      DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
+      DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
+      DBT_DATABRICKS_USER: ${{ secrets.DBT_DATABRICKS_USER }}
+      DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+
+      - name: Install python dependencies
+        run: |
+          sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install tox
+          tox --version
+
+      - name: Run tox
+        run: tox
+
   build:
     name: build packages
 
@@ -164,7 +226,7 @@ jobs:
 
   test-build:
     name: verify packages / python ${{ matrix.python-version }} / ${{ matrix.os }}
-
+    
     if: needs.build.outputs.is_alpha == 0
 
     needs: build
@@ -208,3 +270,4 @@ jobs:
       - name: Check source distributions
         run: |
           dbt --version
+ 
