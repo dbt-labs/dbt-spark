@@ -226,7 +226,7 @@ jobs:
 
   test-build:
     name: verify packages / python ${{ matrix.python-version }} / ${{ matrix.os }}
-    
+
     if: needs.build.outputs.is_alpha == 0
 
     needs: build
@@ -270,4 +270,3 @@ jobs:
       - name: Check source distributions
         run: |
           dbt --version
- 
