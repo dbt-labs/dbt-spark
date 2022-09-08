@@ -207,36 +207,19 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
-        cached_relations = self.cache.get_relations(relation.database, relation.schema)
-        cached_relation = next(
-            (
-                cached_relation
-                for cached_relation in cached_relations
-                if str(cached_relation) == str(relation)
-            ),
-            None,
-        )
-        columns = []
-        if cached_relation and cached_relation.information:
-            columns = self.parse_columns_from_information(cached_relation)
-        if not columns:
-            # in open source delta 'show table extended' query output doesnt
-            # return relation's schema. if columns are empty from cache,
-            # use get_columns_in_relation spark macro
-            # which would execute 'describe extended tablename' query
-            try:
-                rows: List[agate.Row] = self.execute_macro(
-                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
-                )
-                columns = self.parse_describe_extended(relation, rows)
-            except dbt.exceptions.RuntimeException as e:
-                # spark would throw error when table doesn't exist, where other
-                # CDW would just return and empty list, normalizing the behavior here
-                errmsg = getattr(e, "msg", "")
-                if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
-                    pass
-                else:
-                    raise e
+        try:
+            rows: List[agate.Row] = self.execute_macro(
+                GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+            )
+            columns = self.parse_describe_extended(relation, rows)
+        except dbt.exceptions.RuntimeException as e:
+            # spark would throw error when table doesn't exist, where other
+            # CDW would just return and empty list, normalizing the behavior here
+            errmsg = getattr(e, "msg", "")
+            if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
+                pass
+            else:
+                raise e
 
         # strip hudi metadata columns.
         columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
