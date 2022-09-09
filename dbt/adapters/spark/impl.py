@@ -1,7 +1,7 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union, Type
 from typing_extensions import TypeAlias
 
 import agate
@@ -10,14 +10,17 @@ from dbt.contracts.relation import RelationType
 import dbt
 import dbt.exceptions
 
-from dbt.adapters.base import AdapterConfig
-from dbt.adapters.base.impl import catch_as_completed, log_code_execution
-from dbt.adapters.base.meta import available
+from dbt.adapters.base import AdapterConfig, PythonJobHelper
+from dbt.adapters.base.impl import catch_as_completed
+from dbt.contracts.connection import AdapterResponse
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
-from dbt.adapters.spark.python_submissions import PYTHON_SUBMISSION_HELPERS
+from dbt.adapters.spark.python_submissions import (
+    DBNotebookPythonJobHelper,
+    DBCommandsApiPythonJobHelper,
+)
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.events import AdapterLogger
@@ -118,7 +121,7 @@ class SparkAdapter(SQLAdapter):
             dbt.exceptions.raise_compiler_error(
                 "Attempted to cache a null schema for {}".format(name)
             )
-        if dbt.flags.USE_CACHE:
+        if dbt.flags.USE_CACHE:  # type: ignore
             self.cache.add_schema(None, schema)
         # so jinja doesn't render things
         return ""
@@ -385,25 +388,19 @@ class SparkAdapter(SQLAdapter):
         finally:
             conn.transaction_open = False
 
-    @available.parse_none
-    @log_code_execution
-    def submit_python_job(self, parsed_model: dict, compiled_code: str, timeout=None):
-        # TODO improve the typing here.  N.B. Jinja returns a `jinja2.runtime.Undefined` instead
-        # of `None` which evaluates to True!
-
-        # TODO limit this function to run only when doing the materialization of python nodes
-        # assuming that for python job running over 1 day user would mannually overwrite this
-        submission_method = parsed_model["config"].get("submission_method", "commands")
-        if submission_method not in PYTHON_SUBMISSION_HELPERS:
-            raise NotImplementedError(
-                "Submission method {} is not supported".format(submission_method)
-            )
-        job_helper = PYTHON_SUBMISSION_HELPERS[submission_method](
-            parsed_model, self.connections.profile.credentials
-        )
-        job_helper.submit(compiled_code)
-        # we don't really get any useful information back from the job submission other than success
+    def generate_python_submission_response(self, submission_result: Any) -> AdapterResponse:
         return self.connections.get_response(None)
+
+    @property
+    def default_python_submission_method(self) -> str:
+        return "commands"
+
+    @property
+    def python_submission_helpers(self) -> Dict[str, Type[PythonJobHelper]]:
+        return {
+            "notebook": DBNotebookPythonJobHelper,
+            "commands": DBCommandsApiPythonJobHelper,
+        }
 
     def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
         grants_dict: Dict[str, List[str]] = {}

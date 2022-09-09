@@ -5,14 +5,16 @@ from typing import Any, Dict
 import uuid
 
 import dbt.exceptions
+from dbt.adapters.base import PythonJobHelper
+from dbt.adapters.spark import SparkCredentials
 
-DEFAULT_POLLING_INTERVAL = 3
+DEFAULT_POLLING_INTERVAL = 5
 SUBMISSION_LANGUAGE = "python"
 DEFAULT_TIMEOUT = 60 * 60 * 24
 
 
-class BasePythonJobHelper:
-    def __init__(self, parsed_model, credentials):
+class BaseDatabricksHelper(PythonJobHelper):
+    def __init__(self, parsed_model: Dict, credentials: SparkCredentials) -> None:
         self.check_credentials(credentials)
         self.credentials = credentials
         self.identifier = parsed_model["alias"]
@@ -21,18 +23,18 @@ class BasePythonJobHelper:
         self.timeout = self.get_timeout()
         self.polling_interval = DEFAULT_POLLING_INTERVAL
 
-    def get_timeout(self):
+    def get_timeout(self) -> int:
         timeout = self.parsed_model["config"].get("timeout", DEFAULT_TIMEOUT)
         if timeout <= 0:
             raise ValueError("Timeout must be a positive integer")
         return timeout
 
-    def check_credentials(self, credentials):
+    def check_credentials(self, credentials) -> None:
         raise NotImplementedError(
             "Overwrite this method to check specific requirement for current submission method"
         )
 
-    def submit(self, compiled_code):
+    def submit(self, compiled_code: str) -> None:
         raise NotImplementedError(
             "BasePythonJobHelper is an abstract class and you should implement submit method."
         )
@@ -45,7 +47,7 @@ class BasePythonJobHelper:
         terminal_states,
         expected_end_state,
         get_state_msg_func,
-    ):
+    ) -> Dict:
         state = None
         start = time.time()
         exceeded_timeout = False
@@ -54,7 +56,7 @@ class BasePythonJobHelper:
             if time.time() - start > self.timeout:
                 exceeded_timeout = True
                 break
-            # TODO should we do exponential backoff?
+            # should we do exponential backoff?
             time.sleep(self.polling_interval)
             response = status_func(**status_func_kwargs)
             state = get_state_func(response)
@@ -68,16 +70,16 @@ class BasePythonJobHelper:
         return response
 
 
-class DBNotebookPythonJobHelper(BasePythonJobHelper):
-    def __init__(self, parsed_model, credentials):
+class DBNotebookPythonJobHelper(BaseDatabricksHelper):
+    def __init__(self, parsed_model: Dict, credentials: SparkCredentials) -> None:
         super().__init__(parsed_model, credentials)
         self.auth_header = {"Authorization": f"Bearer {self.credentials.token}"}
 
-    def check_credentials(self, credentials):
+    def check_credentials(self, credentials) -> None:
         if not credentials.user:
             raise ValueError("Databricks user is required for notebook submission method.")
 
-    def _create_work_dir(self, path):
+    def _create_work_dir(self, path: str) -> None:
         response = requests.post(
             f"https://{self.credentials.host}/api/2.0/workspace/mkdirs",
             headers=self.auth_header,
@@ -90,7 +92,7 @@ class DBNotebookPythonJobHelper(BasePythonJobHelper):
                 f"Error creating work_dir for python notebooks\n {response.content!r}"
             )
 
-    def _upload_notebook(self, path, compiled_code):
+    def _upload_notebook(self, path: str, compiled_code: str) -> None:
         b64_encoded_content = base64.b64encode(compiled_code.encode()).decode()
         response = requests.post(
             f"https://{self.credentials.host}/api/2.0/workspace/import",
@@ -108,7 +110,7 @@ class DBNotebookPythonJobHelper(BasePythonJobHelper):
                 f"Error creating python notebook.\n {response.content!r}"
             )
 
-    def _submit_notebook(self, path):
+    def _submit_notebook(self, path: str) -> str:
         submit_response = requests.post(
             f"https://{self.credentials.host}/api/2.1/jobs/runs/submit",
             headers=self.auth_header,
@@ -126,7 +128,7 @@ class DBNotebookPythonJobHelper(BasePythonJobHelper):
             )
         return submit_response.json()["run_id"]
 
-    def submit(self, compiled_code):
+    def submit(self, compiled_code: str) -> None:
         # it is safe to call mkdirs even if dir already exists and have content inside
         work_dir = f"/Users/{self.credentials.user}/{self.schema}/"
         self._create_work_dir(work_dir)
@@ -167,7 +169,7 @@ class DBNotebookPythonJobHelper(BasePythonJobHelper):
 
 
 class DBContext:
-    def __init__(self, credentials):
+    def __init__(self, credentials: SparkCredentials) -> None:
         self.auth_header = {"Authorization": f"Bearer {credentials.token}"}
         self.cluster = credentials.cluster
         self.host = credentials.host
@@ -206,7 +208,7 @@ class DBContext:
 
 
 class DBCommand:
-    def __init__(self, credentials):
+    def __init__(self, credentials: SparkCredentials) -> None:
         self.auth_header = {"Authorization": f"Bearer {credentials.token}"}
         self.cluster = credentials.cluster
         self.host = credentials.host
@@ -247,12 +249,12 @@ class DBCommand:
         return response.json()
 
 
-class DBCommandsApiPythonJobHelper(BasePythonJobHelper):
-    def check_credentials(self, credentials):
+class DBCommandsApiPythonJobHelper(BaseDatabricksHelper):
+    def check_credentials(self, credentials: SparkCredentials) -> None:
         if not credentials.cluster:
             raise ValueError("Databricks cluster is required for commands submission method.")
 
-    def submit(self, compiled_code):
+    def submit(self, compiled_code: str) -> None:
         context = DBContext(self.credentials)
         command = DBCommand(self.credentials)
         context_id = context.create()
@@ -276,9 +278,3 @@ class DBCommandsApiPythonJobHelper(BasePythonJobHelper):
                 )
         finally:
             context.destroy(context_id)
-
-
-PYTHON_SUBMISSION_HELPERS = {
-    "notebook": DBNotebookPythonJobHelper,
-    "commands": DBCommandsApiPythonJobHelper,
-}
