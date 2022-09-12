@@ -29,7 +29,7 @@ class BaseDatabricksHelper(PythonJobHelper):
             raise ValueError("Timeout must be a positive integer")
         return timeout
 
-    def check_credentials(self, credentials) -> None:
+    def check_credentials(self, credentials: SparkCredentials) -> None:
         raise NotImplementedError(
             "Overwrite this method to check specific requirement for current submission method"
         )
