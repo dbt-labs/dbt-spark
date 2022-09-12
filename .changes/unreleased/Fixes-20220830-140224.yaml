@@ -1,0 +1,7 @@
+kind: Fixes
+body: python incremental model tmp table using correct schema
+time: 2022-08-30T14:02:24.603033-07:00
+custom:
+  Author: ChenyuLInx
+  Issue: "441"
+  PR: "445"
