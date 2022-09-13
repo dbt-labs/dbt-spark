@@ -1,0 +1,8 @@
+kind: Dependency
+body: "Bump pyodbc from 4.0.32 to 4.0.34"
+time: 2022-09-13T22:53:28.00000Z
+custom:
+  Author: dependabot[bot]
+  Issue: 417
+  PR: 459
+
