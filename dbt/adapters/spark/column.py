@@ -9,7 +9,7 @@ Self = TypeVar("Self", bound="SparkColumn")
 
 
 @dataclass
-class SparkColumn(dbtClassMixin, Column):
+class SparkColumn(dbtClassMixin, Column):  # type: ignore
     table_database: Optional[str] = None
     table_schema: Optional[str] = None
     table_name: Optional[str] = None
@@ -22,7 +22,7 @@ class SparkColumn(dbtClassMixin, Column):
     def translate_type(cls, dtype: str) -> str:
         return dtype
 
-    def can_expand_to(self: Self, other_column: Self) -> bool:
+    def can_expand_to(self: Self, other_column: Self) -> bool:  # type: ignore
         """returns True if both columns are strings"""
         return self.is_string() and other_column.is_string()
 
