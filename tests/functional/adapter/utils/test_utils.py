@@ -1,5 +1,8 @@
 import pytest
 
+from dbt.tests.adapter.utils.test_array_append import BaseArrayAppend
+from dbt.tests.adapter.utils.test_array_concat import BaseArrayConcat
+from dbt.tests.adapter.utils.test_array_construct import BaseArrayConstruct
 from dbt.tests.adapter.utils.test_any_value import BaseAnyValue
 from dbt.tests.adapter.utils.test_bool_or import BaseBoolOr
 from dbt.tests.adapter.utils.test_cast_bool_to_text import BaseCastBoolToText
@@ -28,6 +31,18 @@ from tests.functional.adapter.utils.fixture_listagg import models__test_listagg_
 
 
 class TestAnyValue(BaseAnyValue):
+    pass
+
+
+class TestArrayAppend(BaseArrayAppend):
+    pass
+
+
+class TestArrayConcat(BaseArrayConcat):
+    pass
+
+
+class TestArrayConstruct(BaseArrayConstruct):
     pass
 
 
