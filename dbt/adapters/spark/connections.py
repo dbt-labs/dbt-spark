@@ -59,7 +59,7 @@ class SparkConnectionMethod(StrEnum):
 class SparkCredentials(Credentials):
     host: str
     method: SparkConnectionMethod
-    database: Optional[str]
+    database: Optional[str]  # type: ignore
     driver: Optional[str] = None
     cluster: Optional[str] = None
     endpoint: Optional[str] = None
