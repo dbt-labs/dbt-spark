@@ -207,6 +207,7 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
+        columns = []
         try:
             rows: List[agate.Row] = self.execute_macro(
                 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
