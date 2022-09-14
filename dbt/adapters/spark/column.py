@@ -22,7 +22,6 @@ class SparkColumn(dbtClassMixin, Column):  # type: ignore
     def translate_type(cls, dtype: str) -> str:
         return dtype
 
-
     def can_expand_to(self: Self, other_column: Self) -> bool:  # type: ignore
         """returns True if both columns are strings"""
         return self.is_string() and other_column.is_string()
