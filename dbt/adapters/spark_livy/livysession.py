@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import time 
 import requests
+from urllib import response
 
 import datetime as dt
 from types import TracebackType
@@ -289,7 +290,22 @@ class LivyConnectionManager:
         }
 
         # Create sessions
-        session_id = str(requests.post(connect_url + '/sessions', data=json.dumps(data), headers=headers, auth=auth).json()['id'])
+        try:
+            response = requests.post(connect_url + '/sessions', data=json.dumps(data), headers=headers, auth=auth)
+            response.raise_for_status()
+        except requests.exceptions.ConnectionError as c_err:
+            print("Connection Error :", c_err)
+        except requests.exceptions.HTTPError as h_err:
+            print("Http Error: ", h_err)
+        except requests.exceptions.Timeout as t_err:
+            print("Timeout Error: ", t_err)
+        except requests.exceptions.RequestException as a_err:
+            print("Authorization Error: ", a_err)
+
+        if response is None:
+            raise Exception("Invalid response from livy server")
+
+        session_id = str(response.json()['id'])
 
         # Wait for started state
         while True:
