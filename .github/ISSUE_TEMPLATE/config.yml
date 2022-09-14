@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask the community for help
+    url: https://github.com/dbt-labs/docs.getdbt.com/discussions
+    about: Need help troubleshooting? Check out our guide on how to ask
+  - name: Contact dbt Cloud support
+    url: mailto:support@getdbt.com
+    about: Are you using dbt Cloud? Contact our support team for help!
+  - name: Participate in Discussions
+    url: https://github.com/dbt-labs/dbt-spark/discussions
+    about: Do you have a Big Idea for dbt-spark? Read open discussions, or start a new one
+  - name: Create an issue for dbt-core
+    url: https://github.com/dbt-labs/dbt-core/issues/new/choose
+    about: Report a bug or request a feature for dbt-core
