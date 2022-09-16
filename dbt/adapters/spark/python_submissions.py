@@ -116,7 +116,14 @@ class DBNotebookPythonJobHelper(BaseDatabricksHelper):
             headers=self.auth_header,
             json={
                 "run_name": f"{self.schema}-{self.identifier}-{uuid.uuid4()}",
-                "existing_cluster_id": self.credentials.cluster,
+                # "existing_cluster_id": self.credentials.cluster,
+                "new_cluster": {
+                    "spark_version": "7.3.x-scala2.12",
+                    "node_type_id": "i3.xlarge",
+                    "spark_conf": {"spark.speculation": True},
+                    "aws_attributes": {"availability": "SPOT", "zone_id": "us-west-2a"},
+                    "autoscale": {"min_workers": 2, "max_workers": 4},
+                },
                 "notebook_task": {
                     "notebook_path": path,
                 },
