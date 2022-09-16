@@ -1,7 +1,7 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union, Type
 from typing_extensions import TypeAlias
 
 import agate
@@ -10,12 +10,17 @@ from dbt.contracts.relation import RelationType
 import dbt
 import dbt.exceptions
 
-from dbt.adapters.base import AdapterConfig
+from dbt.adapters.base import AdapterConfig, PythonJobHelper
 from dbt.adapters.base.impl import catch_as_completed
+from dbt.contracts.connection import AdapterResponse
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
+from dbt.adapters.spark.python_submissions import (
+    DBNotebookPythonJobHelper,
+    DBCommandsApiPythonJobHelper,
+)
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.events import AdapterLogger
@@ -117,7 +122,7 @@ class SparkAdapter(SQLAdapter):
             dbt.exceptions.raise_compiler_error(
                 "Attempted to cache a null schema for {}".format(name)
             )
-        if dbt.flags.USE_CACHE:
+        if dbt.flags.USE_CACHE:  # type: ignore
             self.cache.add_schema(None, schema)
         # so jinja doesn't render things
         return ""
@@ -160,11 +165,9 @@ class SparkAdapter(SQLAdapter):
 
         return relations
 
-    def get_relation(
-        self, database: Optional[str], schema: str, identifier: str
-    ) -> Optional[BaseRelation]:
+    def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.include_policy.database:
-            database = None
+            database = None  # type: ignore
 
         return super().get_relation(database, schema, identifier)
 
@@ -208,36 +211,20 @@ class SparkAdapter(SQLAdapter):
         return pos
 
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
-        cached_relations = self.cache.get_relations(relation.database, relation.schema)
-        cached_relation = next(
-            (
-                cached_relation
-                for cached_relation in cached_relations
-                if str(cached_relation) == str(relation)
-            ),
-            None,
-        )
         columns = []
-        if cached_relation and cached_relation.information:
-            columns = self.parse_columns_from_information(cached_relation)
-        if not columns:
-            # in open source delta 'show table extended' query output doesnt
-            # return relation's schema. if columns are empty from cache,
-            # use get_columns_in_relation spark macro
-            # which would execute 'describe extended tablename' query
-            try:
-                rows: List[agate.Row] = self.execute_macro(
-                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
-                )
-                columns = self.parse_describe_extended(relation, rows)
-            except dbt.exceptions.RuntimeException as e:
-                # spark would throw error when table doesn't exist, where other
-                # CDW would just return and empty list, normalizing the behavior here
-                errmsg = getattr(e, "msg", "")
-                if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
-                    pass
-                else:
-                    raise e
+        try:
+            rows: List[agate.Row] = self.execute_macro(
+                GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
+            )
+            columns = self.parse_describe_extended(relation, rows)
+        except dbt.exceptions.RuntimeException as e:
+            # spark would throw error when table doesn't exist, where other
+            # CDW would just return and empty list, normalizing the behavior here
+            errmsg = getattr(e, "msg", "")
+            if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
+                pass
+            else:
+                raise e
 
         # strip hudi metadata columns.
         columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
@@ -297,7 +284,12 @@ class SparkAdapter(SQLAdapter):
                 for schema in schemas:
                     futures.append(
                         tpe.submit_connected(
-                            self, schema, self._get_one_catalog, info, [schema], manifest
+                            self,
+                            schema,
+                            self._get_one_catalog,
+                            info,
+                            [schema],
+                            manifest,
                         )
                     )
             catalogs, exceptions = catch_as_completed(futures)
@@ -380,6 +372,20 @@ class SparkAdapter(SQLAdapter):
             raise
         finally:
             conn.transaction_open = False
+
+    def generate_python_submission_response(self, submission_result: Any) -> AdapterResponse:
+        return self.connections.get_response(None)
+
+    @property
+    def default_python_submission_method(self) -> str:
+        return "commands"
+
+    @property
+    def python_submission_helpers(self) -> Dict[str, Type[PythonJobHelper]]:
+        return {
+            "notebook": DBNotebookPythonJobHelper,
+            "commands": DBCommandsApiPythonJobHelper,
+        }
 
     def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
         grants_dict: Dict[str, List[str]] = {}

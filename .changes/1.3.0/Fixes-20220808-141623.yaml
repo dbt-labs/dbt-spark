@@ -1,0 +1,8 @@
+kind: Fixes
+body: Pin pyodbc to version 4.0.32 to prevent overwriting libodbc.so and libltdl.so
+  on Linux
+time: 2022-08-08T14:16:23.846876-05:00
+custom:
+  Author: barberscot
+  Issue: "397"
+  PR: "398"
