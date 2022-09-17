@@ -53,7 +53,7 @@ if importlib.util.find_spec(package_name):
       # convert to pyspark.DataFrame
       df = spark.createDataFrame(df)
 
-df.write.mode("overwrite").format("delta").saveAsTable("{{ target_relation }}")
+df.write.mode("overwrite").format("delta").option("overwriteSchema", "true").saveAsTable("{{ target_relation }}")
 {%- endmacro -%}
 
 {%macro py_script_comment()%}
