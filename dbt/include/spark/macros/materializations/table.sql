@@ -42,18 +42,31 @@
 dbt = dbtObj(spark.table)
 df = model(dbt, spark)
 
-# make sure pandas exists
 import importlib.util
-import pyspark.pandas
-package_name = 'pandas'
-if importlib.util.find_spec(package_name):
-    import pandas
+
+pandas_available = False
+pyspark_available = False
+
+# make sure pandas exists before using it
+if importlib.util.find_spec("pandas"):
+  import pandas
+  pandas_available = True
+
+# make sure pyspark.pandas exists before using it
+if importlib.util.find_spec("pyspark.pandas"):
+  import pyspark.pandas
+  pyspark_available = True
 
 # convert to pyspark.sql.dataframe.DataFrame
-if isinstance(df, pandas.core.frame.DataFrame):
+if isinstance(df, pyspark.sql.dataframe.DataFrame):
+  pass  # since it is already a Spark DataFrame
+elif pandas_available and isinstance(df, pandas.core.frame.DataFrame):
   df = spark.createDataFrame(df)
-elif isinstance(df, pyspark.pandas.frame.DataFrame):
+elif pyspark_available and isinstance(df, pyspark.pandas.frame.DataFrame):
   df = df.to_spark()
+else:
+  msg = f"{type(df)} is not a supported type for dbt Python materialization"
+  raise Exception(msg)
 
 df.write.mode("overwrite").format("delta").option("overwriteSchema", "true").saveAsTable("{{ target_relation }}")
 {%- endmacro -%}
