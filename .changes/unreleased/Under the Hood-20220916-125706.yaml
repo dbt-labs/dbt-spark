@@ -1,5 +1,5 @@
 kind: Under the Hood
-body: Convert df to pyspark DataFrame if it is pandas before writing
+body: Enable Pandas and Pandas-on-Spark DataFrames for dbt python models
 time: 2022-09-16T12:57:06.846297-06:00
 custom:
   Author: chamini2 dbeatty10

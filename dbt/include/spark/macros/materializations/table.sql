@@ -44,12 +44,15 @@ df = model(dbt, spark)
 
 # make sure pandas exists
 import importlib.util
+import pyspark.pandas
 package_name = 'pandas'
 if importlib.util.find_spec(package_name):
     import pandas
+    # convert to pyspark.sql.dataframe.DataFrame
     if isinstance(df, pandas.core.frame.DataFrame):
-      # convert to pyspark.DataFrame
       df = spark.createDataFrame(df)
+    elif isinstance(df, pyspark.pandas.frame.DataFrame):
+      df = df.to_spark()
 
 df.write.mode("overwrite").format("delta").option("overwriteSchema", "true").saveAsTable("{{ target_relation }}")
 {%- endmacro -%}
