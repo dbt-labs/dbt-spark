@@ -57,13 +57,19 @@ if importlib.util.find_spec("pyspark.pandas"):
   import pyspark.pandas
   pyspark_available = True
 
+# preferentially convert pandas DataFrames to pandas-on-Spark DataFrames first
+# since they know how to convert pandas DataFrames better than `spark.createDataFrame(df)`
+# and converting from pandas-on-Spark to Spark DataFrame has no overhead
+if pyspark_available and pandas_available and isinstance(df, pandas.core.frame.DataFrame):
+  df = pyspark.pandas.frame.DataFrame(df)
+
 # convert to pyspark.sql.dataframe.DataFrame
 if isinstance(df, pyspark.sql.dataframe.DataFrame):
   pass  # since it is already a Spark DataFrame
-elif pandas_available and isinstance(df, pandas.core.frame.DataFrame):
-  df = spark.createDataFrame(df)
 elif pyspark_available and isinstance(df, pyspark.pandas.frame.DataFrame):
   df = df.to_spark()
+elif pandas_available and isinstance(df, pandas.core.frame.DataFrame):
+  df = spark.createDataFrame(df)
 else:
   msg = f"{type(df)} is not a supported type for dbt Python materialization"
   raise Exception(msg)
