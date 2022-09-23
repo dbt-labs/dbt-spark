@@ -21,7 +21,6 @@
 
 ### Contributors
 - [@barberscot](https://github.com/barberscot) ([#398](https://github.com/dbt-labs/dbt-spark/pull/398))
-
 ## Previous Releases
 For information on prior major and minor releases, see their changelogs:
 - [1.2](https://github.com/dbt-labs/dbt-spark/blob/1.2.latest/CHANGELOG.md)
