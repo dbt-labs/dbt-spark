@@ -1,7 +1,7 @@
 {{ config(
     materialized='incremental',
     incremental_strategy='insert_overwrite',
-    partition_by='id'
+    partition_by='id',
     file_format='delta'
 ) }}
 
