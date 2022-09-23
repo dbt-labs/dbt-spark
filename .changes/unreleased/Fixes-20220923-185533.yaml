@@ -1,0 +1,8 @@
+kind: Fixes
+body: Handled inconsistent Bigint/Long datatype returned by Spark using `describe`
+  and `show table extended`
+time: 2022-09-23T18:55:33.119505+02:00
+custom:
+  Author: francescomucio
+  Issue: "357"
+  PR: "358"
