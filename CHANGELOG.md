@@ -16,13 +16,11 @@
 - Support python model through notebook, currently supported materializations are table and incremental ([#417](https://github.com/dbt-labs/dbt-spark/issues/417), [#377](https://github.com/dbt-labs/dbt-spark/pull/377))
 ### Fixes
 - Pin pyodbc to version 4.0.32 to prevent overwriting libodbc.so and libltdl.so on Linux ([#397](https://github.com/dbt-labs/dbt-spark/issues/397), [#398](https://github.com/dbt-labs/dbt-spark/pull/398))
-- Handled inconsistent Bigint/Long datatype returned by Spark using `describe` and `show table extended`.
 ### Under the Hood
 - Support core incremental refactor ([#4402](https://github.com/dbt-labs/dbt-spark/issues/4402), [#394](https://github.com/dbt-labs/dbt-spark/pull/394))
 
 ### Contributors
 - [@barberscot](https://github.com/barberscot) ([#398](https://github.com/dbt-labs/dbt-spark/pull/398))
-- [@francescomucio](https://github.com/francescomucio) ([#357](https://github.com/dbt-labs/dbt-spark/pull/357))
 
 ## Previous Releases
 For information on prior major and minor releases, see their changelogs:
