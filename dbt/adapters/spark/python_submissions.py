@@ -8,7 +8,7 @@ import dbt.exceptions
 from dbt.adapters.base import PythonJobHelper
 from dbt.adapters.spark import SparkCredentials
 
-DEFAULT_POLLING_INTERVAL = 5
+DEFAULT_POLLING_INTERVAL = 10
 SUBMISSION_LANGUAGE = "python"
 DEFAULT_TIMEOUT = 60 * 60 * 24
 
@@ -18,10 +18,14 @@ class BaseDatabricksHelper(PythonJobHelper):
         self.check_credentials(credentials)
         self.credentials = credentials
         self.identifier = parsed_model["alias"]
-        self.schema = getattr(parsed_model, "schema", self.credentials.schema)
+        self.schema = parsed_model["schema"]
         self.parsed_model = parsed_model
         self.timeout = self.get_timeout()
         self.polling_interval = DEFAULT_POLLING_INTERVAL
+
+    @property
+    def cluster_id(self) -> str:
+        return self.parsed_model.get("cluster_id", self.credentials.cluster_id)
 
     def get_timeout(self) -> int:
         timeout = self.parsed_model["config"].get("timeout", DEFAULT_TIMEOUT)
@@ -111,23 +115,27 @@ class DBNotebookPythonJobHelper(BaseDatabricksHelper):
             )
 
     def _submit_notebook(self, path: str) -> str:
+        if self.parsed_model["config"].get("job_cluster_config", None):
+            # example of job_cluster_config config:
+            # {
+            #     "spark_version": "7.3.x-scala2.12",
+            #     "node_type_id": "i3.xlarge",
+            #     "autoscale": {"min_workers": 2, "max_workers": 4},
+            # }
+            cluster_spec = {"new_cluster": self.parsed_model["config"]["job_cluster_config"]}
+        else:
+            cluster_spec = {"existing_cluster_id": self.cluster_id}
+        job_spec = {
+            "run_name": f"{self.schema}-{self.identifier}-{uuid.uuid4()}",
+            "notebook_task": {
+                "notebook_path": path,
+            },
+        }
+        job_spec.update(cluster_spec)
         submit_response = requests.post(
             f"https://{self.credentials.host}/api/2.1/jobs/runs/submit",
             headers=self.auth_header,
-            json={
-                "run_name": f"{self.schema}-{self.identifier}-{uuid.uuid4()}",
-                # "existing_cluster_id": self.credentials.cluster,
-                "new_cluster": {
-                    "spark_version": "7.3.x-scala2.12",
-                    "node_type_id": "i3.xlarge",
-                    "spark_conf": {"spark.speculation": True},
-                    "aws_attributes": {"availability": "SPOT", "zone_id": "us-west-2a"},
-                    "autoscale": {"min_workers": 2, "max_workers": 4},
-                },
-                "notebook_task": {
-                    "notebook_path": path,
-                },
-            },
+            json=job_spec,
         )
         if submit_response.status_code != 200:
             raise dbt.exceptions.RuntimeException(
@@ -137,9 +145,8 @@ class DBNotebookPythonJobHelper(BaseDatabricksHelper):
 
     def submit(self, compiled_code: str) -> None:
         # it is safe to call mkdirs even if dir already exists and have content inside
-        work_dir = f"/Users/{self.credentials.user}/{self.schema}/"
+        work_dir = f"/dbt_python_model/{self.schema}/"
         self._create_work_dir(work_dir)
-
         # add notebook
         whole_file_path = f"{work_dir}{self.identifier}"
         self._upload_notebook(whole_file_path, compiled_code)
@@ -176,9 +183,9 @@ class DBNotebookPythonJobHelper(BaseDatabricksHelper):
 
 
 class DBContext:
-    def __init__(self, credentials: SparkCredentials) -> None:
+    def __init__(self, credentials: SparkCredentials, cluster_id: str) -> None:
         self.auth_header = {"Authorization": f"Bearer {credentials.token}"}
-        self.cluster = credentials.cluster
+        self.cluster_id = cluster_id
         self.host = credentials.host
 
     def create(self) -> str:
@@ -187,7 +194,7 @@ class DBContext:
             f"https://{self.host}/api/1.2/contexts/create",
             headers=self.auth_header,
             json={
-                "clusterId": self.cluster,
+                "clusterId": self.cluster_id,
                 "language": SUBMISSION_LANGUAGE,
             },
         )
@@ -203,7 +210,7 @@ class DBContext:
             f"https://{self.host}/api/1.2/contexts/destroy",
             headers=self.auth_header,
             json={
-                "clusterId": self.cluster,
+                "clusterId": self.cluster_id,
                 "contextId": context_id,
             },
         )
@@ -215,9 +222,9 @@ class DBContext:
 
 
 class DBCommand:
-    def __init__(self, credentials: SparkCredentials) -> None:
+    def __init__(self, credentials: SparkCredentials, cluster_id: str) -> None:
         self.auth_header = {"Authorization": f"Bearer {credentials.token}"}
-        self.cluster = credentials.cluster
+        self.cluster_id = cluster_id
         self.host = credentials.host
 
     def execute(self, context_id: str, command: str) -> str:
@@ -226,7 +233,7 @@ class DBCommand:
             f"https://{self.host}/api/1.2/commands/execute",
             headers=self.auth_header,
             json={
-                "clusterId": self.cluster,
+                "clusterId": self.cluster_id,
                 "contextId": context_id,
                 "language": SUBMISSION_LANGUAGE,
                 "command": command,
@@ -244,7 +251,7 @@ class DBCommand:
             f"https://{self.host}/api/1.2/commands/status",
             headers=self.auth_header,
             params={
-                "clusterId": self.cluster,
+                "clusterId": self.cluster_id,
                 "contextId": context_id,
                 "commandId": command_id,
             },
@@ -258,12 +265,12 @@ class DBCommand:
 
 class DBCommandsApiPythonJobHelper(BaseDatabricksHelper):
     def check_credentials(self, credentials: SparkCredentials) -> None:
-        if not credentials.cluster:
+        if not self.cluster_id:
             raise ValueError("Databricks cluster is required for commands submission method.")
 
     def submit(self, compiled_code: str) -> None:
-        context = DBContext(self.credentials)
-        command = DBCommand(self.credentials)
+        context = DBContext(self.credentials, self.cluster_id)
+        command = DBCommand(self.credentials, self.cluster_id)
         context_id = context.create()
         try:
             command_id = command.execute(context_id, compiled_code)
