@@ -18,8 +18,8 @@ from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
 from dbt.adapters.spark.python_submissions import (
-    DBNotebookPythonJobHelper,
-    DBCommandsApiPythonJobHelper,
+    JobClusterPythonJobHelper,
+    AllPurposeClusterPythonJobHelper,
 )
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
@@ -377,13 +377,13 @@ class SparkAdapter(SQLAdapter):
 
     @property
     def default_python_submission_method(self) -> str:
-        return "commands"
+        return "all_purpose_cluster"
 
     @property
     def python_submission_helpers(self) -> Dict[str, Type[PythonJobHelper]]:
         return {
-            "notebook": DBNotebookPythonJobHelper,
-            "commands": DBCommandsApiPythonJobHelper,
+            "job_cluster": JobClusterPythonJobHelper,
+            "all_purpose_cluster": AllPurposeClusterPythonJobHelper,
         }
 
     def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
