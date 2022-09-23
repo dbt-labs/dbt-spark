@@ -15,13 +15,13 @@ DEFAULT_TIMEOUT = 60 * 60 * 24
 
 class BaseDatabricksHelper(PythonJobHelper):
     def __init__(self, parsed_model: Dict, credentials: SparkCredentials) -> None:
-        self.check_credentials(credentials)
         self.credentials = credentials
         self.identifier = parsed_model["alias"]
         self.schema = parsed_model["schema"]
         self.parsed_model = parsed_model
         self.timeout = self.get_timeout()
         self.polling_interval = DEFAULT_POLLING_INTERVAL
+        self.check_credentials(credentials)
 
     @property
     def cluster_id(self) -> str:
@@ -79,9 +79,11 @@ class DBNotebookPythonJobHelper(BaseDatabricksHelper):
         super().__init__(parsed_model, credentials)
         self.auth_header = {"Authorization": f"Bearer {self.credentials.token}"}
 
-    def check_credentials(self, credentials) -> None:
-        if not credentials.user:
-            raise ValueError("Databricks user is required for notebook submission method.")
+    def check_credentials(self, credentials: SparkCredentials) -> None:
+        if not self.cluster_id and not self.parsed_model["config"].get("job_cluster_config", None):
+            raise ValueError(
+                "cluster_id or job_cluster_config is required for commands submission method."
+            )
 
     def _create_work_dir(self, path: str) -> None:
         response = requests.post(
