@@ -7,10 +7,12 @@ import uuid
 import dbt.exceptions
 from dbt.adapters.base import PythonJobHelper
 from dbt.adapters.spark import SparkCredentials
+from dbt.adapters.spark import __version__
 
 DEFAULT_POLLING_INTERVAL = 10
 SUBMISSION_LANGUAGE = "python"
 DEFAULT_TIMEOUT = 60 * 60 * 24
+DBT_SPARK_VERSION = __version__.version
 
 
 class BaseDatabricksHelper(PythonJobHelper):
@@ -21,7 +23,11 @@ class BaseDatabricksHelper(PythonJobHelper):
         self.parsed_model = parsed_model
         self.timeout = self.get_timeout()
         self.polling_interval = DEFAULT_POLLING_INTERVAL
-        self.check_credentials(credentials)
+        self.check_credentials()
+        self.auth_header = {
+            "Authorization": f"Bearer {self.credentials.token}",
+            "User-Agent": f"dbt-labs-dbt-spark/{DBT_SPARK_VERSION} (Databricks)",
+        }
 
     @property
     def cluster_id(self) -> str:
@@ -33,10 +39,98 @@ class BaseDatabricksHelper(PythonJobHelper):
             raise ValueError("Timeout must be a positive integer")
         return timeout
 
-    def check_credentials(self, credentials: SparkCredentials) -> None:
+    def check_credentials(self) -> None:
         raise NotImplementedError(
             "Overwrite this method to check specific requirement for current submission method"
         )
+
+    def _create_work_dir(self, path: str) -> None:
+        response = requests.post(
+            f"https://{self.credentials.host}/api/2.0/workspace/mkdirs",
+            headers=self.auth_header,
+            json={
+                "path": path,
+            },
+        )
+        if response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating work_dir for python notebooks\n {response.content!r}"
+            )
+
+    def _upload_notebook(self, path: str, compiled_code: str) -> None:
+        b64_encoded_content = base64.b64encode(compiled_code.encode()).decode()
+        response = requests.post(
+            f"https://{self.credentials.host}/api/2.0/workspace/import",
+            headers=self.auth_header,
+            json={
+                "path": path,
+                "content": b64_encoded_content,
+                "language": "PYTHON",
+                "overwrite": True,
+                "format": "SOURCE",
+            },
+        )
+        if response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating python notebook.\n {response.content!r}"
+            )
+
+    def _submit_job(self, path: str, cluster_spec: dict) -> str:
+        job_spec = {
+            "run_name": f"{self.schema}-{self.identifier}-{uuid.uuid4()}",
+            "notebook_task": {
+                "notebook_path": path,
+            },
+        }
+        job_spec.update(cluster_spec)
+        submit_response = requests.post(
+            f"https://{self.credentials.host}/api/2.1/jobs/runs/submit",
+            headers=self.auth_header,
+            json=job_spec,
+        )
+        if submit_response.status_code != 200:
+            raise dbt.exceptions.RuntimeException(
+                f"Error creating python run.\n {submit_response.content!r}"
+            )
+        return submit_response.json()["run_id"]
+
+    def _submit_through_notebook(self, compiled_code: str, cluster_spec: dict) -> None:
+        # it is safe to call mkdirs even if dir already exists and have content inside
+        work_dir = f"/dbt_python_model/{self.schema}/"
+        self._create_work_dir(work_dir)
+        # add notebook
+        whole_file_path = f"{work_dir}{self.identifier}"
+        self._upload_notebook(whole_file_path, compiled_code)
+
+        # submit job
+        run_id = self._submit_job(whole_file_path, cluster_spec)
+
+        self.polling(
+            status_func=requests.get,
+            status_func_kwargs={
+                "url": f"https://{self.credentials.host}/api/2.1/jobs/runs/get?run_id={run_id}",
+                "headers": self.auth_header,
+            },
+            get_state_func=lambda response: response.json()["state"]["life_cycle_state"],
+            terminal_states=("TERMINATED", "SKIPPED", "INTERNAL_ERROR"),
+            expected_end_state="TERMINATED",
+            get_state_msg_func=lambda response: response.json()["state"]["state_message"],
+        )
+
+        # get end state to return to user
+        run_output = requests.get(
+            f"https://{self.credentials.host}" f"/api/2.1/jobs/runs/get-output?run_id={run_id}",
+            headers=self.auth_header,
+        )
+        json_run_output = run_output.json()
+        result_state = json_run_output["metadata"]["state"]["result_state"]
+        if result_state != "SUCCESS":
+            raise dbt.exceptions.RuntimeException(
+                "Python model failed with traceback as:\n"
+                "(Note that the line number here does not "
+                "match the line number in your code due to dbt templating)\n"
+                f"{json_run_output['error_trace']}"
+            )
 
     def submit(self, compiled_code: str) -> None:
         raise NotImplementedError(
@@ -74,119 +168,19 @@ class BaseDatabricksHelper(PythonJobHelper):
         return response
 
 
-class DBNotebookPythonJobHelper(BaseDatabricksHelper):
-    def __init__(self, parsed_model: Dict, credentials: SparkCredentials) -> None:
-        super().__init__(parsed_model, credentials)
-        self.auth_header = {"Authorization": f"Bearer {self.credentials.token}"}
-
-    def check_credentials(self, credentials: SparkCredentials) -> None:
-        if not self.cluster_id and not self.parsed_model["config"].get("job_cluster_config", None):
-            raise ValueError(
-                "cluster_id or job_cluster_config is required for commands submission method."
-            )
-
-    def _create_work_dir(self, path: str) -> None:
-        response = requests.post(
-            f"https://{self.credentials.host}/api/2.0/workspace/mkdirs",
-            headers=self.auth_header,
-            json={
-                "path": path,
-            },
-        )
-        if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
-                f"Error creating work_dir for python notebooks\n {response.content!r}"
-            )
-
-    def _upload_notebook(self, path: str, compiled_code: str) -> None:
-        b64_encoded_content = base64.b64encode(compiled_code.encode()).decode()
-        response = requests.post(
-            f"https://{self.credentials.host}/api/2.0/workspace/import",
-            headers=self.auth_header,
-            json={
-                "path": path,
-                "content": b64_encoded_content,
-                "language": "PYTHON",
-                "overwrite": True,
-                "format": "SOURCE",
-            },
-        )
-        if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
-                f"Error creating python notebook.\n {response.content!r}"
-            )
-
-    def _submit_notebook(self, path: str) -> str:
-        if self.parsed_model["config"].get("job_cluster_config", None):
-            # example of job_cluster_config config:
-            # {
-            #     "spark_version": "7.3.x-scala2.12",
-            #     "node_type_id": "i3.xlarge",
-            #     "autoscale": {"min_workers": 2, "max_workers": 4},
-            # }
-            cluster_spec = {"new_cluster": self.parsed_model["config"]["job_cluster_config"]}
-        else:
-            cluster_spec = {"existing_cluster_id": self.cluster_id}
-        job_spec = {
-            "run_name": f"{self.schema}-{self.identifier}-{uuid.uuid4()}",
-            "notebook_task": {
-                "notebook_path": path,
-            },
-        }
-        job_spec.update(cluster_spec)
-        submit_response = requests.post(
-            f"https://{self.credentials.host}/api/2.1/jobs/runs/submit",
-            headers=self.auth_header,
-            json=job_spec,
-        )
-        if submit_response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
-                f"Error creating python run.\n {submit_response.content!r}"
-            )
-        return submit_response.json()["run_id"]
+class JobClusterPythonJobHelper(BaseDatabricksHelper):
+    def check_credentials(self) -> None:
+        if not self.parsed_model["config"].get("job_cluster_config", None):
+            raise ValueError("job_cluster_config is required for commands submission method.")
 
     def submit(self, compiled_code: str) -> None:
-        # it is safe to call mkdirs even if dir already exists and have content inside
-        work_dir = f"/dbt_python_model/{self.schema}/"
-        self._create_work_dir(work_dir)
-        # add notebook
-        whole_file_path = f"{work_dir}{self.identifier}"
-        self._upload_notebook(whole_file_path, compiled_code)
-
-        # submit job
-        run_id = self._submit_notebook(whole_file_path)
-
-        self.polling(
-            status_func=requests.get,
-            status_func_kwargs={
-                "url": f"https://{self.credentials.host}/api/2.1/jobs/runs/get?run_id={run_id}",
-                "headers": self.auth_header,
-            },
-            get_state_func=lambda response: response.json()["state"]["life_cycle_state"],
-            terminal_states=("TERMINATED", "SKIPPED", "INTERNAL_ERROR"),
-            expected_end_state="TERMINATED",
-            get_state_msg_func=lambda response: response.json()["state"]["state_message"],
-        )
-
-        # get end state to return to user
-        run_output = requests.get(
-            f"https://{self.credentials.host}" f"/api/2.1/jobs/runs/get-output?run_id={run_id}",
-            headers=self.auth_header,
-        )
-        json_run_output = run_output.json()
-        result_state = json_run_output["metadata"]["state"]["result_state"]
-        if result_state != "SUCCESS":
-            raise dbt.exceptions.RuntimeException(
-                "Python model failed with traceback as:\n"
-                "(Note that the line number here does not "
-                "match the line number in your code due to dbt templating)\n"
-                f"{json_run_output['error_trace']}"
-            )
+        cluster_spec = {"new_cluster": self.parsed_model["config"]["job_cluster_config"]}
+        self._submit_through_notebook(compiled_code, cluster_spec)
 
 
 class DBContext:
-    def __init__(self, credentials: SparkCredentials, cluster_id: str) -> None:
-        self.auth_header = {"Authorization": f"Bearer {credentials.token}"}
+    def __init__(self, credentials: SparkCredentials, cluster_id: str, auth_header: dict) -> None:
+        self.auth_header = auth_header
         self.cluster_id = cluster_id
         self.host = credentials.host
 
@@ -224,8 +218,8 @@ class DBContext:
 
 
 class DBCommand:
-    def __init__(self, credentials: SparkCredentials, cluster_id: str) -> None:
-        self.auth_header = {"Authorization": f"Bearer {credentials.token}"}
+    def __init__(self, credentials: SparkCredentials, cluster_id: str, auth_header: dict) -> None:
+        self.auth_header = auth_header
         self.cluster_id = cluster_id
         self.host = credentials.host
 
@@ -265,32 +259,38 @@ class DBCommand:
         return response.json()
 
 
-class DBCommandsApiPythonJobHelper(BaseDatabricksHelper):
-    def check_credentials(self, credentials: SparkCredentials) -> None:
+class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
+    def check_credentials(self) -> None:
         if not self.cluster_id:
-            raise ValueError("Databricks cluster is required for commands submission method.")
+            raise ValueError(
+                "Databricks cluster_id is required for all_purpose_cluster submission method with running with notebook."
+            )
 
     def submit(self, compiled_code: str) -> None:
-        context = DBContext(self.credentials, self.cluster_id)
-        command = DBCommand(self.credentials, self.cluster_id)
-        context_id = context.create()
-        try:
-            command_id = command.execute(context_id, compiled_code)
-            # poll until job finish
-            response = self.polling(
-                status_func=command.status,
-                status_func_kwargs={
-                    "context_id": context_id,
-                    "command_id": command_id,
-                },
-                get_state_func=lambda response: response["status"],
-                terminal_states=("Cancelled", "Error", "Finished"),
-                expected_end_state="Finished",
-                get_state_msg_func=lambda response: response.json()["results"]["data"],
-            )
-            if response["results"]["resultType"] == "error":
-                raise dbt.exceptions.RuntimeException(
-                    f"Python model failed with traceback as:\n" f"{response['results']['cause']}"
+        if self.parsed_model["config"].get("create_notebook", False):
+            self._submit_through_notebook(compiled_code, {"existing_cluster_id": self.cluster_id})
+        else:
+            context = DBContext(self.credentials, self.cluster_id, self.auth_header)
+            command = DBCommand(self.credentials, self.cluster_id, self.auth_header)
+            context_id = context.create()
+            try:
+                command_id = command.execute(context_id, compiled_code)
+                # poll until job finish
+                response = self.polling(
+                    status_func=command.status,
+                    status_func_kwargs={
+                        "context_id": context_id,
+                        "command_id": command_id,
+                    },
+                    get_state_func=lambda response: response["status"],
+                    terminal_states=("Cancelled", "Error", "Finished"),
+                    expected_end_state="Finished",
+                    get_state_msg_func=lambda response: response.json()["results"]["data"],
                 )
-        finally:
-            context.destroy(context_id)
+                if response["results"]["resultType"] == "error":
+                    raise dbt.exceptions.RuntimeException(
+                        f"Python model failed with traceback as:\n"
+                        f"{response['results']['cause']}"
+                    )
+            finally:
+                context.destroy(context_id)
