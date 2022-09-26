@@ -1,0 +1,7 @@
+kind: "Dependency"
+body: "Update click requirement from ~=8.0.4 to ~=8.1.3"
+time: 2022-09-14T19:20:27.00000Z
+custom:
+  Author: dependabot[bot]
+  Issue: 417
+  PR: 457

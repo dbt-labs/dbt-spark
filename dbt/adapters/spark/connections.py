@@ -59,7 +59,7 @@ class SparkConnectionMethod(StrEnum):
 class SparkCredentials(Credentials):
     host: str
     method: SparkConnectionMethod
-    database: Optional[str]
+    database: Optional[str]  # type: ignore
     driver: Optional[str] = None
     cluster: Optional[str] = None
     endpoint: Optional[str] = None
@@ -82,6 +82,10 @@ class SparkCredentials(Credentials):
         if "database" not in data:
             data["database"] = None
         return data
+
+    @property
+    def cluster_id(self):
+        return self.cluster
 
     def __post_init__(self):
         # spark classifies database and schema as the same thing
