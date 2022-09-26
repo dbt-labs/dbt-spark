@@ -1,7 +1,7 @@
 kind: Features
-body: Consolidate timestamp macrs
+body: Consolidate timestamp macros
 time: 2022-09-26T12:36:09.319981-07:00
 custom:
   Author: colin-rogers-dbt
-  Issue: "5521"
+  Issue: "483"
   PR: "480"
