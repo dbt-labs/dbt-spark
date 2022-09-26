@@ -1,3 +1,0 @@
-kind: Fixed
-body: Password doesn't pass to server using LDAP connection via thrift (#310)
-time: 2022-09-22T14:31:54.410453766+03:00
