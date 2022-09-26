@@ -82,6 +82,10 @@ class SparkCredentials(Credentials):
             data["database"] = None
         return data
 
+    @property
+    def cluster_id(self):
+        return self.cluster
+
     def __post_init__(self):
         # spark classifies database and schema as the same thing
         if self.database is not None and self.database != self.schema:

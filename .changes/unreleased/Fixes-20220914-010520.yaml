@@ -1,0 +1,8 @@
+kind: Fixes
+body: change to get_columns_in_relation to fix cache inconsistencies to fix cache
+  issues in incremental models causing failure on on_schema_change
+time: 2022-09-14T01:05:20.312981-05:00
+custom:
+  Author: McKnight-42
+  Issue: "447"
+  PR: "451"
