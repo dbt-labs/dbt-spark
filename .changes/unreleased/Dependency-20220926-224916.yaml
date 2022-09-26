@@ -1,0 +1,7 @@
+kind: "Dependency"
+body: "Bump mypy from 0.971 to 0.981"
+time: 2022-09-26T22:49:16.00000Z
+custom:
+  Author: dependabot[bot]
+  Issue: 417
+  PR: 482
