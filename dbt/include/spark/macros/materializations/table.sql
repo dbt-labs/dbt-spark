@@ -63,11 +63,13 @@ if importlib.util.find_spec("databricks.koalas"):
   import databricks.koalas
   koalas_available = True
 
-# preferentially convert pandas DataFrames to pandas-on-Spark DataFrames first
+# preferentially convert pandas and Koalas DataFrames to pandas-on-Spark DataFrames first
 # since they know how to convert pandas DataFrames better than `spark.createDataFrame(df)`
 # and converting from pandas-on-Spark to Spark DataFrame has no overhead
 if pyspark_available and pandas_available and isinstance(df, pandas.core.frame.DataFrame):
   df = pyspark.pandas.frame.DataFrame(df)
+elif koalas_available and pandas_available and isinstance(df, pandas.core.frame.DataFrame):
+  df = databricks.koalas.frame.DataFrame(df)
 
 # convert to pyspark.sql.dataframe.DataFrame
 if isinstance(df, pyspark.sql.dataframe.DataFrame):
