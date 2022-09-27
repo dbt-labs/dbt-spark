@@ -1,7 +1,7 @@
 import pytest
 import os
 from xdist import is_xdist_controller
-from xdist.scheduling import LoadScopeScheduling
+from xdist.scheduler.loadscope import LoadScopeScheduling
 
 pytest_plugins = ["dbt.tests.fixtures.project"]
 
