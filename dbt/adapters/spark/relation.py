@@ -40,7 +40,7 @@ class SparkRelation(BaseRelation):
     meta: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
-        if self.is_iceberg is not True and self.database != self.schema and self.database:
+        if self.database != self.schema and self.database:
             raise RuntimeException("Cannot set database in spark!")
 
     @classmethod
