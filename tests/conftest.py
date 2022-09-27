@@ -18,6 +18,10 @@ def pytest_configure(config):
         "markers",
         "skip_profile(profile): skip test for the given profile",
     )
+    config.addinivalue_line(
+        "markers",
+        "serial: run all tests with mark in single process",
+    )
 
 
 @pytest.fixture(scope="session")
