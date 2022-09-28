@@ -18,7 +18,7 @@ def pytest_configure(config):
     )
     config.addinivalue_line(
         "markers",
-        "serial: run all tests with mark in single process",
+        "python_model: tests related to python model",
     )
 
 
