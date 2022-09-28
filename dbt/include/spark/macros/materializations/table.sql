@@ -42,8 +42,6 @@
 dbt = dbtObj(spark.table)
 df = model(dbt, spark)
 
-import importlib.util
-
 # make sure pandas exists before using it
 try:
   import pandas
