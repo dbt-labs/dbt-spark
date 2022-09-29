@@ -1,8 +1,0 @@
-kind: Features
-body: Support job cluster in notebook submission method, remove requirement for user
-  for python model submission
-time: 2022-09-23T10:12:48.288911-07:00
-custom:
-  Author: ChenyuLInx
-  Issue: "444"
-  PR: "467"
