@@ -46,26 +46,26 @@
 dbt = dbtObj(spark.table)
 df = model(dbt, spark)
 
-import importlib.util
-
-pandas_available = False
-pyspark_available = False
-koalas_available = False
-
 # make sure pandas exists before using it
-if importlib.util.find_spec("pandas"):
+try:
   import pandas
   pandas_available = True
+except ImportError:
+  pandas_available = False
 
 # make sure pyspark.pandas exists before using it
-if importlib.util.find_spec("pyspark.pandas"):
+try:
   import pyspark.pandas
   pyspark_available = True
+except ImportError:
+  pyspark_available = False
 
 # make sure databricks.koalas exists before using it
-if importlib.util.find_spec("databricks.koalas"):
+try:
   import databricks.koalas
   koalas_available = True
+except ImportError:
+  koalas_available = False
 
 # preferentially convert pandas DataFrames to pandas-on-Spark or Koalas DataFrames first
 # since they know how to convert pandas DataFrames better than `spark.createDataFrame(df)`
