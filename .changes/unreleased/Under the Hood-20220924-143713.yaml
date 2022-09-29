@@ -1,7 +1,0 @@
-kind: Under the Hood
-body: Convert df to pyspark DataFrame if it is koalas before writing
-time: 2022-09-24T14:37:13.100404-06:00
-custom:
-  Author: dbeatty10 ueshin
-  Issue: "473"
-  PR: "474"

@@ -1,7 +1,0 @@
-kind: "Dependency"
-body: "Bump thrift-sasl from 0.4.1 to 0.4.3"
-time: 2022-09-14T19:21:25.00000Z
-custom:
-  Author: dependabot[bot]
-  Issue: 417
-  PR: 455
