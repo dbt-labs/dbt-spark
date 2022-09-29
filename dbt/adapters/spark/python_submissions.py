@@ -82,7 +82,14 @@ class BaseDatabricksHelper(PythonJobHelper):
                 "notebook_path": path,
             },
         }
-        job_spec.update(cluster_spec)
+        job_spec.update(cluster_spec)  # updates 'new_cluster' config
+        packages = self.parsed_model["config"].get("packages")
+        libraries = []
+        for package in packages:
+            # TODO this only allows for public PyPI packages
+            # egg, whl, pip + repo are also supported
+            libraries.append({"pypi": {"package": package}})
+        job_spec.update({"libraries": libraries})
         submit_response = requests.post(
             f"https://{self.credentials.host}/api/2.1/jobs/runs/submit",
             headers=self.auth_header,
