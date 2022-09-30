@@ -7,6 +7,6 @@ class TestCurrentTimestampSnowflake(test_timestamps.TestCurrentTimestamps):
     def expected_schema(self):
         return {
             "current_timestamp": "timestamp",
-            "current_timestamp_in_utc": "timestamp",
+            "current_timestamp_in_utc_backcompat": "timestamp",
             "current_timestamp_backcompat": "timestamp",
         }
