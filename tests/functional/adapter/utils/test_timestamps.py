@@ -15,4 +15,4 @@ class TestCurrentTimestampSpark(BaseCurrentTimestamps):
 
     @pytest.fixture(scope="class")
     def expected_sql(self):
-        return """select CURRENT_TIMESTAMP() as current_timestamp"""
+        return """select current_timestamp() as current_timestamp"""
