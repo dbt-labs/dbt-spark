@@ -20,10 +20,22 @@ class TestPythonIncrementalModelSpark(BasePythonIncrementalTests):
 
 models__simple_python_model = """
 import pandas
+import torch
+import spacy
 
 def model(dbt, spark):
     dbt.config(
         materialized='table',
+        submission_method='job_cluster',
+        job_cluster_config={
+            "spark_version": "7.3.x-scala2.12",
+            "node_type_id": "i3.xlarge",
+            "autoscale": {
+                "min_workers": 1,
+                "max_workers": 2
+            }
+        },
+        packages=['spacy', 'torch']
     )
     data = [[1,2]] * 10
     return spark.createDataFrame(data, schema=['test', 'test2'])

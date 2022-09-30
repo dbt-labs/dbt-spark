@@ -31,7 +31,7 @@ class BaseDatabricksHelper(PythonJobHelper):
 
     @property
     def cluster_id(self) -> str:
-        return self.parsed_model.get("cluster_id", self.credentials.cluster_id)
+        return self.parsed_model["config"].get("cluster_id", self.credentials.cluster_id)
 
     def get_timeout(self) -> int:
         timeout = self.parsed_model["config"].get("timeout", DEFAULT_TIMEOUT)
@@ -83,13 +83,16 @@ class BaseDatabricksHelper(PythonJobHelper):
             },
         }
         job_spec.update(cluster_spec)  # updates 'new_cluster' config
-        packages = self.parsed_model["config"].get("packages")
+        # PYPI packages
+        packages = self.parsed_model["config"].get("packages", [])
+        # additional format of packages
+        additional_libs = self.parsed_model["config"].get("additional_libs", [])
         libraries = []
         for package in packages:
-            # TODO this only allows for public PyPI packages
-            # egg, whl, pip + repo are also supported
             libraries.append({"pypi": {"package": package}})
-        job_spec.update({"libraries": libraries})
+        for lib in additional_libs:
+            libraries.append(lib)
+        job_spec.update({"libraries": libraries})  # type: ignore
         submit_response = requests.post(
             f"https://{self.credentials.host}/api/2.1/jobs/runs/submit",
             headers=self.auth_header,
