@@ -1,5 +1,5 @@
 kind: Features
-body: Consolidate timestamp macros
+body: Migrate dbt-utils current_timestamp macros into core + adapters
 time: 2022-09-26T12:36:09.319981-07:00
 custom:
   Author: colin-rogers-dbt
