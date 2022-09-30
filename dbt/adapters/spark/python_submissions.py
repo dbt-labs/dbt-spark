@@ -106,7 +106,7 @@ class BaseDatabricksHelper(PythonJobHelper):
 
     def _submit_through_notebook(self, compiled_code: str, cluster_spec: dict) -> None:
         # it is safe to call mkdirs even if dir already exists and have content inside
-        work_dir = f"/dbt_python_model/{self.schema}/"
+        work_dir = f"/Shared/dbt_python_model/{self.schema}/"
         self._create_work_dir(work_dir)
         # add notebook
         whole_file_path = f"{work_dir}{self.identifier}"
