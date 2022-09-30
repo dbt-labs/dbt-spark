@@ -1,7 +1,0 @@
-kind: Under the Hood
-body: Submit python model with Command API by default. Adjusted run name
-time: 2022-08-29T16:44:26.509138-07:00
-custom:
-  Author: ChenyuLInx
-  Issue: "424"
-  PR: "442"
