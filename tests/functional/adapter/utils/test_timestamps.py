@@ -10,3 +10,9 @@ class TestCurrentTimestampSnowflake(test_timestamps.TestCurrentTimestamps):
             "current_timestamp_in_utc_backcompat": "timestamp",
             "current_timestamp_backcompat": "timestamp",
         }
+
+    @pytest.fixture(scope="class")
+    def expected_sql(self):
+        return """select CURRENT_TIMESTAMP() as current_timestamp,
+                current_timestamp::timestamp as current_timestamp_in_utc_backcompat,
+                current_timestamp::timestamp as current_timestamp_backcompat"""
