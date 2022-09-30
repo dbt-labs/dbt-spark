@@ -1,18 +1,18 @@
-from dbt.tests.adapter.utils import test_timestamps
 import pytest
+from dbt.tests.adapter.utils.test_timestamps import BaseCurrentTimestamps
 
 
-class TestCurrentTimestampSnowflake(test_timestamps.TestCurrentTimestamps):
+class TestCurrentTimestampSpark(BaseCurrentTimestamps):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {"get_current_timestamp.sql": "select {{ current_timestamp() }} as current_timestamp"}
+
     @pytest.fixture(scope="class")
     def expected_schema(self):
         return {
-            "current_timestamp": "timestamp",
-            "current_timestamp_in_utc_backcompat": "timestamp",
-            "current_timestamp_backcompat": "timestamp",
+            "current_timestamp": "timestamp"
         }
 
     @pytest.fixture(scope="class")
     def expected_sql(self):
-        return """select CURRENT_TIMESTAMP() as current_timestamp,
-                current_timestamp::timestamp as current_timestamp_in_utc_backcompat,
-                current_timestamp::timestamp as current_timestamp_backcompat"""
+        return """select CURRENT_TIMESTAMP() as current_timestamp"""
