@@ -1,7 +1,0 @@
-kind: Under the Hood
-body: ignore mypy typing issues
-time: 2022-09-13T15:20:04.459783-07:00
-custom:
-  Author: colin-rogers-dbt
-  Issue: "461"
-  PR: "462"
