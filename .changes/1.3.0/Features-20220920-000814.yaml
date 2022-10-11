@@ -1,7 +1,0 @@
-kind: Features
-body: implement testing for type_boolean in spark
-time: 2022-09-20T00:08:14.15447+01:00
-custom:
-  Author: jpmmcneill
-  Issue: "470"
-  PR: "471"
