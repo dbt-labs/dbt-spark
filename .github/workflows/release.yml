@@ -68,7 +68,7 @@ jobs:
         env:
           IS_PRERELEASE: ${{ contains(env.version_number, 'rc') ||  contains(env.version_number, 'b') }}
         run: |
-          echo ::set-output name=isPrerelease::$IS_PRERELEASE
+          echo "isPrerelease=${IS_PRERELEASE}"
 
       - name: Create GitHub release
         uses: actions/create-release@v1

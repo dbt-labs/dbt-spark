@@ -106,7 +106,7 @@ jobs:
       - name: Get current date
         if: always()
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%dT%H_%M_%S')" #no colons allowed for artifacts
+        run: echo "date=$(date +'%Y-%m-%dT%H_%M_%S')" >> $GITHUB_OUTPUT #no colons allowed for artifacts
 
       - uses: actions/upload-artifact@v2
         if: always()
@@ -155,7 +155,7 @@ jobs:
         run: |
           export is_alpha=0
           if [[ "$(ls -lh dist/)" == *"a1"* ]]; then export is_alpha=1; fi
-          echo "::set-output name=is_alpha::$is_alpha"
+          echo "is_alpha=${is_alpha}" >> $GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v2
         with:
