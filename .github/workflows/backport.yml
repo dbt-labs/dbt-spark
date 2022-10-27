@@ -1,5 +1,3 @@
-
-
 # **what?**
 # When a PR is merged, if it has the backport label, it will create
 # a new PR to backport those changes to the given branch. If it can't

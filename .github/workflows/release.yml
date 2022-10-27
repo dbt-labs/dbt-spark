@@ -6,7 +6,7 @@ on:
 
 # Release version number that must be updated for each release
 env:
-  version_number: '0.20.0rc2'
+  version_number: "0.20.0rc2"
 
 jobs:
   Test:
@@ -15,7 +15,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
 
       - uses: actions/checkout@v2
 
@@ -39,7 +39,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
 
       - uses: actions/checkout@v2
 
@@ -56,9 +56,9 @@ jobs:
       - name: Commit version bump and tag
         uses: EndBug/add-and-commit@v7
         with:
-          author_name: 'Leah Antkiewicz'
-          author_email: 'leah.antkiewicz@dbtlabs.com'
-          message: 'Bumping version to ${{env.version_number}}'
+          author_name: "Leah Antkiewicz"
+          author_email: "leah.antkiewicz@dbtlabs.com"
+          message: "Bumping version to ${{env.version_number}}"
           tag: v${{env.version_number}}
 
       # Need to set an output variable because env variables can't be taken as input
@@ -98,7 +98,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
 
       - uses: actions/checkout@v2
         with:
