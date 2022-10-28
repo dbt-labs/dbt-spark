@@ -273,7 +273,7 @@ class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
     def check_credentials(self) -> None:
         if not self.cluster_id:
             raise ValueError(
-                "Databricks cluster_id is required for all_purpose_cluster submission method with running with notebook."
+                "Databricks cluster_id is required for all_purpose_cluster submission method."
             )
 
     def submit(self, compiled_code: str) -> None:
