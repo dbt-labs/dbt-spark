@@ -60,6 +60,8 @@ class TestInsertOverwrite(TestIncrementalStrategies):
     def test_insert_overwrite_apache_spark(self):
         self.run_and_test()
 
+    # This test requires settings on the test cluster
+    # more info at https://docs.getdbt.com/reference/resource-configs/spark-configs#the-insert_overwrite-strategy
     @use_profile("databricks_cluster")
     def test_insert_overwrite_databricks_cluster(self):
         self.run_and_test()
@@ -76,6 +78,7 @@ class TestDeltaStrategies(TestIncrementalStrategies):
         self.assertTablesEqual("merge_no_key", "expected_append")
         self.assertTablesEqual("merge_unique_key", "expected_upsert")
         self.assertTablesEqual("merge_update_columns", "expected_partial_upsert")
+        self.assertTablesEqual("merge_exclude_columns", "expected_exclude_upsert")
 
     @use_profile("databricks_cluster")
     def test_delta_strategies_databricks_cluster(self):

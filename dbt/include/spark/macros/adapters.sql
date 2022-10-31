@@ -118,35 +118,46 @@
 {%- endmacro %}
 
 
-{% macro create_temporary_view(relation, sql) -%}
-  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, sql)) }}
+{% macro create_temporary_view(relation, compiled_code) -%}
+  {{ return(adapter.dispatch('create_temporary_view', 'dbt')(relation, compiled_code)) }}
 {%- endmacro -%}
 
-{#-- We can't use temporary tables with `create ... as ()` syntax #}
-{% macro spark__create_temporary_view(relation, sql) -%}
-  create temporary view {{ relation.include(schema=false) }} as
-    {{ sql }}
-{% endmacro %}
+{#-- We can't use temporary tables with `create ... as ()` syntax --#}
+{% macro spark__create_temporary_view(relation, compiled_code) -%}
+    create temporary view {{ relation }} as
+      {{ compiled_code }}
+{%- endmacro -%}
 
 
-{% macro spark__create_table_as(temporary, relation, sql) -%}
-  {% if temporary -%}
-    {{ create_temporary_view(relation, sql) }}
-  {%- else -%}
-    {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
-      create or replace table {{ relation }}
-    {% else %}
-      create table {{ relation }}
-    {% endif %}
-    {{ file_format_clause() }}
-    {{ options_clause() }}
-    {{ partition_cols(label="partitioned by") }}
-    {{ clustered_cols(label="clustered by") }}
-    {{ location_clause() }}
-    {{ comment_clause() }}
-    as
-      {{ sql }}
-  {%- endif %}
+{%- macro spark__create_table_as(temporary, relation, compiled_code, language='sql') -%}
+  {%- if language == 'sql' -%}
+    {%- if temporary -%}
+      {{ create_temporary_view(relation, compiled_code) }}
+    {%- else -%}
+      {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
+        create or replace table {{ relation }}
+      {% else %}
+        create table {{ relation }}
+      {% endif %}
+      {{ file_format_clause() }}
+      {{ options_clause() }}
+      {{ partition_cols(label="partitioned by") }}
+      {{ clustered_cols(label="clustered by") }}
+      {{ location_clause() }}
+      {{ comment_clause() }}
+      as
+      {{ compiled_code }}
+    {%- endif -%}
+  {%- elif language == 'python' -%}
+    {#--
+    N.B. Python models _can_ write to temp views HOWEVER they use a different session
+    and have already expired by the time they need to be used (I.E. in merges for incremental models)
+
+    TODO: Deep dive into spark sessions to see if we can reuse a single session for an entire
+    dbt invocation.
+     --#}
+    {{ py_write_table(compiled_code=compiled_code, target_relation=relation) }}
+  {%- endif -%}
 {%- endmacro -%}
 
 
@@ -169,11 +180,19 @@
   {%- endcall -%}
 {% endmacro %}
 
-{% macro spark__get_columns_in_relation(relation) -%}
-  {% call statement('get_columns_in_relation', fetch_result=True) %}
-      describe extended {{ relation.include(schema=(schema is not none)) }}
+{% macro get_columns_in_relation_raw(relation) -%}
+  {{ return(adapter.dispatch('get_columns_in_relation_raw', 'dbt')(relation)) }}
+{%- endmacro -%}
+
+{% macro spark__get_columns_in_relation_raw(relation) -%}
+  {% call statement('get_columns_in_relation_raw', fetch_result=True) %}
+      describe extended {{ relation }}
   {% endcall %}
-  {% do return(load_result('get_columns_in_relation').table) %}
+  {% do return(load_result('get_columns_in_relation_raw').table) %}
+{% endmacro %}
+
+{% macro spark__get_columns_in_relation(relation) -%}
+  {{ return(adapter.get_columns_in_relation(relation)) }}
 {% endmacro %}
 
 {% macro spark__list_relations_without_caching(relation) %}
@@ -190,10 +209,6 @@
   {% endcall %}
   {{ return(load_result('list_schemas').table) }}
 {% endmacro %}
-
-{% macro spark__current_timestamp() -%}
-  current_timestamp()
-{%- endmacro %}
 
 {% macro spark__rename_relation(from_relation, to_relation) -%}
   {% call statement('rename_relation') -%}
@@ -232,7 +247,7 @@
       {% set comment = column_dict[column_name]['description'] %}
       {% set escaped_comment = comment | replace('\'', '\\\'') %}
       {% set comment_query %}
-        alter table {{ relation }} change column 
+        alter table {{ relation }} change column
             {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }}
             comment '{{ escaped_comment }}';
       {% endset %}
@@ -245,8 +260,7 @@
 {% macro spark__make_temp_relation(base_relation, suffix) %}
     {% set tmp_identifier = base_relation.identifier ~ suffix %}
     {% set tmp_relation = base_relation.incorporate(path = {
-        "identifier": tmp_identifier,
-        "schema": None
+        "identifier": tmp_identifier
     }) -%}
 
     {% do return(tmp_relation) %}
@@ -261,25 +275,25 @@
 
 
 {% macro spark__alter_relation_add_remove_columns(relation, add_columns, remove_columns) %}
-  
+
   {% if remove_columns %}
     {% set platform_name = 'Delta Lake' if relation.is_delta else 'Apache Spark' %}
     {{ exceptions.raise_compiler_error(platform_name + ' does not support dropping columns from tables') }}
   {% endif %}
-  
+
   {% if add_columns is none %}
     {% set add_columns = [] %}
   {% endif %}
-  
+
   {% set sql -%}
-     
+
      alter {{ relation.type }} {{ relation }}
-       
+
        {% if add_columns %} add columns {% endif %}
             {% for column in add_columns %}
                {{ column.name }} {{ column.data_type }}{{ ',' if not loop.last }}
             {% endfor %}
-  
+
   {%- endset -%}
 
   {% do run_query(sql) %}

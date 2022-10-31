@@ -1,0 +1,7 @@
+kind: Breaking Changes
+body: Add schema to the default location root
+time: 2022-10-31T20:11:09.291461+01:00
+custom:
+  Author: dan1elt0m JCZuurmond
+  Issue: "239"
+  PR: "339"
