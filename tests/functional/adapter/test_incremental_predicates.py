@@ -11,6 +11,6 @@ class TestIncrementalPredicatesMergeSpark(BaseIncrementalPredicates):
                     "dbt_internal_dest.id != 2"
                 ],
                 "+incremental_strategy": "merge",
-                "file_format": "delta"
+                "+file_format": "delta"
             }
         }
