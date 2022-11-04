@@ -2,9 +2,13 @@ import os
 import pytest
 from dbt.tests.util import run_dbt, write_file, run_dbt_and_capture
 from dbt.tests.adapter.python_model.test_python_model import BasePythonModelTests, BasePythonIncrementalTests
-
+from dbt.tests.adapter.python_model.test_spark import BasePySparkTests
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestPythonModelSpark(BasePythonModelTests):
+    pass
+
+@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+class TestPySpark(BasePySparkTests):
     pass
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
@@ -16,10 +20,26 @@ class TestPythonIncrementalModelSpark(BasePythonIncrementalTests):
 
 models__simple_python_model = """
 import pandas
+import torch
+import spacy
 
 def model(dbt, spark):
     dbt.config(
         materialized='table',
+        submission_method='job_cluster',
+        job_cluster_config={
+            "spark_version": "7.3.x-scala2.12",
+            "node_type_id": "i3.xlarge",
+            "num_workers": 0,
+            "spark_conf": {
+                "spark.databricks.cluster.profile": "singleNode",
+                "spark.master": "local[*, 4]"
+            },
+            "custom_tags": {
+                "ResourceClass": "SingleNode"
+            }
+        },
+        packages=['spacy', 'torch']
     )
     data = [[1,2]] * 10
     return spark.createDataFrame(data, schema=['test', 'test2'])

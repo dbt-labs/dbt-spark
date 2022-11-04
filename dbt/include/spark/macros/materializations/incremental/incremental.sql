@@ -1,4 +1,4 @@
-{% materialization incremental, adapter='spark' -%}
+{% materialization incremental, adapter='spark', supported_languages=['sql', 'python'] -%}
   {#-- Validate early so we don't run SQL if the file_format + strategy combo is invalid --#}
   {%- set raw_file_format = config.get('file_format', default='parquet') -%}
   {%- set raw_strategy = config.get('incremental_strategy') or 'append' -%}
@@ -17,6 +17,11 @@
   {%- set target_relation = this -%}
   {%- set existing_relation = load_relation(this) -%}
   {%- set tmp_relation = make_temp_relation(this) -%}
+
+  {#-- for SQL model we will create temp view that doesn't have database and schema --#}
+  {%- if language == 'sql'-%}
+    {%- set tmp_relation = tmp_relation.include(database=false, schema=false) -%}
+  {%- endif -%}
 
   {#-- Set Overwrite Mode --#}
   {%- if strategy == 'insert_overwrite' and partition_by -%}
