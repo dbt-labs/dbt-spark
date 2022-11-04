@@ -39,7 +39,8 @@ class TestIncrementalPredicatesMergeSpark(BaseIncrementalPredicates):
                 "+file_format": "delta"
             }
         }
-    
+        
+    @pytest.fixture(scope="class")
     def models(self):
         return {
             "delete_insert_incremental_predicates.sql": models__spark_incremental_predicates_sql
