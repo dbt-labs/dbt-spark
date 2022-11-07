@@ -246,10 +246,6 @@
   {{ return(load_result('list_schemas').table) }}
 {% endmacro %}
 
-{% macro spark__current_timestamp() -%}
-  current_timestamp()
-{%- endmacro %}
-
 {% macro spark__rename_relation(from_relation, to_relation) -%}
   {% call statement('rename_relation') -%}
     {% if not from_relation.type %}

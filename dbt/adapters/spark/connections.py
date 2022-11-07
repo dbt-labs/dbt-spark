@@ -65,6 +65,7 @@ class SparkCredentials(Credentials):
     endpoint: Optional[str] = None
     token: Optional[str] = None
     user: Optional[str] = None
+    password: Optional[str] = None
     port: int = 443
     auth: Optional[str] = None
     kerberos_service_name: Optional[str] = None
@@ -375,6 +376,7 @@ class SparkConnectionManager(SQLConnectionManager):
                             username=creds.user,
                             auth=creds.auth,
                             kerberos_service_name=creds.kerberos_service_name,
+                            password=creds.password,
                         )
                         conn = hive.connect(thrift_transport=transport)
                     else:
@@ -384,6 +386,7 @@ class SparkConnectionManager(SQLConnectionManager):
                             username=creds.user,
                             auth=creds.auth,
                             kerberos_service_name=creds.kerberos_service_name,
+                            password=creds.password,
                         )  # noqa
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
