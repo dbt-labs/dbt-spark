@@ -1,0 +1,8 @@
+kind: Fixes
+body: Fixed dbt run failure when the materialize config of tests is not configured
+  as test
+time: 2022-11-17T22:43:49.029469+05:30
+custom:
+  Author: akashrn5
+  Issue: "522"
+  PR: "512"

@@ -1,5 +1,5 @@
 {{ config(
-    materialized = 'incremental',
+    materialized = 'test',
     incremental_strategy = 'insert_overwrite',
     file_format = 'parquet',
 ) }}

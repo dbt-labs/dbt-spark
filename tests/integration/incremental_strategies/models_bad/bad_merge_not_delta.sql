@@ -1,5 +1,5 @@
 {{ config(
-    materialized = 'incremental',
+    materialized = 'test',
     incremental_strategy = 'merge',
 ) }}
 

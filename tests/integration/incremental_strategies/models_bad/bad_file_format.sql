@@ -1,5 +1,5 @@
 {{ config(
-    materialized = 'incremental',
+    materialized = 'test',
     file_format = 'something_else',
 ) }}
 

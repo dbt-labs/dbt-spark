@@ -1,5 +1,5 @@
 {{ config(
-    materialized = 'incremental',
+    materialized = 'test',
 ) }}
 
 {% if not is_incremental() %}
