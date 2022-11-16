@@ -220,7 +220,14 @@ class SparkAdapter(SQLAdapter):
             # spark would throw error when table doesn't exist, where other
             # CDW would just return and empty list, normalizing the behavior here
             errmsg = getattr(e, "msg", "")
-            if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
+            if any(
+                msg in errmsg
+                for msg in (
+                    "[TABLE_OR_VIEW_NOT_FOUND]",
+                    "Table or view not found",
+                    "NoSuchTableException",
+                )
+            ):
                 pass
             else:
                 raise e
