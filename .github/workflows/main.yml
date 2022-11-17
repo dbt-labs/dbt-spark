@@ -191,7 +191,7 @@ jobs:
 
       - name: Install python dependencies
         run: |
-          ppython -m pip install --user --upgrade pip
+          python -m pip install --user --upgrade pip
           python -m pip install --upgrade wheel
           python -m pip --version
       - uses: actions/download-artifact@v2
