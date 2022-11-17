@@ -69,7 +69,7 @@ jobs:
           python -m pip install mypy==0.942
           mypy --version
           python -m pip install -r requirements.txt
-          python -m pip install -r dev-requirements.txt
+          python -m pip install -r dev_requirements.txt
           dbt --version
 
       - name: Run pre-commit hooks
