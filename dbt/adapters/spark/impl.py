@@ -31,7 +31,7 @@ logger = AdapterLogger("Spark")
 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
-LIST_RELATIONS_NO_EXTENDED_MACRO_NAME = "list_relations_without_caching_no_extended"
+LIST_RELATIONS_SHOW_TABLES_MACRO_NAME = "list_relations_show_tables_without_caching"
 DESCRIBE_TABLE_EXTENDED_MACRO_NAME = "describe_table_extended_without_caching"
 DROP_RELATION_MACRO_NAME = "drop_relation"
 FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
@@ -128,7 +128,7 @@ class SparkAdapter(SQLAdapter):
         # so jinja doesn't render things
         return ""
 
-    def use_show_tables(self, table_name):
+    def parse_information(self, table_name):
         information = ""
         kwargs = {"table_name": table_name}
         try:
@@ -166,7 +166,7 @@ class SparkAdapter(SQLAdapter):
         if try_show_tables:
             expected_result_rows = 3
             try:
-                results = self.execute_macro(LIST_RELATIONS_NO_EXTENDED_MACRO_NAME, kwargs=kwargs)
+                results = self.execute_macro(LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs=kwargs)
             except dbt.exceptions.RuntimeException as e:
                 errmsg = getattr(e, "msg", "")
                 description = "Error while retrieving information about"
@@ -186,7 +186,7 @@ class SparkAdapter(SQLAdapter):
 
             if try_show_tables:
                 _, name, _ = row
-                information = self.use_show_tables(name)
+                information = self.parse_information(name)
                 _schema = schema_relation.schema
             else:
                 _schema, name, _, information = row
