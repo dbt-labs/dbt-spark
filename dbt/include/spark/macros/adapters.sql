@@ -268,7 +268,12 @@
 
 
 {% macro spark__generate_database_name(custom_database_name=none, node=none) -%}
-  {% do return(None) %}
+  {%- if custom_database_name is none -%}
+    {% do return(none) if not target.database -%}
+    {{ target.database }}
+  {%- else -%}
+    {{ custom_database_name | trim }}
+  {%- endif -%}
 {%- endmacro %}
 
 {% macro spark__persist_docs(relation, model, for_relation, for_columns) -%}

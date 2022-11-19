@@ -155,3 +155,36 @@ class TestDeltaOnSchemaChange(TestIncrementalOnSchemaChange):
     @use_profile('databricks_sql_endpoint')
     def test__databricks_sql_endpoint__run_incremental_sync_all_columns(self):
         self.run_incremental_sync_all_columns()
+
+class TestIcebergOnSchemaChange(TestIncrementalOnSchemaChange):
+    @property
+    def project_config(self):
+        return {
+            "config-version": 2,
+            "test-paths": ["tests"],
+            "models": {
+                "+file_format": "iceberg",
+                "+incremental_strategy": "merge",
+                "+unique_key": "id",
+            }
+        }
+
+    @use_profile('apache_iceberg')
+    def test__apache_iceberg__run_incremental_ignore(self):
+        self.run_incremental_ignore()
+
+    @use_profile('apache_iceberg')
+    def test__apache_iceberg__run_incremental_fail_on_schema_change(self):
+        self.run_incremental_fail_on_schema_change()
+
+    @use_profile('apache_iceberg')
+    def test__apache_iceberg__run_incremental_append_new_columns(self):
+        self.run_incremental_append_new_columns()
+
+    @use_profile('apache_iceberg')
+    def test__apache_iceberg__run_incremental_sync_all_columns(self):
+        self.run_incremental_sync_all_columns()
+
+    @use_profile('apache_iceberg')
+    def test__apache_iceberg__run_incremental_ignore(self):
+        self.run_incremental_ignore()

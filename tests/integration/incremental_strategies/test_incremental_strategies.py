@@ -128,3 +128,32 @@ class TestBadStrategies(TestIncrementalStrategies):
     @use_profile("databricks_sql_endpoint")
     def test_bad_strategies_databricks_sql_endpoint(self):
         self.run_and_test()
+
+
+class TestIcebergStrategies(TestIncrementalStrategies):
+    @property
+    def models(self):
+        return "models_iceberg"
+
+    @property
+    def project_config(self):
+        return {
+            'seeds': {
+                'quote_columns': False,
+            },
+            'models': {
+            'file_format': 'iceberg',
+            },
+        }
+
+    def run_and_test(self):
+        self.seed_and_run_twice()
+        self.assertTablesEqual("append", "expected_append")
+        self.assertTablesEqual("merge_no_key", "expected_append")
+        self.assertTablesEqual("merge_unique_key", "expected_upsert")
+        self.assertTablesEqual("merge_update_columns", "expected_partial_upsert")
+        self.assertTablesEqual("merge_exclude_columns", "expected_exclude_upsert")
+
+    @use_profile("apache_iceberg")
+    def test_iceberg_strategies_apache_iceberg(self):
+        self.run_and_test()

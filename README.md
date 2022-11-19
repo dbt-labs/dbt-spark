@@ -87,3 +87,93 @@ Everyone interacting in the dbt project's codebases, issue trackers, chat rooms,
 ## Code of Conduct
 
 Everyone interacting in the dbt project's codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [dbt Code of Conduct](https://community.getdbt.com/code-of-conduct).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------
+
+# JupyterLab Dev Setup
+
+--------------
+
+install Linux package for sasl. If you don't have this package your get this error ```thrift.transport.TTransport.TTransportException: Could not start SASL: b'Error in sasl_client_start (-4) SASL(-4): no mechanism available: No worthy mechs found'```
+
+```bash
+sudo apt update
+sudo apt install libsasl2-2
+sudo apt install python3-pure-sasl
+```
+
+Install python packages
+
+```bash
+pip install -r dev-requirements.txt
+pip install twine
+python setup.py install
+```
+
+Configure your local spark to use a local warehouse directory. For example we will set it to /tmp/warehouse. Make sure to override these two configurations from spark-defaults.conf.
+
+```
+
+spark.sql.warehouse.dir file:///tmp/warehouse
+spark.hadoop.fs.defaultFS file:///
+
+
+spark.sql.catalog.dbt_spark_test org.apache.iceberg.spark.SparkCatalog
+spark.sql.catalog.dbt_spark_test.type hadoop
+spark.sql.catalog.dbt_spark_test.warehouse file:///tmp/iceberg
+spark.sql.catalog.dbt_spark_test.cache-enabled: false
+
+spark.sql.extensions: org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+
+
+```
+
+To see logs of the thrift server
+
+create a verbose log4j file
+```
+/usr/local/spark/bin/toggle-spark-logging.sh verbose
+```
+
+Then add the following to it
+```
+logger.thrift.name = org.apache.spark.sql.hive.thriftserver
+logger.thrift.level = debug
+logger.hive.name = org.apache.spark.sql.hive.thriftserver
+logger.hive.level = debug
+```
+
+Start/Stop local Thrift server
+
+```
+/usr/local/spark/sbin/stop-thriftserver.sh 
+/usr/local/spark/sbin/start-thriftserver.sh --hiveconf ./docker/hive-site.xml --hiveconf hive.server2.thrift.port=10000 --hiveconf hive.server2.thrift.bind.host=localhost
+ ```
+
+Log can be found in this location `/usr/local/spark/logs/`
+
+Run tests using `tox` this will issue these two pytest commands
+
+```
+python -m pytest -v --profile apache_spark  -n4 tests/functional/adapter/*
+python -m pytest -v -m profile_apache_spark -n4 tests/integration/*
+
+```
+
+
+

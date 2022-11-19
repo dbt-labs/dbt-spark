@@ -89,7 +89,7 @@ class TestArgs:
 
 def _profile_from_test_name(test_name):
     adapter_names = ('apache_spark', 'databricks_cluster',
-                     'databricks_sql_endpoint')
+                     'databricks_sql_endpoint', 'apache_iceberg')
     adapters_in_name = sum(x in test_name for x in adapter_names)
     if adapters_in_name != 1:
         raise ValueError(
@@ -169,7 +169,7 @@ class DBTIntegrationTest(unittest.TestCase):
                 'target': 'thrift'
             }
         }
-
+    
     def databricks_cluster_profile(self):
         return {
             'config': {
@@ -220,6 +220,31 @@ class DBTIntegrationTest(unittest.TestCase):
             }
         }
 
+    def apache_iceberg_profile(self):
+        return {
+            'config': {
+                'send_anonymous_usage_stats': False
+            },
+            'test': {
+                'outputs': {
+                    'thrift': {
+                        'type': 'spark',
+                        'host': 'localhost',
+                        'user': 'dbt',
+                        'method': 'thrift',
+                        'port': 10000,
+                        'connect_retries': 3,
+                        'connect_timeout': 5,
+                        'retry_all': True,
+                        'database': "dbt_spark_test",
+                        'schema': self.unique_schema()
+                    },
+                },
+                'target': 'thrift'
+            }
+        }
+
+
     @property
     def packages_config(self):
         return None
@@ -247,6 +272,8 @@ class DBTIntegrationTest(unittest.TestCase):
     def get_profile(self, adapter_type):
         if adapter_type == 'apache_spark':
             return self.apache_spark_profile()
+        elif adapter_type == 'apache_iceberg':
+            return self.apache_iceberg_profile()
         elif adapter_type == 'databricks_cluster':
             return self.databricks_cluster_profile()
         elif adapter_type == 'databricks_sql_endpoint':
@@ -417,10 +444,25 @@ class DBTIntegrationTest(unittest.TestCase):
         return schema_fqn
 
     def _create_schema_named(self, database, schema):
-        self.run_sql('CREATE SCHEMA {schema}')
+        schema_relation = self.adapter.Relation.create(self.default_database, schema=schema)
+        self.run_sql('CREATE SCHEMA  {schema_relation}', kwargs={ 'schema_relation': schema_relation })
 
     def _drop_schema_named(self, database, schema):
-        self.run_sql('DROP SCHEMA IF EXISTS {schema} CASCADE')
+        schema = self.unique_schema()
+        schema_relation = self.adapter.Relation.create(self.default_database, schema=schema)
+        try:
+            self.run_sql('DROP SCHEMA IF EXISTS {schema_relation} CASCADE', kwargs={ 'schema_relation': schema_relation })
+        except Exception as e:
+            errmsg = getattr(e, "msg", "")
+            if "is not empty" in errmsg:
+                with self.get_connection('__test') as conn:
+                    if conn.transaction_open == False:
+                        cursor = conn.handle.cursor()
+                    relations = self.adapter.list_relations_without_caching(schema_relation)
+                    if len(relations) > 0:
+                        for relation in relations:
+                            self.run_sql('DROP TABLE IF EXISTS {relation}', kwargs={ 'relation': relation })
+                    self.run_sql('DROP SCHEMA IF EXISTS {schema_relation}', kwargs={ 'schema_relation': schema_relation })
 
     def _create_schemas(self):
         schema = self.unique_schema()

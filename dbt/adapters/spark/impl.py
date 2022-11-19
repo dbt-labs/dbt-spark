@@ -186,16 +186,20 @@ class SparkAdapter(SQLAdapter):
 
             if try_show_tables:
                 _, name, _ = row
-                information = self.parse_information(name)
+                relation = schema_relation.database + "." + schema_relation.schema + "." + name
+                information = self.parse_information(relation)
                 _schema = schema_relation.schema
+                _database = schema_relation.database
             else:
                 _schema, name, _, information = row
+                _database = None
             is_delta = "Provider: delta" in information
             is_hudi = "Provider: hudi" in information
             is_iceberg = "Provider: iceberg" in information
             rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
 
             relation = self.Relation.create(
+                database=_database,
                 schema=_schema,
                 identifier=name,
                 type=rel_type,

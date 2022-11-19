@@ -88,15 +88,15 @@ class SparkCredentials(Credentials):
         return self.cluster
 
     def __post_init__(self):
-        # spark classifies database and schema as the same thing
-        if self.database is not None and self.database != self.schema:
-            raise dbt.exceptions.RuntimeException(
-                f"    schema: {self.schema} \n"
-                f"    database: {self.database} \n"
-                f"On Spark, database must be omitted or have the same value as"
-                f" schema."
-            )
-        self.database = None
+        # # spark classifies database and schema as the same thing
+        # if self.database is not None and self.database != self.schema:
+        #     raise dbt.exceptions.RuntimeException(
+        #         f"    schema: {self.schema} \n"
+        #         f"    database: {self.database} \n"
+        #         f"On Spark, database must be omitted or have the same value as"
+        #         f" schema."
+        #     )
+        # self.database = None
 
         if self.method == SparkConnectionMethod.ODBC:
             try:
@@ -148,7 +148,7 @@ class SparkCredentials(Credentials):
         return self.host
 
     def _connection_keys(self):
-        return ("host", "port", "cluster", "endpoint", "schema", "organization")
+        return ("host", "port", "cluster", "endpoint", "schema", "organization", "database")
 
 
 class PyhiveConnectionWrapper(object):

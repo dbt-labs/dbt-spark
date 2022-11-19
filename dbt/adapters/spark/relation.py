@@ -21,7 +21,7 @@ class SparkQuotePolicy(Policy):
 
 @dataclass
 class SparkIncludePolicy(Policy):
-    database: bool = False
+    database: bool = True
     schema: bool = True
     identifier: bool = True
 
@@ -39,9 +39,9 @@ class SparkRelation(BaseRelation):
     source_meta: Optional[Dict[str, Any]] = None
     meta: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
-        if self.database != self.schema and self.database:
-            raise RuntimeException("Cannot set database in spark!")
+    # def __post_init__(self):
+    #     if self.database != self.schema and self.database:
+    #         raise RuntimeException("Cannot set database in spark!")
 
     @classmethod
     def create_from_source(cls: Type[Self], source: ParsedSourceDefinition, **kwargs: Any) -> Self:
@@ -65,9 +65,9 @@ class SparkRelation(BaseRelation):
         )
 
     def render(self):
-        if self.include_policy.database and self.include_policy.schema:
-            raise RuntimeException(
-                "Got a spark relation with schema and database set to "
-                "include, but only one can be set"
-            )
+        # if self.include_policy.database and self.include_policy.schema:
+        #     raise RuntimeException(
+        #         "Got a spark relation with schema and database set to "
+        #         "include, but only one can be set"
+        #     )
         return super().render()
