@@ -1,3 +1,14 @@
+{% macro dbt_spark_tblproperties_clause() -%}
+  {%- set tblproperties = config.get('tblproperties') -%}
+  {%- if tblproperties is not none %}
+    tblproperties (
+      {%- for prop in tblproperties -%}
+      '{{ prop }}' = '{{ tblproperties[prop] }}' {% if not loop.last %}, {% endif %}
+      {%- endfor %}
+    )
+  {%- endif %}
+{%- endmacro -%}
+
 {% macro file_format_clause() %}
   {{ return(adapter.dispatch('file_format_clause', 'dbt')()) }}
 {%- endmacro -%}
@@ -135,6 +146,8 @@
     {%- else -%}
       {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
         create or replace table {{ relation }}
+      {% elif config.get('file_format', validator=validation.any[basestring]) == 'iceberg' %}
+        create or replace table {{ relation }}
       {% else %}
         create table {{ relation }}
       {% endif %}
@@ -191,7 +204,10 @@
 {% endmacro %}
 
 {% macro spark__get_columns_in_relation(relation) -%}
-  {{ return(adapter.get_columns_in_relation(relation)) }}
+  {% call statement('get_columns_in_relation', fetch_result=True) %}
+      describe extended {{ relation.include(schema=(schema is not none)) }}
+  {% endcall %}
+  {% do return(load_result('get_columns_in_relation').table) %}
 {% endmacro %}
 
 {% macro spark__list_relations_without_caching(relation) %}
@@ -200,6 +216,29 @@
   {% endcall %}
 
   {% do return(load_result('list_relations_without_caching').table) %}
+{% endmacro %}
+
+{% macro list_relations_without_caching_no_extended(schema_relation) %}
+  {#-- We can't use temporary tables with `create ... as ()` syntax #}
+  {#-- Spark with iceberg tables don't work with show table extended for #}
+  {#-- V2 iceberg tables #}
+  {#-- https://issues.apache.org/jira/browse/SPARK-33393 #}
+  {% call statement('list_relations_without_caching_no_extended', fetch_result=True) -%}
+    show tables in {{ schema_relation }} like '*'
+  {% endcall %}
+
+  {% do return(load_result('list_relations_without_caching_no_extended').table) %}
+{% endmacro %}
+
+{% macro describe_table_extended_without_caching(table_name) %}
+  {#-- We can't use temporary tables with `create ... as ()` syntax #}
+  {#-- Spark with iceberg tables don't work with show table extended for #}
+  {#-- V2 iceberg tables #}
+  {#-- https://issues.apache.org/jira/browse/SPARK-33393 #}
+  {% call statement('describe_table_extended_without_caching', fetch_result=True) -%}
+    describe extended {{ table_name }}
+  {% endcall %}
+  {% do return(load_result('describe_table_extended_without_caching').table) %}
 {% endmacro %}
 
 {% macro spark__list_schemas(database) -%}
@@ -246,9 +285,15 @@
       {% set comment = column_dict[column_name]['description'] %}
       {% set escaped_comment = comment | replace('\'', '\\\'') %}
       {% set comment_query %}
-        alter table {{ relation }} change column
-            {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }}
-            comment '{{ escaped_comment }}';
+        {% if relation.is_iceberg %}
+          alter table {{ relation }} alter column
+              {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }}
+              comment '{{ escaped_comment }}';
+        {% else %}
+          alter table {{ relation }} change column
+              {{ adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name }}
+              comment '{{ escaped_comment }}';
+        {% endif %}
       {% endset %}
       {% do run_query(comment_query) %}
     {% endfor %}
@@ -276,7 +321,13 @@
 {% macro spark__alter_relation_add_remove_columns(relation, add_columns, remove_columns) %}
 
   {% if remove_columns %}
-    {% set platform_name = 'Delta Lake' if relation.is_delta else 'Apache Spark' %}
+    {% if relation.is_delta %}
+      {% set platform_name = 'Delta Lake' %}
+    {% elif relation.is_iceberg %}
+      {% set platform_name = 'Iceberg' %}
+    {% else %}
+      {% set platform_name = 'Apache Spark' %}
+    {% endif %}
     {{ exceptions.raise_compiler_error(platform_name + ' does not support dropping columns from tables') }}
   {% endif %}
 

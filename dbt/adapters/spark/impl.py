@@ -31,6 +31,8 @@ logger = AdapterLogger("Spark")
 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
+LIST_RELATIONS_NO_EXTENDED_MACRO_NAME = "list_relations_without_caching_no_extended"
+DESCRIBE_TABLE_EXTENDED_MACRO_NAME = "describe_table_extended_without_caching"
 DROP_RELATION_MACRO_NAME = "drop_relation"
 FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 
@@ -126,38 +128,79 @@ class SparkAdapter(SQLAdapter):
         # so jinja doesn't render things
         return ""
 
+    def use_show_tables(self, table_name):
+        information = ""
+        kwargs = {"table_name": table_name}
+        try:
+            table_results = self.execute_macro(DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs=kwargs)
+        except dbt.exceptions.RuntimeException as e:
+            logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
+            return []
+        for info_row in table_results:
+            info_type, info_value, _ = info_row
+            if info_type.startswith("#") is False:
+                information += f"{info_type}: {info_value}\n"
+        return information
+
     def list_relations_without_caching(
         self, schema_relation: SparkRelation
     ) -> List[SparkRelation]:
         kwargs = {"schema_relation": schema_relation}
+        try_show_tables = False
+        expected_result_rows = 4
         try:
             results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
         except dbt.exceptions.RuntimeException as e:
             errmsg = getattr(e, "msg", "")
             if f"Database '{schema_relation}' not found" in errmsg:
                 return []
+            elif "SHOW TABLE EXTENDED is not supported for v2 tables" in errmsg:
+                # this happens with spark-iceberg with v2 iceberg tables
+                # https://issues.apache.org/jira/browse/SPARK-33393
+                try_show_tables = True
             else:
+                description = "Error while retrieving information about"
+                logger.debug(f"{description} {schema_relation}: {e.msg}")
+                return []
+
+        if try_show_tables:
+            expected_result_rows = 3
+            try:
+                results = self.execute_macro(LIST_RELATIONS_NO_EXTENDED_MACRO_NAME, kwargs=kwargs)
+            except dbt.exceptions.RuntimeException as e:
+                errmsg = getattr(e, "msg", "")
                 description = "Error while retrieving information about"
                 logger.debug(f"{description} {schema_relation}: {e.msg}")
                 return []
 
         relations = []
         for row in results:
-            if len(row) != 4:
+            if len(row) != expected_result_rows:
+                if try_show_tables:
+                    description = 'Invalid value from "show tables ...", '
+                else:
+                    description = 'Invalid value from "show table extended ...", '
                 raise dbt.exceptions.RuntimeException(
-                    f'Invalid value from "show table extended ...", '
-                    f"got {len(row)} values, expected 4"
+                    f"{description} got {len(row)} values, expected {expected_result_rows}"
                 )
-            _schema, name, _, information = row
-            rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
+
+            if try_show_tables:
+                _, name, _ = row
+                information = self.use_show_tables(name)
+            else:
+                _schema, name, _, information = row
             is_delta = "Provider: delta" in information
             is_hudi = "Provider: hudi" in information
+            is_iceberg = "Provider: iceberg" in information
+            rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
+
             relation = self.Relation.create(
-                schema=_schema,
+                schema=schema_relation.schema,
                 identifier=name,
                 type=rel_type,
                 information=information,
                 is_delta=is_delta,
+                is_iceberg=is_iceberg,
                 is_hudi=is_hudi,
             )
             relations.append(relation)
@@ -254,7 +297,16 @@ class SparkAdapter(SQLAdapter):
         return columns
 
     def _get_columns_for_catalog(self, relation: SparkRelation) -> Iterable[Dict[str, Any]]:
-        columns = self.parse_columns_from_information(relation)
+        columns = []
+        if relation and relation.information:
+            columns = self.parse_columns_from_information(relation)
+        else:
+            # in open source delta 'show table extended' query output doesn't
+            # return relation's schema. if columns are empty from cache,
+            # use get_columns_in_relation spark macro
+            # which would execute 'describe extended tablename' query
+            rows: List[agate.Row] = super().get_columns_in_relation(relation)
+            columns = self.parse_describe_extended(relation, rows)
 
         for column in columns:
             # convert SparkColumns into catalog dicts

@@ -1,9 +1,15 @@
-from typing import Optional
-
+from typing import Optional, TypeVar, Any, Type, Dict
+from dbt.contracts.graph.parsed import ParsedSourceDefinition
+from dbt.utils import deep_merge
 from dataclasses import dataclass
 
 from dbt.adapters.base.relation import BaseRelation, Policy
 from dbt.exceptions import RuntimeException
+from dbt.events import AdapterLogger
+
+logger = AdapterLogger("Spark")
+
+Self = TypeVar("Self", bound="BaseRelation")
 
 
 @dataclass
@@ -27,11 +33,36 @@ class SparkRelation(BaseRelation):
     quote_character: str = "`"
     is_delta: Optional[bool] = None
     is_hudi: Optional[bool] = None
+    is_iceberg: Optional[bool] = None
     information: Optional[str] = None
+    loader: Optional[str] = None
+    source_meta: Optional[Dict[str, Any]] = None
+    meta: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
-        if self.database != self.schema and self.database:
+        if self.is_iceberg is not True and self.database != self.schema and self.database:
             raise RuntimeException("Cannot set database in spark!")
+
+    @classmethod
+    def create_from_source(cls: Type[Self], source: ParsedSourceDefinition, **kwargs: Any) -> Self:
+        source_quoting = source.quoting.to_dict(omit_none=True)
+        source_quoting.pop("column", None)
+        quote_policy = deep_merge(
+            cls.get_default_quote_policy().to_dict(omit_none=True),
+            source_quoting,
+            kwargs.get("quote_policy", {}),
+        )
+
+        return cls.create(
+            database=source.database,
+            schema=source.schema,
+            identifier=source.identifier,
+            quote_policy=quote_policy,
+            loader=source.loader,
+            source_meta=source.source_meta,
+            meta=source.meta,
+            **kwargs,
+        )
 
     def render(self):
         if self.include_policy.database and self.include_policy.schema:
