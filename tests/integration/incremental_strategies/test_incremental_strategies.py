@@ -34,6 +34,11 @@ class TestDefaultAppend(TestIncrementalStrategies):
     def run_and_test(self):
         self.seed_and_run_twice()
         self.assertTablesEqual("default_append", "expected_append")
+        with self.get_connection():
+            table_relation = self._make_relation("default_append", self.unique_schema(), self.default_database)
+            tblproperties = self.adapter.get_properties(table_relation)
+            self.assertIn('test_tbl_prop', tblproperties)
+            self.assertEquals(tblproperties['test_tbl_prop'], 'test_value')
 
     @use_profile("apache_spark")
     def test_default_append_apache_spark(self):

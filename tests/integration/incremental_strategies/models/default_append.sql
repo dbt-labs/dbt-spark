@@ -1,5 +1,6 @@
 {{ config(
     materialized = 'incremental',
+    tblproperties = { 'test_tbl_prop': 'test_value' },
 ) }}
 
 {% if not is_incremental() %}
