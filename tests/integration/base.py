@@ -89,7 +89,7 @@ class TestArgs:
 
 def _profile_from_test_name(test_name):
     adapter_names = ('apache_spark', 'databricks_cluster',
-                     'databricks_sql_endpoint', 'apache_iceberg')
+                     'databricks_sql_endpoint', 'apache_iceberg', 'python_hooks')
     adapters_in_name = sum(x in test_name for x in adapter_names)
     if adapters_in_name != 1:
         raise ValueError(
@@ -220,6 +220,26 @@ class DBTIntegrationTest(unittest.TestCase):
             }
         }
 
+    def python_hooks_profile(self):
+        return {
+            'config': {
+                'send_anonymous_usage_stats': False
+            },
+            'test': {
+                'outputs': {
+                    'python_hooks': {
+                        'type': 'spark',
+                        'method': 'session',
+                        'host': 'bogus',
+                        'schema': self.unique_schema(),
+                        'python_module': 'tests.integration.python_hooks.spark_context',
+                        'spark_configuration': { 'spark.app.name': 'custom_name'},
+                    },
+                },
+                'target': 'python_hooks'
+            }
+        }
+
     def apache_iceberg_profile(self):
         return {
             'config': {
@@ -237,7 +257,7 @@ class DBTIntegrationTest(unittest.TestCase):
                         'connect_timeout': 5,
                         'retry_all': True,
                         'database': "dbt_spark_test",
-                        'schema': self.unique_schema()
+                        'schema': self.unique_schema(),
                     },
                 },
                 'target': 'thrift'
@@ -274,6 +294,8 @@ class DBTIntegrationTest(unittest.TestCase):
             return self.apache_spark_profile()
         elif adapter_type == 'apache_iceberg':
             return self.apache_iceberg_profile()
+        elif adapter_type == 'python_hooks':
+            return self.python_hooks_profile()
         elif adapter_type == 'databricks_cluster':
             return self.databricks_cluster_profile()
         elif adapter_type == 'databricks_sql_endpoint':

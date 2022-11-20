@@ -150,8 +150,12 @@ class SparkAdapter(SQLAdapter):
         expected_result_rows = 4
         try:
             results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
-        except dbt.exceptions.RuntimeException as e:
+        except Exception as e:
+            # connections using "session" mode will throw a AnalysisException,
+            # using Exception to handle them all since we look at the message anyways
             errmsg = getattr(e, "msg", "")
+            if not errmsg:
+                errmsg = getattr(e, "desc", "")
             if f"Database '{schema_relation}' not found" in errmsg:
                 return []
             elif "SHOW TABLE EXTENDED is not supported for v2 tables" in errmsg:

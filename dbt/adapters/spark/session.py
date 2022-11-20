@@ -9,6 +9,8 @@ from typing import Any, List, Optional, Tuple
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
 from pyspark.sql import DataFrame, Row, SparkSession
+from pyspark import SparkConf
+import importlib
 
 
 logger = AdapterLogger("Spark")
@@ -24,9 +26,10 @@ class Cursor:
     https://github.com/mkleehammer/pyodbc/wiki/Cursor
     """
 
-    def __init__(self) -> None:
+    def __init__(self, spark_session) -> None:
         self._df: Optional[DataFrame] = None
         self._rows: Optional[List[Row]] = None
+        self._spark_session = spark_session
 
     def __enter__(self) -> Cursor:
         return self
@@ -106,8 +109,7 @@ class Cursor:
         """
         if len(parameters) > 0:
             sql = sql % parameters
-        spark_session = SparkSession.builder.enableHiveSupport().getOrCreate()
-        self._df = spark_session.sql(sql)
+        self._df = self._spark_session.sql(sql)
 
     def fetchall(self) -> Optional[List[Row]]:
         """
@@ -158,6 +160,24 @@ class Connection:
     ------
     https://github.com/mkleehammer/pyodbc/wiki/Connection
     """
+    def __init__(self, spark_configuration=None, python_module=None) -> None:
+        self._spark_configuration = spark_configuration
+        self._python_module = python_module
+        self.build_spark_session()
+
+    def build_spark_session(self):
+        spark_conf = SparkConf()
+        if self._spark_configuration:
+            spark_conf.setAll([(k, v) for k, v in self._spark_configuration.items()])
+
+        if self._python_module:
+            path = self._python_module
+            logger.debug(f"Attempting to load spark context from {path}")
+            module = importlib.import_module(path)
+            create_spark_context = getattr(module, "create_spark_context")
+            self._spark_session = create_spark_context(spark_conf)
+        else:
+            self._spark_session = SparkSession.builder.enableHiveSupport().config(conf=spark_conf).getOrCreate()
 
     def cursor(self) -> Cursor:
         """
@@ -168,7 +188,7 @@ class Connection:
         out : Cursor
             The cursor.
         """
-        return Cursor()
+        return Cursor(self._spark_session)
 
 
 class SessionConnectionWrapper(object):
