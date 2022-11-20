@@ -448,8 +448,7 @@ class DBTIntegrationTest(unittest.TestCase):
         self.run_sql('CREATE SCHEMA  {schema_relation}', kwargs={ 'schema_relation': schema_relation })
 
     def _drop_schema_named(self, database, schema):
-        schema = self.unique_schema()
-        schema_relation = self.adapter.Relation.create(self.default_database, schema=schema)
+        schema_relation = self._make_relation(None, self.unique_schema(), self.default_database)
         try:
             self.run_sql('DROP SCHEMA IF EXISTS {schema_relation} CASCADE', kwargs={ 'schema_relation': schema_relation })
         except Exception as e:
