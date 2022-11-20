@@ -2,6 +2,7 @@
     materialized = 'incremental',
     incremental_strategy = 'append',
     file_format = 'iceberg',
+    tblproperties = { 'write.parquet.compression-codec': 'zstd' },
 ) }}
 
 {% if not is_incremental() %}

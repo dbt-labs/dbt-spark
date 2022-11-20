@@ -159,6 +159,13 @@ class TestIcebergStrategies(TestIncrementalStrategies):
         self.assertTablesEqual("merge_update_columns", "expected_partial_upsert")
         self.assertTablesEqual("merge_exclude_columns", "expected_exclude_upsert")
 
+        with self.get_connection():
+            table_relation = self._make_relation("append", self.unique_schema(), self.default_database)
+            tblproperties = self.adapter.get_properties(table_relation)
+            self.assertIn('write.parquet.compression-codec', tblproperties)
+            self.assertEquals(tblproperties['write.parquet.compression-codec'], 'zstd')
+
+
     @use_profile("apache_iceberg")
     def test_iceberg_strategies_apache_iceberg(self):
         self.run_and_test()
