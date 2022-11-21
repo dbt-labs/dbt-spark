@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: custom
+    tables:
+    - name: users
+      meta:
+        python_module: tests.integration.python_hooks.users
+

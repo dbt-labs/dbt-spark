@@ -5,7 +5,7 @@ import dbt.exceptions
 class TestRegisterPythonUDF(DBTIntegrationTest):
     @property
     def schema(self):
-        return "python_udf"
+        return "python_hooks"
 
     @property
     def models(self):
@@ -15,6 +15,7 @@ class TestRegisterPythonUDF(DBTIntegrationTest):
         self.run_dbt(["seed"])
         self.run_dbt(["run"])
         self.assertTablesEqual("python_udf", "expected_python_udf")
+        self.assertTablesEqual("python_view", "expected_python_view")
 
     @use_profile("python_hooks")
     def test_udf_python_hooks(self):

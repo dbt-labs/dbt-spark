@@ -10,6 +10,10 @@ from dbt.events import AdapterLogger
 logger = AdapterLogger("Spark")
 
 Self = TypeVar("Self", bound="BaseRelation")
+import importlib
+import os
+import sys
+from datetime import datetime
 
 
 @dataclass
@@ -42,6 +46,46 @@ class SparkRelation(BaseRelation):
     # def __post_init__(self):
     #     if self.database != self.schema and self.database:
     #         raise RuntimeException("Cannot set database in spark!")
+
+    # cccs: create a view from a dataframe
+    def load_python_module(self, start_time, end_time, **kwargs):
+        logger.debug(f"SparkRelation create source for {self.identifier}")
+        from pyspark.sql import SparkSession
+        spark = SparkSession.builder.getOrCreate()
+        if self.meta and self.meta.get('python_module'):
+            path = f"{self.meta.get('python_module')}"
+        elif self.source_meta and self.source_meta.get('python_module'):
+            path = f"{self.source_meta.get('python_module')}"
+        if path:
+            logger.debug(f"SparkRelation attempting to load generic python module {path}")
+            spec = importlib.util.find_spec(path)
+            if not spec:
+                raise RuntimeException(f"Cannot find python module {path}")
+
+            python_file = spec.origin
+            # file modification timestamp of a file
+            mod_time = os.path.getmtime(python_file)
+            # convert timestamp into DateTime object
+            f_date = datetime.fromtimestamp(mod_time).strftime("%Y%m%d%H%M%S")
+            s_date = start_time.strftime("%Y%m%d%H%M%S")
+            e_date = end_time.strftime("%Y%m%d%H%M%S")
+            view_name = f'{self.identifier}_{f_date}_{s_date}_{e_date}'
+            if spark.catalog._jcatalog.tableExists(view_name):
+                logger.debug(f"View {view_name} already exists")
+            else:
+                logger.debug(f"Creating view {view_name}")
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                create_dataframe = getattr(module, "create_dataframe")
+                df = create_dataframe(
+                    spark=spark,
+                    table_name=self.identifier, 
+                    start_time=start_time, 
+                    end_time=end_time, 
+                    **kwargs)
+                df.createOrReplaceTempView(view_name)
+            # Return a relation which only has a table name (spark view have no catalog or schema)
+            return SparkRelation.create(database=None, schema=None, identifier=view_name)
 
     @classmethod
     def create_from_source(cls: Type[Self], source: ParsedSourceDefinition, **kwargs: Any) -> Self:
