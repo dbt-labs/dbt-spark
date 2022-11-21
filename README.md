@@ -176,4 +176,8 @@ python -m pytest -v -m profile_apache_spark -n4 tests/integration/*
 ```
 
 
+Creating a python package for distribution
+```
+python setup.py sdist
+```
 
