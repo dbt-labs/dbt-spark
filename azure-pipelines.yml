@@ -1,0 +1,53 @@
+trigger:
+  branches:
+    include:
+      - cccs
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  tag: '$(Build.BuildId)'
+
+stages:
+- stage: Build_and_Publish_Python_Artifact
+  displayName: Build, package and publish python artifacts.
+  jobs:
+  - job: BuildPythonArtifact
+    displayName: Build and package python artifacts.
+    strategy:
+      matrix:
+        Python38:
+          python.version: '3.10'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+      displayName: 'Use Python $(python.version)'
+    - script: |
+        python -m pip install --user --upgrade pip
+        python -m pip install --upgrade wheel
+        python -m pip --version
+    - task: PythonScript@0
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: ./scripts/build-dist.sh
+    - script: |
+        ls -lh dist/
+      displayName: 'Show distributions'
+    - script: |
+        twine check dist/*
+      displayName: 'Check distribution descriptions'
+    - script: |
+        check-wheel-contents dist/*.whl --ignore W007,W008
+      displayName: 'Check wheel contents'
+    - task: CopyFiles@2
+      inputs:
+        targetFolder: $(Build.ArtifactStagingDirectory)
+      displayName: 'Stage build artifact to publish'
+    - task: PublishBuildArtifacts@1
+      displayName: Publish build artifacts
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)/dist'
+        artifactName: 'dist'
+        publishLocation: 'Container'
