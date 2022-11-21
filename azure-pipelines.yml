@@ -28,9 +28,11 @@ stages:
         python -m pip install --user --upgrade pip
         python -m pip install --upgrade setuptools wheel twine check-wheel-contents
         python -m pip --version
+      displayName: 'Install python dependencies'
     - task: ShellScript@2
       inputs:
         scriptPath: ./scripts/build-dist.sh
+      displayName: 'Build distributions'
     - script: |
         ls -lh dist/
       displayName: 'Show distributions'
