@@ -17,7 +17,7 @@ stages:
     displayName: Build and package python artifacts.
     strategy:
       matrix:
-        Python38:
+        Python310:
           python.version: '3.10'
     steps:
     - task: UsePythonVersion@0
@@ -26,7 +26,7 @@ stages:
       displayName: 'Use Python $(python.version)'
     - script: |
         python -m pip install --user --upgrade pip
-        python -m pip install --upgrade wheel
+        python -m pip install --upgrade setuptools wheel twine check-wheel-contents
         python -m pip --version
     - task: ShellScript@2
       inputs:
