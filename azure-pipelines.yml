@@ -52,3 +52,19 @@ stages:
         pathtoPublish: '$(Build.ArtifactStagingDirectory)/dist'
         artifactName: 'dist'
         publishLocation: 'Container'
+  - job: PublishArtifactToNexus
+    dependsOn: BuildPythonArtifact
+    steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current'
+        downloadType: 'specific'
+        downloadPath: '$(Pipeline.Workspace)'
+      displayName: 'Download build artifact.'
+    - task: TwineAuthenticate@1
+      inputs:
+        pythonUploadServiceConnection: nexus-u-pypi-cccs
+    - script: |
+        pip install twine
+        python -m twine upload --skip-existing -r "nexus-u-pypi-cccs" --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/dist/* --verbose
+      displayName: 'Publish artifact to PyPI.'
