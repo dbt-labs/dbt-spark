@@ -16,8 +16,8 @@ stages:
     displayName: Build and package python artifacts.
     strategy:
       matrix:
-        Python310:
-          python.version: '3.10'
+        Python38:
+          python.version: '3.8'
     steps:
     - task: UsePythonVersion@0
       inputs:
