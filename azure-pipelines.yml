@@ -10,10 +10,10 @@ variables:
 
 stages:
 - stage: Build_and_Publish_Python_Artifact
-  displayName: Build, package and publish python artifacts.
+  displayName: 'Build, package and publish python artifacts'
   jobs:
   - job: BuildPythonArtifact
-    displayName: Build and package python artifacts.
+    displayName: 'Build and package python artifacts'
     strategy:
       matrix:
         Python38:
@@ -46,24 +46,33 @@ stages:
         targetFolder: $(Build.ArtifactStagingDirectory)
       displayName: 'Stage build artifact to publish'
     - task: PublishBuildArtifacts@1
-      displayName: Publish build artifacts
+      displayName: 'Publish build artifacts'
       inputs:
         pathtoPublish: '$(Build.ArtifactStagingDirectory)/dist'
         artifactName: 'dist'
         publishLocation: 'Container'
   - job: PublishArtifactToNexus
     dependsOn: BuildPythonArtifact
+    displayName: 'Publish python artifacts to nexus'
+    strategy:
+      matrix:
+        Python38:
+          python.version: '3.8'
     steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+      displayName: 'Use Python $(python.version)'
     - task: DownloadBuildArtifacts@0
       inputs:
         buildType: 'current'
         downloadType: 'specific'
         downloadPath: '$(Pipeline.Workspace)'
-      displayName: 'Download build artifact.'
+      displayName: 'Download build artifact'
     - task: TwineAuthenticate@1
       inputs:
         pythonUploadServiceConnection: nexus-u-pypi-cccs
     - script: |
         pip install twine
         python -m twine upload --skip-existing -r "nexus-u-pypi-cccs" --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/dist/* --verbose
-      displayName: 'Publish artifact to PyPI.'
+      displayName: 'Publish artifact to nexus'
