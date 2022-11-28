@@ -185,9 +185,8 @@ class SparkAdapter(SQLAdapter):
                 )
 
             if try_show_tables:
-                _, name, _ = row
-                information = self.parse_information(name)
-                _schema = schema_relation.schema
+                _schema, name, _ = row
+                information = self.parse_information(f"{_schema}.{name}")
             else:
                 _schema, name, _, information = row
             is_delta = "Provider: delta" in information
