@@ -37,6 +37,11 @@ FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 KEY_TABLE_OWNER = "Owner"
 KEY_TABLE_STATISTICS = "Statistics"
 
+TABLE_OR_VIEW_NOT_FOUND_MESSAGES = (
+    "[TABLE_OR_VIEW_NOT_FOUND]",
+    "Table or view not found",
+    "NoSuchTableException",
+)
 
 @dataclass
 class SparkConfig(AdapterConfig):
@@ -220,14 +225,7 @@ class SparkAdapter(SQLAdapter):
             # spark would throw error when table doesn't exist, where other
             # CDW would just return and empty list, normalizing the behavior here
             errmsg = getattr(e, "msg", "")
-            if any(
-                msg in errmsg
-                for msg in (
-                    "[TABLE_OR_VIEW_NOT_FOUND]",
-                    "Table or view not found",
-                    "NoSuchTableException",
-                )
-            ):
+            if any(msg in errmsg for msg in TABLE_OR_VIEW_NOT_FOUND_MESSAGES):
                 pass
             else:
                 raise e
