@@ -43,6 +43,7 @@ TABLE_OR_VIEW_NOT_FOUND_MESSAGES = (
     "NoSuchTableException",
 )
 
+
 @dataclass
 class SparkConfig(AdapterConfig):
     file_format: str = "parquet"
