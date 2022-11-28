@@ -26,7 +26,7 @@ select cast(3 as bigint) as id, 'anyway' as msg, 'purple' as color
 {% endif %}
 """
 
-
+@pytest.mark.skip_profile('spark_session', 'apache_spark')
 class TestIncrementalPredicatesMergeSpark(BaseIncrementalPredicates):
     @pytest.fixture(scope="class")
     def project_config_update(self):
