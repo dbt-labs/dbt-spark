@@ -1,0 +1,7 @@
+kind: Fixes
+body: Support new error messages in the future Spark.
+time: 2022-11-16T23:46:01.899921861Z
+custom:
+  Author: ueshin
+  Issue: "515"
+  PR: "520"
