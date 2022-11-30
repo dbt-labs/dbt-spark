@@ -238,9 +238,7 @@ class SparkAdapter(SQLAdapter):
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
             try:
-                rows: List[agate.Row] = self.execute_macro(
-                    GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
-                )
+                rows: List[agate.Row] = super().get_columns_in_relation(relation)
                 columns = self.parse_describe_extended(relation, rows)
             except dbt.exceptions.RuntimeException as e:
                 # spark would throw error when table doesn't exist, where other
