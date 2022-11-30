@@ -238,13 +238,17 @@ class SparkAdapter(SQLAdapter):
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
             try:
-                rows: List[agate.Row] = super().get_columns_in_relation(relation)
+                rows: List[agate.Row] = super().get_columns_in_relation(
+                    relation
+                )
                 columns = self.parse_describe_extended(relation, rows)
             except dbt.exceptions.RuntimeException as e:
                 # spark would throw error when table doesn't exist, where other
                 # CDW would just return and empty list, normalizing the behavior here
                 errmsg = getattr(e, "msg", "")
-                found_msgs = (msg in errmsg for msg in TABLE_OR_VIEW_NOT_FOUND_MESSAGES)
+                found_msgs = (
+                    msg in errmsg for msg in TABLE_OR_VIEW_NOT_FOUND_MESSAGES
+                )
                 if any(found_msgs):
                     pass
                 else:
