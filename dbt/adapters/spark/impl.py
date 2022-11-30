@@ -244,7 +244,8 @@ class SparkAdapter(SQLAdapter):
                 columns = self.parse_describe_extended(relation, rows)
             except dbt.exceptions.RuntimeException as e:
                 # spark would throw error when table doesn't exist, where other
-                # CDW would just return and empty list, fixing the behavior here
+                # CDW would just return and empty list,
+                # we can normalize the behavior here
                 errmsg = getattr(e, "msg", "")
                 found_msgs = (
                     msg in errmsg for msg in TABLE_OR_VIEW_NOT_FOUND_MESSAGES
