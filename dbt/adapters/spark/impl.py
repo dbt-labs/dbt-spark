@@ -21,14 +21,20 @@ from dbt.utils import executor
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_MACRO_NAME = 'get_columns_in_relation'
-LIST_SCHEMAS_MACRO_NAME = 'list_schemas'
-LIST_RELATIONS_MACRO_NAME = 'list_relations_without_caching'
-DROP_RELATION_MACRO_NAME = 'drop_relation'
-FETCH_TBL_PROPERTIES_MACRO_NAME = 'fetch_tbl_properties'
+GET_COLUMNS_IN_RELATION_MACRO_NAME = "get_columns_in_relation"
+LIST_SCHEMAS_MACRO_NAME = "list_schemas"
+LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
+DROP_RELATION_MACRO_NAME = "drop_relation"
+FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 
-KEY_TABLE_OWNER = 'Owner'
-KEY_TABLE_STATISTICS = 'Statistics'
+KEY_TABLE_OWNER = "Owner"
+KEY_TABLE_STATISTICS = "Statistics"
+
+TABLE_OR_VIEW_NOT_FOUND_MESSAGES = (
+    "[TABLE_OR_VIEW_NOT_FOUND]",
+    "Table or view not found",
+    "NoSuchTableException",
+)
 
 
 @dataclass
@@ -238,10 +244,8 @@ class SparkAdapter(SQLAdapter):
                 # spark would throw error when table doesn't exist, where other
                 # CDW would just return and empty list, normalizing the behavior here
                 errmsg = getattr(e, "msg", "")
-                if (
-                    "Table or view not found" in errmsg or
-                    "NoSuchTableException" in errmsg
-                ):
+                found_msgs = (msg in errmsg for msg in TABLE_OR_VIEW_NOT_FOUND_MESSAGES)
+                if any(found_msgs):
                     pass
                 else:
                     raise e
