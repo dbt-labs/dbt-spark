@@ -73,7 +73,7 @@ Finally, you can also run a specific test or group of tests using `pytest` direc
 
 ```sh
 # run specific spark integration tests
-python -m pytest -m profile_spark tests/integration/get_columns_in_relation
+python -m pytest -m profile_databricks_sql_endpoint tests/integration/get_columns_in_relation
 # run specific functional tests
 python -m pytest --profile databricks_sql_endpoint tests/functional/adapter/test_basic.py
 # run all unit tests in a file
