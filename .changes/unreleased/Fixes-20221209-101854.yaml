@@ -1,0 +1,7 @@
+kind: Fixes
+body: Update policy code and test config to support py3.11 and tox 4.0
+time: 2022-12-09T10:18:54.68118-08:00
+custom:
+  Author: colin-rogers-dbt
+  Issue: "542"
+  PR: "543"
