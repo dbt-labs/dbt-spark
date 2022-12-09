@@ -1,0 +1,7 @@
+kind: Under the Hood
+body: fix post new release tox issues around passenv and allowlist_externals
+time: 2022-12-09T14:38:21.145779-06:00
+custom:
+  Author: McKnight-42
+  Issue: "545"
+  PR: "545"
