@@ -158,7 +158,7 @@ class SparkAdapter(SQLAdapter):
             rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
             is_delta = "Provider: delta" in information
             is_hudi = "Provider: hudi" in information
-            relation = self.Relation.create(
+            relation: BaseRelation = self.Relation.create(
                 schema=_schema,
                 identifier=name,
                 type=rel_type,
@@ -171,7 +171,7 @@ class SparkAdapter(SQLAdapter):
         return relations
 
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
-        if not self.Relation.include_policy.database:
+        if not self.Relation.get_default_include_policy().database:
             database = None  # type: ignore
 
         return super().get_relation(database, schema, identifier)
