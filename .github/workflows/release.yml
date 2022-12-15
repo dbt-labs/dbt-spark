@@ -11,7 +11,7 @@
 name: Build, Test, and Package
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       sha:
         description: "The last commit sha in the release"
@@ -185,7 +185,7 @@ jobs:
     needs: build-test-package
 
     # pin to commit since this is workflow is WIP but this commit has been tested as working
-    uses: dbt-labs/dbt-release/.github/workflows/github-release.yml@7b6e01d
+    uses: dbt-labs/dbt-release/.github/workflows/github-release.yml@7b6e01d73d2c8454e06302cc66ef4c2dbd4dbe4e
 
     with:
       sha: ${{ inputs.sha }}
