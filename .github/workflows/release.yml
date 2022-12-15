@@ -193,22 +193,23 @@ jobs:
       changelog_path: ${{ inputs.changelog_path }}
       test_run: ${{ inputs.test_run }}
 
-# Skipping this for now until we've proven build work in the repos
-  # pypi-release:
-  #   name: Pypi release
+  pypi-release:
+    name: Pypi release
+    # only release to PyPi if we're not testing - will release to PyPi test when workflow gets rewritten
+    if: inputs.test_run  == 'false'
 
-  #   runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-  #   needs: github-release
+    needs: github-release
 
-  #   environment: PypiProd
-  #   steps:
-  #     - uses: actions/download-artifact@v2
-  #       with:
-  #         name: dist
-  #         path: 'dist'
+    environment: PypiProd
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: 'dist'
 
-  #     - name: Publish distribution to PyPI
-  #       uses: pypa/gh-action-pypi-publish@v1.4.2
-  #       with:
-  #         password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
