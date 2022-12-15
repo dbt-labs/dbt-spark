@@ -37,6 +37,12 @@ FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 KEY_TABLE_OWNER = "Owner"
 KEY_TABLE_STATISTICS = "Statistics"
 
+TABLE_OR_VIEW_NOT_FOUND_MESSAGES = (
+    "[TABLE_OR_VIEW_NOT_FOUND]",
+    "Table or view not found",
+    "NoSuchTableException",
+)
+
 
 @dataclass
 class SparkConfig(AdapterConfig):
@@ -152,7 +158,7 @@ class SparkAdapter(SQLAdapter):
             rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
             is_delta = "Provider: delta" in information
             is_hudi = "Provider: hudi" in information
-            relation = self.Relation.create(
+            relation: BaseRelation = self.Relation.create(
                 schema=_schema,
                 identifier=name,
                 type=rel_type,
@@ -165,7 +171,7 @@ class SparkAdapter(SQLAdapter):
         return relations
 
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
-        if not self.Relation.include_policy.database:
+        if not self.Relation.get_default_include_policy().database:
             database = None  # type: ignore
 
         return super().get_relation(database, schema, identifier)
@@ -220,7 +226,8 @@ class SparkAdapter(SQLAdapter):
             # spark would throw error when table doesn't exist, where other
             # CDW would just return and empty list, normalizing the behavior here
             errmsg = getattr(e, "msg", "")
-            if "Table or view not found" in errmsg or "NoSuchTableException" in errmsg:
+            found_msgs = (msg in errmsg for msg in TABLE_OR_VIEW_NOT_FOUND_MESSAGES)
+            if any(found_msgs):
                 pass
             else:
                 raise e
