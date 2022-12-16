@@ -1,7 +1,7 @@
 .hive-metastore/
 .spark-warehouse/
 *.egg-info
-env/
+env*/
 *.pyc
 __pycache__
 .tox/
