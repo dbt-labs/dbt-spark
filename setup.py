@@ -54,12 +54,12 @@ package_version = "1.4.0a1"
 dbt_core_version = _get_dbt_core_version()
 description = """The Apache Spark adapter plugin for dbt"""
 
-odbc_extras = ["pyodbc>=4.0.30"]
+odbc_extras = ["pyodbc~=4.0.34"]
 pyhive_extras = [
-    "PyHive[hive]>=0.6.0,<0.7.0",
-    "thrift>=0.11.0,<0.16.0",
+    "PyHive[hive]~=0.6.0",
+    "thrift~=0.15.0",
 ]
-session_extras = ["pyspark>=3.0.0,<4.0.0"]
+session_extras = ["pyspark~=3.0"]
 all_extras = odbc_extras + pyhive_extras + session_extras
 
 setup(
@@ -75,7 +75,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "dbt-core~={}".format(dbt_core_version),
-        "sqlparams>=3.0.0",
+        "sqlparams~=5.0",
     ],
     extras_require={
         "ODBC": odbc_extras,
