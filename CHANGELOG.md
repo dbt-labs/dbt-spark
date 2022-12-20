@@ -20,7 +20,9 @@
 - Configure insert_overwrite models to use parquet ([#301](https://github.com/dbt-labs/dbt-spark/issues/301))
 
 ### Contributors
-- [@ueshin](https://github.com/ueshin) ([#285](https://github.com/dbt-labs/dbt-spark/pull/285), [#320](https://github.com/dbt-labs/dbt-spark/pull/320))## dbt-spark 1.0.0 - December 3, 2021
+- [@ueshin](https://github.com/ueshin) ([#285](https://github.com/dbt-labs/dbt-spark/pull/285), [#320](https://github.com/dbt-labs/dbt-spark/pull/320))
+
+## dbt-spark 1.0.0 - December 3, 2021
 
 ### Features
 - Add support for Apache Hudi (hudi file format) which supports incremental merge strategies ([#187](https://github.com/dbt-labs/dbt-spark/issues/187), [#210](https://github.com/dbt-labs/dbt-spark/pull/210))
