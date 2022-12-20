@@ -1,7 +1,7 @@
 from typing import Optional, TypeVar, Any, Type, Dict
 from dbt.contracts.graph.nodes import SourceDefinition
 from dbt.utils import deep_merge
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from dbt.adapters.base.relation import BaseRelation, Policy
 from dbt.exceptions import RuntimeException
@@ -28,8 +28,8 @@ class SparkIncludePolicy(Policy):
 
 @dataclass(frozen=True, eq=False, repr=False)
 class SparkRelation(BaseRelation):
-    quote_policy: SparkQuotePolicy = SparkQuotePolicy()
-    include_policy: SparkIncludePolicy = SparkIncludePolicy()
+    quote_policy: Policy = field(default_factory=lambda: SparkQuotePolicy())
+    include_policy: Policy = field(default_factory=lambda: SparkIncludePolicy())
     quote_character: str = "`"
     is_delta: Optional[bool] = None
     is_hudi: Optional[bool] = None
