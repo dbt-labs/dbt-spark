@@ -134,28 +134,26 @@ class SparkAdapter(SQLAdapter):
         # so jinja doesn't render things
         return ""
 
-    def parse_information(self, table_name):
+    def parse_information(self, table_name: str) -> str:
         information = ""
-        kwargs = {"table_name": table_name}
         try:
-            table_results = self.execute_macro(DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs=kwargs)
+            table_results = self.execute_macro(DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name})
         except dbt.exceptions.RuntimeException as e:
             logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
-            return []
+            return ""
         for info_row in table_results:
             info_type, info_value, _ = info_row
-            if info_type.startswith("#") is False:
+            if not info_type.startswith("#"):
                 information += f"{info_type}: {info_value}\n"
         return information
 
     def list_relations_without_caching(
         self, schema_relation: SparkRelation
     ) -> List[SparkRelation]:
-        kwargs = {"schema_relation": schema_relation}
         try_show_tables = False
         expected_result_rows = 4
         try:
-            results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
+            results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs={"schema_relation": schema_relation})
         except dbt.exceptions.RuntimeException as e:
             errmsg = getattr(e, "msg", "")
             if f"Database '{schema_relation}' not found" in errmsg:
@@ -172,9 +170,8 @@ class SparkAdapter(SQLAdapter):
         if try_show_tables:
             expected_result_rows = 3
             try:
-                results = self.execute_macro(LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs=kwargs)
+                results = self.execute_macro(LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs={"schema_relation": schema_relation})
             except dbt.exceptions.RuntimeException as e:
-                errmsg = getattr(e, "msg", "")
                 description = "Error while retrieving information about"
                 logger.debug(f"{description} {schema_relation}: {e.msg}")
                 return []
