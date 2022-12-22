@@ -1,3 +1,16 @@
+{% macro create_table_clause() %}
+  {{ return(adapter.dispatch('create_table_clause', 'dbt')()) }}
+{%- endmacro -%}
+
+{% macro spark__create_table_clause(relation) %}
+      {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
+        create or replace table {{ relation }}
+      {% else %}
+        create table {{ relation }}
+      {% endif %}
+{%- endmacro -%}
+
+
 {% macro file_format_clause() %}
   {{ return(adapter.dispatch('file_format_clause', 'dbt')()) }}
 {%- endmacro -%}
@@ -132,12 +145,8 @@
   {%- if language == 'sql' -%}
     {%- if temporary -%}
       {{ create_temporary_view(relation, compiled_code) }}
-    {%- else -%}
-      {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
-        create or replace table {{ relation }}
-      {% else %}
-        create table {{ relation }}
-      {% endif %}
+    {%- elif not config.get('constraints_enabled', False) -%}
+      {{ create_table_clause(relation) }}
       {{ file_format_clause() }}
       {{ options_clause() }}
       {{ partition_cols(label="partitioned by") }}
@@ -146,6 +155,20 @@
       {{ comment_clause() }}
       as
       {{ compiled_code }}
+    {%- else -%}
+      {{ create_table_clause(relation) }}
+      {{ get_columns_spec_ddl() }}
+      {{ file_format_clause() }}
+      {{ options_clause() }}
+      {{ partition_cols(label="partitioned by") }}
+      {{ clustered_cols(label="clustered by") }}
+      {{ location_clause() }}
+      {{ comment_clause() }};
+
+      insert into {{ relation }}
+        (
+          {{ sql }}
+        );
     {%- endif -%}
   {%- elif language == 'python' -%}
     {#--
