@@ -1,5 +1,5 @@
-{% macro create_table_clause() %}
-  {{ return(adapter.dispatch('create_table_clause', 'dbt')()) }}
+{% macro create_table_clause(relation) %}
+  {{ return(adapter.dispatch('create_table_clause', 'dbt')(relation )) }}
 {%- endmacro -%}
 
 {% macro spark__create_table_clause(relation) %}
