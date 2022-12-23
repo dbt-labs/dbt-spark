@@ -196,7 +196,7 @@ jobs:
   pypi-release:
     name: Pypi release
     # only release to PyPi if we're not testing - will release to PyPi test when workflow gets rewritten
-    if: ${{ inputs.test_run  == 'false' }}
+    if: ${{ inputs.test_run  == false }}
 
     runs-on: ubuntu-latest
 
