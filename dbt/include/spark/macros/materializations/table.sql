@@ -20,9 +20,22 @@
 
   -- build model
 
-  {%- call statement('main', language=language) -%}
-    {{ create_table_as(False, target_relation, compiled_code, language) }}
-  {%- endcall -%}
+  {% set list_create_table_statement = create_table_as(False, target_relation, compiled_code, language).split(';') %}
+  {% if create_table_statement | length == 1 %}
+    {%- call statement('main', language=language) -%}
+      {{ create_table_statement[0] }}
+    {%- endcall -%}
+  {% elif create_table_statement | length == 2 %}
+    -- we need 2 different statements to create a table with a defined schema
+    {%- call statement('main', language=language) -%}
+      {{ create_table_statement[0] }}
+    {%- endcall -%}
+    {%- call statement('main', language=language) -%}
+      {{ create_table_statement[1] }}
+    {%- endcall -%}
+  {% else %} 
+    {{ exceptions.raise_compiler_error("Invalid SQL statement in the table materialization. There is more than one ';'.") }}
+  {% endif %}
 
   {% set should_revoke = should_revoke(old_relation, full_refresh_mode=True) %}
   {% do apply_grants(target_relation, grant_config, should_revoke) %}
