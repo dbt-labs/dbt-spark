@@ -88,7 +88,6 @@ models:
         description: "Test for int type with some constraints"
         data_type: int
         constraints: 
-          - unique
           - not null
       - name: float_column
         description: "Test for int type"
@@ -118,6 +117,7 @@ class TestMaterializedWithConstraints:
             "config-version": 2,
             "models": {
                 "materialized": "table",
+                "file_format": "delta",
             },
         }
 
@@ -138,7 +138,7 @@ class TestMaterializedWithConstraints:
     @use_profile('apache_spark')
     def test__apache_spark__failing_not_null_constraint(self, project):
         result = run_dbt(["run", "--select", "constraints_not_null"], expect_pass=False)
-        assert "NULL result in a non-nullable column" in result.results[0].message
+        assert "NOT NULL constraint violated" in result.results[0].message
 
     @use_profile('apache_spark')
     def test__apache_spark__rollback(self, project):
