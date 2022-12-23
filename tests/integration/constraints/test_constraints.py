@@ -1,6 +1,7 @@
 import pytest
 import json
 from dbt.tests.util import run_dbt, run_dbt_and_capture
+from tests.integration.base import use_profile
 import logging
 
 models__constraints_column_types_sql = """
@@ -120,23 +121,27 @@ class TestMaterializedWithConstraints:
             },
         }
 
-    def test_materialized_with_constraints(self, project):
+    @use_profile('apache_spark')
+    def test__apache_spark__materialized_with_constraints(self, project):
         _, stdout = run_dbt_and_capture(["run", "--select", "constraints_column_types"])
         found_check_config_str = "We noticed you have `check` configs"
         number_times_print_found_check_config = stdout.count(found_check_config_str)
         assert number_times_print_found_check_config == 1
 
-    def test_failing_materialized_with_constraints(self, project):
+    @use_profile('apache_spark')
+    def test__apache_spark__failing_materialized_with_constraints(self, project):
         result = run_dbt(
             ["run", "--select", "constraints_incorrect_column_types"], expect_pass=False
         )
         assert "incompatible types" in result.results[0].message
 
-    def test_failing_not_null_constraint(self, project):
+    @use_profile('apache_spark')
+    def test__apache_spark__failing_not_null_constraint(self, project):
         result = run_dbt(["run", "--select", "constraints_not_null"], expect_pass=False)
         assert "NULL result in a non-nullable column" in result.results[0].message
 
-    def test_rollback(self, project):
+    @use_profile('apache_spark')
+    def test__apache_spark__rollback(self, project):
 
         # run the correct model and modify it to fail
         run_dbt(["run", "--select", "constraints_column_types"])
