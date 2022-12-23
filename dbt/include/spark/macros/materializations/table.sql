@@ -21,17 +21,17 @@
   -- build model
 
   {% set list_create_table_statement = create_table_as(False, target_relation, compiled_code, language).split(';') %}
-  {% if create_table_statement | length == 1 or create_table_statement[1] | trim == '' %}
+  {% if list_create_table_statement | length == 1 or list_create_table_statement[1] | trim == '' %}
     {%- call statement('main', language=language) -%}
-      {{ create_table_statement[0] }}
+      {{ list_create_table_statement[0] }}
     {%- endcall -%}
-  {% elif create_table_statement | length == 2 or create_table_statement[2] | trim == '' %}
+  {% elif list_create_table_statement | length == 2 or list_create_table_statement[2] | trim == '' %}
     -- we need 2 different statements to create a table with a defined schema
     {%- call statement('main', language=language) -%}
-      {{ create_table_statement[0] }}
+      {{ list_create_table_statement[0] }}
     {%- endcall -%}
     {%- call statement('main', language=language) -%}
-      {{ create_table_statement[1] }}
+      {{ list_create_table_statement[1] }}
     {%- endcall -%}
   {% else %} 
     {{ exceptions.raise_compiler_error("Invalid SQL statement in the table materialization. There is more than one ';'.") }}
