@@ -121,12 +121,12 @@ workflows:
       - integration-spark-thrift:
           requires:
             - unit
-      # - integration-spark-databricks-http:
-      #     requires:
-      #       - integration-spark-thrift
-      # - integration-spark-databricks-odbc-cluster:
-      #     requires:
-      #       - integration-spark-thrift
-      # - integration-spark-databricks-odbc-endpoint:
-      #     requires:
-      #       - integration-spark-thrift
+      - integration-spark-databricks-http:
+          requires:
+            - integration-spark-thrift
+      - integration-spark-databricks-odbc-cluster:
+          requires:
+            - integration-spark-thrift
+      - integration-spark-databricks-odbc-endpoint:
+          requires:
+            - integration-spark-thrift
