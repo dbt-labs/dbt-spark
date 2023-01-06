@@ -38,7 +38,7 @@ If the instance doesn't start correctly, try the complete reset command listed b
 Create a profile like this one:
 
 ```
-spark-testing:
+spark_testing:
   target: local
   outputs:
     local:
