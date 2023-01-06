@@ -125,8 +125,10 @@ workflows:
           requires:
             - integration-spark-thrift
       - integration-spark-databricks-odbc-cluster:
+          context: org-global
           requires:
             - integration-spark-thrift
       - integration-spark-databricks-odbc-endpoint:
+          context: org-global
           requires:
             - integration-spark-thrift
