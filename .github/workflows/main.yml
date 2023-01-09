@@ -146,6 +146,58 @@ jobs:
       - name: Run tox
         run: tox
 
+  integration-spark-thrift:
+    name: integration test (spark-thrift)
+
+    runs-on: ubuntu-latest
+    # services:
+    #   test-container:
+    #     image: fishtownanalytics/test-container:10
+      
+    #   godatadriven:
+    #     image: godatadriven/spark:3.1.1
+    #     env: 
+    #     ports:
+    #       - localhost:5432
+
+    #   postgres:
+    #     image: postgres:9.6.17-alpine
+    #     env:
+    #       POSTGRES_USER: dbt
+    #       POSTGRES_PASSWORD: dbt
+    #       POSTGRES_DB: metastore
+    #     ports:
+
+    timeout-minutes: 60
+
+    env:
+      TOXENV: "integration-spark-thrift"
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install python dependencies
+        run: |
+          sudo apt-get update --fix-missing
+          sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install tox
+          tox --version
+
+      - name: Docker compose
+        run: docker-compose up -d
+
+      - name: Run tox
+        run: tox
+        
+
   integration-spark-databricks-http:
     name: integration test (spark-databricks-http)
 
@@ -184,6 +236,71 @@ jobs:
 
       - name: Run tox
         run: tox
+
+  integration-spark-databricks-odbc-cluster: &databricks-odbc
+    name: "integration test (spark databricks odbc cluster"
+
+    runs-on: ubuntu-latest
+    #container: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest
+    timeout: 60
+
+    env: 
+      TOXENV: "integration-spark-databricks-odbc-cluster"
+      ODBC_DRIVER: Simba # TODO: move env var to Docker image
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install python dependencies
+        run: |
+          sudo apt-get update --fix-missing
+          sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install tox
+          tox --version
+
+      - name: Run tox
+        run: tox
+
+  integration-spark-databricks-odbc-endpoint:
+    name: "integration test (spark databricks odbc cluster"
+
+    runs-on: ubuntu-latest
+    timeout: 60
+
+    env:
+      TOXENV: "integration-spark-databricks-odbc-endpoint"
+
+    steps:
+      - name: Checkout the repository
+      uses: actions/checkout@v2
+
+      - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+      - name: Install python dependencies
+        run: |
+          sudo apt-get update --fix-missing
+          sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install tox
+          tox --version
+      
+      - name: Run tox
+      run: tox
 
   build:
     name: build packages
