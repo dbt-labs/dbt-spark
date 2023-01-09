@@ -39,7 +39,7 @@ def model(dbt, spark):
                 "ResourceClass": "SingleNode"
             }
         },
-        packages=['spacy', 'torch']
+        packages=['spacy', 'torch', 'pydantic<1.10.3']
     )
     data = [[1,2]] * 10
     return spark.createDataFrame(data, schema=['test', 'test2'])
