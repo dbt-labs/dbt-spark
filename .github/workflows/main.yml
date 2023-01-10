@@ -196,7 +196,6 @@ jobs:
       - name: Run tox
         run: tox
         
-
   integration-spark-databricks-http:
     name: integration test (spark-databricks-http)
 
@@ -282,12 +281,12 @@ jobs:
 
     steps:
       - name: Checkout the repository
-      uses: actions/checkout@v2
+        uses: actions/checkout@v2
 
       - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
 
       - name: Install python dependencies
         run: |
@@ -299,7 +298,7 @@ jobs:
           tox --version
       
       - name: Run tox
-      run: tox
+        run: tox
 
   build:
     name: build packages
