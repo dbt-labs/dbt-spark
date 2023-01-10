@@ -235,7 +235,7 @@ jobs:
       - name: Run tox
         run: tox
 
-  integration-spark-databricks-odbc-cluster: &databricks-odbc
+  integration-spark-databricks-odbc-cluster:
     name: "integration test (spark databricks odbc cluster"
 
     runs-on: ubuntu-latest
