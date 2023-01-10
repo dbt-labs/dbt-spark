@@ -240,7 +240,7 @@ jobs:
 
     runs-on: ubuntu-latest
     #container: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest
-    timeout: 60
+    timeout-minutes: 60
 
     env: 
       TOXENV: "integration-spark-databricks-odbc-cluster"
@@ -274,7 +274,7 @@ jobs:
     name: "integration test (spark databricks odbc cluster"
 
     runs-on: ubuntu-latest
-    timeout: 60
+    timeout-minutes: 60
 
     env:
       TOXENV: "integration-spark-databricks-odbc-endpoint"
