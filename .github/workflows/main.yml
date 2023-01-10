@@ -153,10 +153,10 @@ jobs:
     # services:
     #   test-container:
     #     image: fishtownanalytics/test-container:10
-      
+
     #   godatadriven:
     #     image: godatadriven/spark:3.1.1
-    #     env: 
+    #     env:
     #     ports:
     #       - localhost:5432
 
@@ -175,7 +175,7 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
-      
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -195,11 +195,14 @@ jobs:
 
       - name: Run tox
         run: tox
-        
+
   integration-spark-databricks-http:
     name: integration test (spark-databricks-http)
 
     runs-on: ubuntu-latest
+    services:
+      test-container:
+        image: fishtownanalytics/test-container:10
     timeout-minutes: 60
 
     env:
@@ -242,7 +245,7 @@ jobs:
     #container: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest
     timeout-minutes: 60
 
-    env: 
+    env:
       TOXENV: "integration-spark-databricks-odbc-cluster"
       ODBC_DRIVER: Simba # TODO: move env var to Docker image
       DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
@@ -296,7 +299,7 @@ jobs:
           python -m pip --version
           python -m pip install tox
           tox --version
-      
+
       - name: Run tox
         run: tox
 
