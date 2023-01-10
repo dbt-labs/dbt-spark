@@ -167,7 +167,6 @@ jobs:
     #       POSTGRES_PASSWORD: dbt
     #       POSTGRES_DB: metastore
     #     ports:
-
     timeout-minutes: 60
 
     env:
