@@ -196,7 +196,7 @@ jobs:
   pypi-release:
     name: Pypi release
     # only release to PyPi if we're not testing - will release to PyPi test when workflow gets rewritten
-    if: inputs.test_run  == 'false'
+    if: ${{ inputs.test_run  == false }}
 
     runs-on: ubuntu-latest
 
@@ -204,11 +204,11 @@ jobs:
 
     environment: PypiProd
     steps:
-      - uses: actions/download-artifact@v2
+      - name: "Download Build Artifact - ${{ inputs.version_number }}"
+        uses: actions/download-artifact@v3
         with:
-          name: dist
-          path: 'dist'
-
+          name: ${{ inputs.version_number }}
+          path: dist/
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
