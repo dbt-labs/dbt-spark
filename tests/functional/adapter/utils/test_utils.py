@@ -79,7 +79,7 @@ class TestDateTrunc(BaseDateTrunc):
     pass
 
 
-class TestEscapeSingleQuotes(BaseEscapeSingleQuotesQuote):
+class TestEscapeSingleQuotes(BaseEscapeSingleQuotesBackslash):
     pass
 
 
