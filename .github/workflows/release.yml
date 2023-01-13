@@ -10,7 +10,7 @@
 # Ensure an automated and tested release process
 #
 # **when?**
-# This will only run manually. Run this workflow only after the 
+# This will only run manually. Run this workflow only after the
 # version bump workflow is completed and related changes are reviewed and merged.
 #
 
