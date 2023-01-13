@@ -49,11 +49,11 @@ models:
         data_type: int
         constraints: 
           - not null
-        check: "int_column > 0"
+        constraints_check: "int_column > 0"
       - name: float_column
         description: "Test for int type"
         data_type: float
-        check: "float_column > 0"
+        constraints_check: "float_column > 0"
       - name: bool_column
         description: "Test for int type"
         data_type: boolean
@@ -124,9 +124,9 @@ class TestMaterializedWithConstraints:
     @use_profile('apache_spark')
     def test__apache_spark__materialized_with_constraints(self, project):
         _, stdout = run_dbt_and_capture(["run", "--select", "constraints_column_types"])
-        found_check_config_str = "We noticed you have `check` configs"
-        number_times_print_found_check_config = stdout.count(found_check_config_str)
-        assert number_times_print_found_check_config == 1
+        found_constraints_check_config_str = "We noticed you have `constraints_check` configs"
+        number_times_print_found_constraints_check_config = stdout.count(found_constraints_check_config_str)
+        assert number_times_print_found_constraints_check_config == 1
 
     @use_profile('apache_spark')
     def test__apache_spark__failing_materialized_with_constraints(self, project):
