@@ -1,7 +1,0 @@
-kind: Fixes
-body: Updated the Spark-testing profile name to spark_testing
-time: 2022-11-13T21:12:08.669273+05:30
-custom:
-  Author: akashrn5
-  Issue: "514"
-  PR: "513"

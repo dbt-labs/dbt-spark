@@ -1,7 +1,0 @@
-kind: Fixes
-body: Password doesn't pass to server using LDAP connection via thrift (#310)
-time: 2022-09-26T11:28:57.306285-04:00
-custom:
-  Author: VShkaberda
-  Issue: "310"
-  PR: "396"

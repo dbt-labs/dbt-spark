@@ -53,7 +53,7 @@ class BaseDatabricksHelper(PythonJobHelper):
             },
         )
         if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 f"Error creating work_dir for python notebooks\n {response.content!r}"
             )
 
@@ -71,7 +71,7 @@ class BaseDatabricksHelper(PythonJobHelper):
             },
         )
         if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 f"Error creating python notebook.\n {response.content!r}"
             )
 
@@ -99,7 +99,7 @@ class BaseDatabricksHelper(PythonJobHelper):
             json=job_spec,
         )
         if submit_response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 f"Error creating python run.\n {submit_response.content!r}"
             )
         return submit_response.json()["run_id"]
@@ -135,7 +135,7 @@ class BaseDatabricksHelper(PythonJobHelper):
         json_run_output = run_output.json()
         result_state = json_run_output["metadata"]["state"]["result_state"]
         if result_state != "SUCCESS":
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 "Python model failed with traceback as:\n"
                 "(Note that the line number here does not "
                 "match the line number in your code due to dbt templating)\n"
@@ -169,9 +169,9 @@ class BaseDatabricksHelper(PythonJobHelper):
             response = status_func(**status_func_kwargs)
             state = get_state_func(response)
         if exceeded_timeout:
-            raise dbt.exceptions.RuntimeException("python model run timed out")
+            raise dbt.exceptions.DbtRuntimeError("python model run timed out")
         if state != expected_end_state:
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 "python model run ended in state"
                 f"{state} with state_message\n{get_state_msg_func(response)}"
             )
@@ -205,7 +205,7 @@ class DBContext:
             },
         )
         if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 f"Error creating an execution context.\n {response.content!r}"
             )
         return response.json()["id"]
@@ -221,7 +221,7 @@ class DBContext:
             },
         )
         if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 f"Error deleting an execution context.\n {response.content!r}"
             )
         return response.json()["id"]
@@ -246,7 +246,7 @@ class DBCommand:
             },
         )
         if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 f"Error creating a command.\n {response.content!r}"
             )
         return response.json()["id"]
@@ -263,7 +263,7 @@ class DBCommand:
             },
         )
         if response.status_code != 200:
-            raise dbt.exceptions.RuntimeException(
+            raise dbt.exceptions.DbtRuntimeError(
                 f"Error getting status of command.\n {response.content!r}"
             )
         return response.json()
@@ -298,7 +298,7 @@ class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
                     get_state_msg_func=lambda response: response.json()["results"]["data"],
                 )
                 if response["results"]["resultType"] == "error":
-                    raise dbt.exceptions.RuntimeException(
+                    raise dbt.exceptions.DbtRuntimeError(
                         f"Python model failed with traceback as:\n"
                         f"{response['results']['cause']}"
                     )
