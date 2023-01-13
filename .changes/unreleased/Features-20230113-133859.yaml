@@ -1,0 +1,7 @@
+kind: Features
+body: Add extras Spark config to thrift connection
+time: 2023-01-13T13:38:59.257521+07:00
+custom:
+  Author: Vinh Nguyen
+  Issue: "590"
+  PR: "0"
