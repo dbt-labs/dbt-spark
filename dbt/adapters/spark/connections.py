@@ -74,6 +74,7 @@ class SparkCredentials(Credentials):
     connect_timeout: int = 10
     use_ssl: bool = False
     server_side_parameters: Dict[str, Any] = field(default_factory=dict)
+    spark_conf_string: Optional[str] = None
     retry_all: bool = False
 
     @classmethod
@@ -370,6 +371,8 @@ class SparkConnectionManager(SQLConnectionManager):
                 elif creds.method == SparkConnectionMethod.THRIFT:
                     cls.validate_creds(creds, ["host", "port", "user", "schema"])
 
+                    configuration = None if not creds.spark_conf_string else parse_spark_config(creds.spark_conf_string)
+
                     if creds.use_ssl:
                         transport = build_ssl_transport(
                             host=creds.host,
@@ -379,7 +382,7 @@ class SparkConnectionManager(SQLConnectionManager):
                             kerberos_service_name=creds.kerberos_service_name,
                             password=creds.password,
                         )
-                        conn = hive.connect(thrift_transport=transport)
+                        conn = hive.connect(thrift_transport=transport, configuration=configuration)
                     else:
                         conn = hive.connect(
                             host=creds.host,
@@ -388,6 +391,7 @@ class SparkConnectionManager(SQLConnectionManager):
                             auth=creds.auth,
                             kerberos_service_name=creds.kerberos_service_name,
                             password=creds.password,
+                            configuration=configuration
                         )  # noqa
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
@@ -540,3 +544,12 @@ def _is_retryable_error(exc: Exception) -> str:
         return str(exc)
     else:
         return ""
+
+
+def parse_spark_config(spark_conf_string: str) -> Dict:
+    try:
+        return dict(map(lambda x: x.split('='), spark_conf_string.split(';')))
+    except:
+        raise dbt.exceptions.DbtProfileError(
+            f"invalid spark_conf_string: {spark_conf_string}. Parse error."
+        )

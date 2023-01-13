@@ -91,6 +91,22 @@ class TestSparkAdapter(unittest.TestCase):
             'target': 'test'
         })
 
+    def _get_target_thrift_with_spark_conf_string(self, project):
+        return config_from_parts_or_dicts(project, {
+            'outputs': {
+                'test': {
+                    'type': 'spark',
+                    'method': 'thrift',
+                    'schema': 'analytics',
+                    'host': 'myorg.sparkhost.com',
+                    'port': 10001,
+                    'user': 'dbt',
+                    'spark_conf_string': 'spark.executor.memory=1g;spark.executor.cores=1'
+                }
+            },
+            'target': 'test'
+        })
+
     def _get_target_odbc_cluster(self, project):
         return config_from_parts_or_dicts(project, {
             'outputs': {
@@ -210,6 +226,29 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertIsNotNone(connection.handle)
             self.assertEqual(connection.credentials.schema, 'analytics')
             self.assertIsNone(connection.credentials.database)
+
+    def test_thrift_connection_with_spark_conf_string(self):
+        config = self._get_target_thrift_with_spark_conf_string(self.project_cfg)
+        adapter = SparkAdapter(config)
+
+        def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password):
+            self.assertEqual(host, 'myorg.sparkhost.com')
+            self.assertEqual(port, 10001)
+            self.assertEqual(username, 'dbt')
+            self.assertIsNone(auth)
+            self.assertIsNone(kerberos_service_name)
+            self.assertIsNone(password)
+
+        with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
+            connection = adapter.acquire_connection('dummy')
+            connection.handle  # trigger lazy-load
+
+            self.assertEqual(connection.state, 'open')
+            self.assertIsNotNone(connection.handle)
+            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertIsNone(connection.credentials.database)
+            spark_conf = {'spark.executor.memory': '1g', 'spark.executor.cores': '1'}
+            self.assertEqual(connection.credentials.configuration, spark_conf)
 
     def test_odbc_cluster_connection(self):
         config = self._get_target_odbc_cluster(self.project_cfg)
