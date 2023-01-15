@@ -45,10 +45,10 @@ repos:
   rev: v0.991
   hooks:
   - id: mypy
-    args: [--show-error-codes, --ignore-missing-imports]
+    args: [--show-error-codes, --ignore-missing-imports, --exclude dbt/include/, --install-types, --non-interactive]
     files: ^dbt/adapters/.*
   - id: mypy
     alias: mypy-check
     stages: [manual]
-    args: [--show-error-codes, --pretty, --ignore-missing-imports]
+    args: [--show-error-codes, --pretty, --ignore-missing-imports, --exclude dbt/include/, --install-types, --non-interactive]
     files: ^dbt/adapters/.*
