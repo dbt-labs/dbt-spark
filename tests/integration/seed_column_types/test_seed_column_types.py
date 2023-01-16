@@ -1,6 +1,5 @@
 from cProfile import run
 from tests.integration.base import DBTIntegrationTest, use_profile
-import dbt.exceptions
 
 
 class TestSeedColumnTypeCast(DBTIntegrationTest):
