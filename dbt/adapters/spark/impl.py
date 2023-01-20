@@ -307,23 +307,24 @@ class SparkAdapter(SQLAdapter):
 
     def _get_columns_for_catalog(self, relation: SparkRelation) -> Iterable[Dict[str, Any]]:
         columns = []
-        if relation and relation.information:
+        parse_information = (relation and relation.information) and not relation.is_iceberg
+        if parse_information:
             columns = self.parse_columns_from_information(relation)
         else:
+            # Iceberg information column does not contain the relation's schema
             # in open source delta 'show table extended' query output doesn't
             # return relation's schema. if columns are empty from cache,
             # use get_columns_in_relation spark macro
             # which would execute 'describe extended tablename' query
             rows: List[agate.Row] = super().get_columns_in_relation(relation)
             columns = self.parse_describe_extended(relation, rows)
-
-        for column in columns:
-            # convert SparkColumns into catalog dicts
-            as_dict = column.to_column_dict()
-            as_dict["column_name"] = as_dict.pop("column", None)
-            as_dict["column_type"] = as_dict.pop("dtype")
-            as_dict["table_database"] = None
-            yield as_dict
+            for column in columns:
+                # convert SparkColumns into catalog dicts
+                as_dict = column.to_column_dict()
+                as_dict["column_name"] = as_dict.pop("column", None)
+                as_dict["column_type"] = as_dict.pop("dtype")
+                as_dict["table_database"] = relation.database if relation.is_iceberg else None
+                yield as_dict
 
     def get_properties(self, relation: Relation) -> Dict[str, str]:
         properties = self.execute_macro(
