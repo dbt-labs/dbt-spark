@@ -4,7 +4,8 @@ from dbt.utils import deep_merge
 from dataclasses import dataclass, field
 
 from dbt.adapters.base.relation import BaseRelation, Policy
-from dbt.exceptions import RuntimeException
+
+from dbt.exceptions import DbtRuntimeError
 from dbt.events import AdapterLogger
 
 logger = AdapterLogger("Spark")
@@ -41,7 +42,7 @@ class SparkRelation(BaseRelation):
 
     def __post_init__(self):
         if self.database != self.schema and self.database:
-            raise RuntimeException("Cannot set database in spark!")
+            raise DbtRuntimeError("Cannot set database in spark!")
 
     @classmethod
     def create_from_source(cls: Type[Self], source: SourceDefinition, **kwargs: Any) -> Self:
@@ -66,7 +67,7 @@ class SparkRelation(BaseRelation):
 
     def render(self):
         if self.include_policy.database and self.include_policy.schema:
-            raise RuntimeException(
+            raise DbtRuntimeError(
                 "Got a spark relation with schema and database set to "
                 "include, but only one can be set"
             )

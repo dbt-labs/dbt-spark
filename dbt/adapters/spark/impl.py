@@ -126,7 +126,7 @@ class SparkAdapter(SQLAdapter):
         """Cache a new schema in dbt. It will show up in `list relations`."""
         if schema is None:
             name = self.nice_connection_name()
-            dbt.exceptions.raise_compiler_error(
+            raise dbt.exceptions.CompilationError(
                 "Attempted to cache a null schema for {}".format(name)
             )
         if dbt.flags.USE_CACHE:  # type: ignore
@@ -137,8 +137,10 @@ class SparkAdapter(SQLAdapter):
     def parse_information(self, table_name: str) -> str:
         information = ""
         try:
-            table_results = self.execute_macro(DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name})
-        except dbt.exceptions.RuntimeException as e:
+            table_results = self.execute_macro(
+                DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name}
+            )
+        except dbt.exceptions.DbtRuntimeError as e:
             logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
             return ""
         for info_row in table_results:
@@ -153,8 +155,10 @@ class SparkAdapter(SQLAdapter):
         try_show_tables = False
         expected_result_rows = 4
         try:
-            results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs={"schema_relation": schema_relation})
-        except dbt.exceptions.RuntimeException as e:
+            results = self.execute_macro(
+                LIST_RELATIONS_MACRO_NAME, kwargs={"schema_relation": schema_relation}
+            )
+        except dbt.exceptions.DbtRuntimeError as e:
             errmsg = getattr(e, "msg", "")
             if f"Database '{schema_relation}' not found" in errmsg:
                 return []
@@ -170,8 +174,11 @@ class SparkAdapter(SQLAdapter):
         if try_show_tables:
             expected_result_rows = 3
             try:
-                results = self.execute_macro(LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs={"schema_relation": schema_relation})
-            except dbt.exceptions.RuntimeException as e:
+                results = self.execute_macro(
+                    LIST_RELATIONS_SHOW_TABLES_MACRO_NAME,
+                    kwargs={"schema_relation": schema_relation},
+                )
+            except dbt.exceptions.DbtRuntimeError as e:
                 description = "Error while retrieving information about"
                 logger.debug(f"{description} {schema_relation}: {e.msg}")
                 return []
@@ -183,7 +190,7 @@ class SparkAdapter(SQLAdapter):
                     description = 'Invalid value from "show tables ...", '
                 else:
                     description = 'Invalid value from "show table extended ...", '
-                raise dbt.exceptions.RuntimeException(
+                raise dbt.exceptions.DbtRuntimeError(
                     f"{description} got {len(row)} values, expected {expected_result_rows}"
                 )
 
@@ -262,7 +269,7 @@ class SparkAdapter(SQLAdapter):
                 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
             )
             columns = self.parse_describe_extended(relation, rows)
-        except dbt.exceptions.RuntimeException as e:
+        except dbt.exceptions.DbtRuntimeError as e:
             # spark would throw error when table doesn't exist, where other
             # CDW would just return and empty list, normalizing the behavior here
             errmsg = getattr(e, "msg", "")
@@ -329,7 +336,7 @@ class SparkAdapter(SQLAdapter):
     def get_catalog(self, manifest):
         schema_map = self._get_catalog_schemas(manifest)
         if len(schema_map) > 1:
-            dbt.exceptions.raise_compiler_error(
+            raise dbt.exceptions.CompilationError(
                 f"Expected only one database in get_catalog, found " f"{list(schema_map)}"
             )
 
@@ -357,7 +364,7 @@ class SparkAdapter(SQLAdapter):
         manifest,
     ) -> agate.Table:
         if len(schemas) != 1:
-            dbt.exceptions.raise_compiler_error(
+            raise dbt.exceptions.CompilationError(
                 f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
             )
 
