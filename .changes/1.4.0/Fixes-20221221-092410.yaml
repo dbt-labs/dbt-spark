@@ -1,8 +1,0 @@
-kind: Fixes
-body: Added escape_single_quotes macro as Spark/Databricks uses a single backslash
-  instead of a single quote
-time: 2022-12-21T09:24:10.952042-06:00
-custom:
-  Author: graciegoheen
-  Issue: "572"
-  PR: "573"
