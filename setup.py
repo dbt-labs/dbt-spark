@@ -57,7 +57,7 @@ description = """The Apache Spark adapter plugin for dbt"""
 odbc_extras = ["pyodbc>=4.0.30"]
 pyhive_extras = [
     "PyHive[hive]>=0.6.0,<0.7.0",
-    "thrift>=0.11.0,<0.16.0",
+    "thrift>=0.11.0,<0.17.0",
 ]
 session_extras = ["pyspark>=3.0.0,<4.0.0"]
 all_extras = odbc_extras + pyhive_extras + session_extras
