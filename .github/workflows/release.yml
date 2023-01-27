@@ -4,7 +4,7 @@
 # - validate version in sources and changelog file for given version;
 # - run unit tests against given commit;
 # - build and package that SHA;
-# - release it to GitHub and PyPi with that specific build;
+# - release it to GitHub and PyPI with that specific build;
 #
 # **why?**
 # Ensure an automated and tested release process
@@ -14,7 +14,7 @@
 # version bump workflow is completed and related changes are reviewed and merged.
 #
 
-name: Release to GitHub and PyPi
+name: Release to GitHub and PyPI
 
 on:
   workflow_dispatch:
@@ -80,7 +80,7 @@ jobs:
           echo Package test command:               ${{ inputs.package_test_command }}
           echo Test run:                           ${{ inputs.test_run }}
 
-  # The Spark repository uses CircleCi to run integration tests.
+  # The Spark repository uses CircleCI to run integration tests.
   # Because of this, the process of version bumps will be manual
   # which means that this stage will be used to audit the version
   # and changelog in sources.
