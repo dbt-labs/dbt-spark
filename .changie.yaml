@@ -74,7 +74,7 @@ custom:
 - key: Issue
   label: GitHub Issue Number (separated by a single space if multiple)
   type: string
-  minLength: 4
+  minLength: 1
 
 footerFormat: |
   {{- $contributorDict := dict }}
