@@ -73,7 +73,7 @@ custom:
   minLength: 3
 - key: Issue
   label: GitHub Issue Number (separated by a single space if multiple)
-  type: int
+  type: string
   minLength: 4
 
 footerFormat: |
