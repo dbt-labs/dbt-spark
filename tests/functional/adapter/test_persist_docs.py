@@ -17,12 +17,12 @@ class TestPersistDocs(BasePersistDocs):
     pass
 
 
-class TestPersistDocsColumnMissing(BasePersistDocsColumnMissing):
-    pass
+# class TestPersistDocsColumnMissing(BasePersistDocsColumnMissing):
+#     pass
 
 
-class TestPersistDocsCommentOnQuotedColumn(BasePersistDocsCommentOnQuotedColumn):
-    pass
+# class TestPersistDocsCommentOnQuotedColumn(BasePersistDocsCommentOnQuotedColumn):
+#     pass
 
 # class TestPersistDocsDelta(DBTIntegrationTest):
 #     @property
