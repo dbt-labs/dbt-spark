@@ -28,6 +28,8 @@ select 1 as id, 'Joe' as name
 """
 
 _PROPERTIES__MODELS = """
+version: 2
+
 models:
   - name: table_delta_model
     description: |
