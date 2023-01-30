@@ -127,18 +127,39 @@ class TestMaterializedWithConstraints:
             },
         }
 
-    @use_profile('apache_spark')
-    def test__apache_spark__materialized_with_constraints(self, project):
-        self.run_dbt(["run", "--select", "constraints_column_types"])
+    def materialized_with_constraints():
+        run_dbt(["run", "--select", "constraints_column_types"])
 
-    @use_profile('apache_spark')
-    def test__apache_spark__failing_materialized_with_constraints(self, project):
+    def failing_materialized_with_not_null_constraint():
         result = run_dbt(
-            ["run", "--select", "constraints_incorrect_column_types"], expect_pass=False
+            ["run", "--select", "constraints_not_null"], expect_pass=False
         )
+        assert "violate the new NOT NULL constraint" in result.results[0].message
+
+    def failing_constraint_check():
+        result = run_dbt(["run", "--select", "constraints_incorrect_constraints_check"], expect_pass=False)
         assert "violate the new CHECK constraint" in result.results[0].message
 
-    @use_profile('apache_spark')
-    def test__apache_spark__failing_constraint_check(self, project):
-        result = run_dbt(["run", "--select", "constraints_incorrect_constraints_check"], expect_pass=False)
-        assert "violate the new NOT NULL constraint" in result.results[0].message
+    @use_profile("databricks_cluster")
+    def test__databricks_cluster__materialized_with_constraints(self, project):
+        self.materialized_with_constraints()
+
+    @use_profile("databricks_cluster")
+    def test__databricks_cluster__failing_materialized_with_constraints(self, project):
+        self.failing_materialized_with_not_null_constraint()
+
+    @use_profile("databricks_cluster")
+    def test__databricks_cluster__failing_constraint_check(self, project):
+        self.failing_constraint_check()
+
+    @use_profile("databricks_sql_endpoint")
+    def test__databricks_sql_endpoint__materialized_with_constraints(self, project):
+        self.materialized_with_constraints()
+
+    @use_profile("databricks_sql_endpoint")
+    def test__databricks_sql_endpoint__failing_materialized_with_constraints(self, project):
+        self.failing_materialized_with_not_null_constraint()
+
+    @use_profile("databricks_sql_endpoint")
+    def test__databricks_sql_endpoint__failing_constraint_check(self, project):
+        self.failing_constraint_check()
