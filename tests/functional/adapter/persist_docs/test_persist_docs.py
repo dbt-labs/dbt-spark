@@ -13,7 +13,8 @@ from fixtures import (
     _SEEDS__BASIC,
 )
 
-class TestPersistDocsDelta:
+@pytest.mark.skip_profile("apache_spark", "spark_session")
+class TestPersistDocsDeltaTable:
     @pytest.fixture(scope="class")
     def models(self):
         return {
