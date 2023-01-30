@@ -109,6 +109,10 @@ models:
 
 class TestMaterializedWithConstraints(DBTIntegrationTest):
     @property
+    def schema(self):
+        return "constraints"
+    
+    @property
     def models(self):
         return {
             "constraints_column_types.sql": models__constraints_column_types_sql,
