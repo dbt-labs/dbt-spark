@@ -122,7 +122,7 @@ class TestMaterializedWithConstraints(DBTIntegrationTest):
         }
 
     @property
-    def project_config(self, prefix):
+    def project_config(self):
         return {
             "config-version": 2,
             "models": {
