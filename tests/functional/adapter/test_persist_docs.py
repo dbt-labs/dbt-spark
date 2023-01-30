@@ -109,8 +109,7 @@ seeds:
           {{ doc('my_fun_doc')}}
 """
 
-_SEEDS__BASIC = """
-id,name
+_SEEDS__BASIC = """id,name
 1,Alice
 2,Bob
 """
@@ -128,8 +127,8 @@ class TestPersistDocsDelta:
     @pytest.fixture(scope="class")
     def seeds(self):
         return {
-            "seeds.csv": _SEEDS__BASIC,
-            "seeds.yml": _PROPERTIES__SEEDS
+            "seed.csv": _SEEDS__BASIC,
+            "seed.yml": _PROPERTIES__SEEDS
         }
 
 
@@ -165,7 +164,7 @@ class TestPersistDocsDelta:
             ('seed', 'Seed'),
             ('incremental_delta_model', 'Incremental')
         ]:
-            results = run_sql(
+            results = project.run_sql(
                 'describe extended {schema}.{table}'.format(schema=project.test_schema, table=table),
                 fetch='all'
             )
@@ -177,9 +176,3 @@ class TestPersistDocsDelta:
                     assert result[2].startswith('id Column description')
                 if result[0] == 'name':
                     assert result[2].startswith('Some stuff here and then a call to')
-
-    # runs on Spark v3.0
-    # @use_profile("databricks_cluster")
-    # runs on Spark v3.0
-    # @use_profile("databricks_sql_endpoint")
-
