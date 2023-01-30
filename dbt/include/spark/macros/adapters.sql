@@ -1,9 +1,3 @@
-{% macro create_table_clause(relation) %}
-  {{ return(adapter.dispatch('create_table_clause', 'dbt')(relation )) }}
-{%- endmacro -%}
-
-
-
 {% macro file_format_clause() %}
   {{ return(adapter.dispatch('file_format_clause', 'dbt')()) }}
 {%- endmacro -%}
