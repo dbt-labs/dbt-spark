@@ -191,7 +191,11 @@ class SparkAdapter(SQLAdapter):
             if try_show_tables:
                 _, name, _ = row
                 relation = schema_relation.database + "." + schema_relation.schema + "." + name
-                information = self.parse_information(relation)
+                # TODO: JCC DO NOT COMMIT UPSTREAM!!
+                # do not check if every table in the schema is an iceberg, we just assume they are
+                # this is much faster, but it's not something we want to commit upstream.
+                # information = self.parse_information(relation)
+                information = "Provider: iceberg"
                 _schema = schema_relation.schema
                 _database = schema_relation.database
             else:
