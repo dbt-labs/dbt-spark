@@ -132,8 +132,8 @@ jobs:
       test_run: ${{ inputs.test_run }}
 
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.PRODUCTION_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.PRODUCTION_AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   github-release:
     name: GitHub Release
@@ -166,7 +166,7 @@ jobs:
 
   slack-notification:
     name: Slack Notification
-    if: ${{ failure() }}
+    if: ${{ failure() && (!inputs.test_run || inputs.nightly_release) }}
 
     needs:
       [
