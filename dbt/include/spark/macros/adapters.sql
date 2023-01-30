@@ -2,13 +2,6 @@
   {{ return(adapter.dispatch('create_table_clause', 'dbt')(relation )) }}
 {%- endmacro -%}
 
-{% macro spark__create_table_clause(relation) %}
-      {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
-        create or replace table {{ relation }}
-      {% else %}
-        create table {{ relation }}
-      {% endif %}
-{%- endmacro -%}
 
 
 {% macro file_format_clause() %}
@@ -145,8 +138,12 @@
   {%- if language == 'sql' -%}
     {%- if temporary -%}
       {{ create_temporary_view(relation, compiled_code) }}
-    {%- elif not config.get('constraints_enabled', False) -%}
-      {{ create_table_clause(relation) }}
+    {%- else -%}
+      {% if config.get('file_format', validator=validation.any[basestring]) == 'delta' %}
+        create or replace table {{ relation }}
+      {% else %}
+        create table {{ relation }}
+      {% endif %}
       {{ file_format_clause() }}
       {{ options_clause() }}
       {{ partition_cols(label="partitioned by") }}
@@ -155,21 +152,6 @@
       {{ comment_clause() }}
       as
       {{ compiled_code }}
-    {%- else -%}
-      {{ create_table_clause(relation) }}
-      {{ get_columns_spec_ddl() }}
-      {{ file_format_clause() }}
-      {{ options_clause() }}
-      {{ partition_cols(label="partitioned by") }}
-      {{ clustered_cols(label="clustered by") }}
-      {{ location_clause() }}
-      {{ comment_clause() }};
-
-      insert into {{ relation }}
-        (
-          {{ sql }}
-        );
-    {%- endif -%}
   {%- elif language == 'python' -%}
     {#--
     N.B. Python models _can_ write to temp views HOWEVER they use a different session
@@ -182,6 +164,55 @@
   {%- endif -%}
 {%- endmacro -%}
 
+{# ------------------------------- #}
+
+{% macro persist_constraints(relation, model) %}
+  {{ return(adapter.dispatch('persist_constraints', 'dbt')(relation, model)) }}
+{% endmacro %}
+
+{% macro databricks__persist_constraints(relation, model) %}
+  {% if config.get('constraints_enabled', False) and config.get('file_format', 'delta') == 'delta' %}
+    {% do alter_table_add_constraints(relation, model.columns) %}
+    {% do alter_column_set_constraints(relation, model.columns) %}
+  {% endif %}
+{% endmacro %}
+
+{% macro alter_table_add_constraints(relation, constraints) %}
+  {{ return(adapter.dispatch('alter_table_add_constraints', 'dbt')(relation, constraints)) }}
+{% endmacro %}
+
+{% macro spark__alter_table_add_constraints(relation, column_dict) %}
+
+  {% for column_name in column_dict %}
+    {% set constraints_check = column_dict[column_name]['config']['constraints_check'] %}
+    {% for constraint_check in constraints_check %}
+      {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint_check) -%}
+      {% if not is_incremental() %}
+        {% call statement() %}
+          alter table {{ relation }} add constraint {{ constraint_hash }} check ({{ column_name }} {{ constraint_check }});
+        {% endcall %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endmacro %}
+
+{% macro alter_column_set_constraints(relation, column_dict) %}
+  {{ return(adapter.dispatch('alter_column_set_constraints', 'dbt')(relation, column_dict)) }}
+{% endmacro %}
+
+{% macro spark__alter_column_set_constraints(relation, column_dict) %}
+  {% for column_name in column_dict %}
+    {% set constraints = column_dict[column_name]['config']['constraints'] %}
+    {% for constraint in constraints %}
+      {% set quoted_name = adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name %}
+      {% call statement() %}
+        alter table {{ relation }} change column {{ quoted_name }} set {{ constraint }};
+      {% endcall %}
+    {% endfor %}
+  {% endfor %}
+{% endmacro %}
+
+{# ------------------------------- #}
 
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
