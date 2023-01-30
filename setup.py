@@ -50,7 +50,7 @@ def _get_dbt_core_version():
 
 
 package_name = "dbt-spark-cccs"
-package_version = "1.4.4"
+package_version = "1.4.5"
 dbt_core_version = _get_dbt_core_version()
 description = """The Apache Spark adapter plugin for dbt"""
 
