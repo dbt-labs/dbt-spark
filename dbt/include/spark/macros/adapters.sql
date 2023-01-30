@@ -165,7 +165,7 @@
   {{ return(adapter.dispatch('persist_constraints', 'dbt')(relation, model)) }}
 {% endmacro %}
 
-{% macro databricks__persist_constraints(relation, model) %}
+{% macro spark__persist_constraints(relation, model) %}
   {% if config.get('constraints_enabled', False) and config.get('file_format', 'delta') == 'delta' %}
     {% do alter_table_add_constraints(relation, model.columns) %}
     {% do alter_column_set_constraints(relation, model.columns) %}
