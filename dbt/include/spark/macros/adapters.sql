@@ -152,6 +152,7 @@
       {{ comment_clause() }}
       as
       {{ compiled_code }}
+    {%- endif -%}
   {%- elif language == 'python' -%}
     {#--
     N.B. Python models _can_ write to temp views HOWEVER they use a different session
