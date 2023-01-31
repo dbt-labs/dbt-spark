@@ -200,22 +200,23 @@ jobs:
     name: integration test (spark-databricks-http)
 
     runs-on: ubuntu-latest
-    services:
-      test-container:
-        image: fishtownanalytics/test-container:10
+    container:
+      image: fishtownanalytics/test-container:10
+      env:
+        TOXENV: "integration-spark-databricks-http"
+        DBT_DATABRICKS_RETRY_ALL: True
+        DBT_INVOCATION_ENV: circle
+        DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+        DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+        DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
+        DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
+        DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
+        DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
+        DBT_DATABRICKS_USER: ${{ secrets.DBT_DATABRICKS_USER }}
+        DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
+
     timeout-minutes: 60
 
-    env:
-      TOXENV: "integration-spark-databricks-http"
-      DBT_DATABRICKS_RETRY_ALL: True
-      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
-      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
-      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
-      DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
-      DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
-      DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
-      DBT_DATABRICKS_USER: ${{ secrets.DBT_DATABRICKS_USER }}
-      DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
 
     steps:
       - name: Check out the repository
@@ -239,18 +240,19 @@ jobs:
         run: tox
 
   integration-spark-databricks-odbc-cluster:
-    name: "integration test (spark databricks odbc cluster"
+    name: "integration test (spark databricks odbc cluster)"
 
     runs-on: ubuntu-latest
-    #container: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest
-    timeout-minutes: 60
+    container:
+      image: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest
+      env:
+        TOXENV: "integration-spark-databricks-odbc-cluster"
+        ODBC_DRIVER: Simba # TODO: move env var to Docker image
+        DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+        DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+        DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
 
-    env:
-      TOXENV: "integration-spark-databricks-odbc-cluster"
-      ODBC_DRIVER: Simba # TODO: move env var to Docker image
-      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
-      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
-      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
+    timeout-minutes: 60
 
     steps:
       - name: Checkout the repository
@@ -274,7 +276,7 @@ jobs:
         run: tox
 
   integration-spark-databricks-odbc-endpoint:
-    name: "integration test (spark databricks odbc cluster"
+    name: "integration test (spark databricks odbc endpoint)"
 
     runs-on: ubuntu-latest
     timeout-minutes: 60
