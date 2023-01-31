@@ -24,7 +24,7 @@ from dbt.adapters.spark.python_submissions import (
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.events import AdapterLogger
-from dbt.utils import executor
+from dbt.utils import executor, AttrDict
 
 logger = AdapterLogger("Spark")
 
@@ -176,9 +176,7 @@ class SparkAdapter(SQLAdapter):
 
         return super().get_relation(database, schema, identifier)
 
-    def parse_describe_extended(
-        self, relation: Relation, raw_rows: List[agate.Row]
-    ) -> List[SparkColumn]:
+    def parse_describe_extended(self, relation: Relation, raw_rows: AttrDict) -> List[SparkColumn]:
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
         # Find the separator between the rows and the metadata provided
@@ -218,7 +216,7 @@ class SparkAdapter(SQLAdapter):
     def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
         columns = []
         try:
-            rows: List[agate.Row] = self.execute_macro(
+            rows: AttrDict = self.execute_macro(
                 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
             )
             columns = self.parse_describe_extended(relation, rows)
