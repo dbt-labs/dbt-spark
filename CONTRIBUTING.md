@@ -72,8 +72,8 @@ There are a few methods for running tests locally.
 Finally, you can also run a specific test or group of tests using `pytest` directly. With a Python virtualenv active and dev dependencies installed you can do things like:
 
 ```sh
-# run specific spark integration tests
-python -m pytest -m profile_spark tests/integration/get_columns_in_relation
+# run all functional tests
+python -m pytest --profile databricks_sql_endpoint tests/functional/
 # run specific functional tests
 python -m pytest --profile databricks_sql_endpoint tests/functional/adapter/test_basic.py
 # run all unit tests in a file
