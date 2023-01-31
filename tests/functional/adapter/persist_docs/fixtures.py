@@ -21,6 +21,11 @@ _MODELS__TABLE_DELTA_MODEL = """
 select 1 as id, 'Joe' as name
 """
 
+_MODELS__TABLE_DELTA_MODEL_MISSING_COLUMN = """
+{{ config(materialized='table', file_format='delta') }}
+select 1 as id, 'Joe' as different_name
+"""
+
 _PROPERTIES__MODELS = """
 version: 2
 

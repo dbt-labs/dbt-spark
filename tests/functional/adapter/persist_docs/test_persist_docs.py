@@ -8,10 +8,12 @@ from fixtures import (
     _MODELS__MY_FUN_DOCS,
     _MODELS__INCREMENTAL_DELTA,
     _MODELS__TABLE_DELTA_MODEL,
+    _MODELS__TABLE_DELTA_MODEL_MISSING_COLUMN,
     _PROPERTIES__MODELS,
     _PROPERTIES__SEEDS,
     _SEEDS__BASIC,
 )
+
 
 @pytest.mark.skip_profile("apache_spark", "spark_session")
 class TestPersistDocsDeltaTable:
@@ -76,3 +78,42 @@ class TestPersistDocsDeltaTable:
                     assert result[2].startswith('id Column description')
                 if result[0] == 'name':
                     assert result[2].startswith('Some stuff here and then a call to')
+
+
+@pytest.mark.skip_profile("apache_spark", "spark_session")
+class TestPersistDocsMissingColumn:
+    @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {
+            "models": {
+                "test": {
+                    "+persist_docs": {
+                        "columns": True,
+                    },
+                }
+            }
+        }
+
+    @pytest.fixture(scope="class")
+    def seeds(self):
+        return {
+            "seed.csv": _SEEDS__BASIC,
+            "seed.yml": _PROPERTIES__SEEDS
+        }
+
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "table_delta_model.sql": _MODELS__TABLE_DELTA_MODEL_MISSING_COLUMN,
+            "my_fun_docs.md": _MODELS__MY_FUN_DOCS,
+    }
+
+    @pytest.fixture(scope="class")
+    def properties(self):
+        return {"schema.yml": _PROPERTIES__MODELS}
+
+    def test_missing_column(self, project):
+        '''spark will use our schema to verify all columns exist rather than fail silently'''
+        run_dbt(["seed"])
+        res = run_dbt(["run"], expect_pass=False)
+        assert "Missing field name in table" in res[0].message
