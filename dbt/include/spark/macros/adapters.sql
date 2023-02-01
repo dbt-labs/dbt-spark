@@ -138,6 +138,7 @@
       {% else %}
         create table {{ relation }}
       {% endif %}
+      {{ get_assert_columns_equivalent(sql) }}
       {{ file_format_clause() }}
       {{ options_clause() }}
       {{ partition_cols(label="partitioned by") }}
@@ -159,7 +160,6 @@
   {%- endif -%}
 {%- endmacro -%}
 
-{# ------------------------------- #}
 
 {% macro persist_constraints(relation, model) %}
   {{ return(adapter.dispatch('persist_constraints', 'dbt')(relation, model)) }}
@@ -207,7 +207,6 @@
   {% endfor %}
 {% endmacro %}
 
-{# ------------------------------- #}
 
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
