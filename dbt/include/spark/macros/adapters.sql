@@ -199,10 +199,14 @@
   {% for column_name in column_dict %}
     {% set constraints = column_dict[column_name]['constraints'] %}
     {% for constraint in constraints %}
-      {% set quoted_name = adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name %}
-      {% call statement() %}
-        alter table {{ relation }} change column {{ quoted_name }} set {{ constraint }};
-      {% endcall %}
+      {% if constraint != 'not_null' %}
+        {{ exceptions.warn('Invalid constraint for column ' ~ column_name ~ '. Only `not null` is supported.') }}
+      {% else %}
+        {% set quoted_name = adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name %}
+        {% call statement() %}
+          alter table {{ relation }} change column {{ quoted_name }} set {{ constraint }};
+        {% endcall %}
+      {% endif %}
     {% endfor %}
   {% endfor %}
 {% endmacro %}
