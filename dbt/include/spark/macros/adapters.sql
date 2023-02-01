@@ -181,7 +181,7 @@
 {% macro spark__alter_table_add_constraints(relation, column_dict) %}
 
   {% for column_name in column_dict %}
-    {% set constraints_check = column_dict[column_name]['config']['constraints_check'] %}
+    {% set constraints_check = column_dict[column_name]['constraints_check'] %}
     {% for constraint_check in constraints_check %}
       {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint_check) -%}
       {% if not is_incremental() %}
@@ -199,7 +199,7 @@
 
 {% macro spark__alter_column_set_constraints(relation, column_dict) %}
   {% for column_name in column_dict %}
-    {% set constraints = column_dict[column_name]['config']['constraints'] %}
+    {% set constraints = column_dict[column_name]['constraints'] %}
     {% for constraint in constraints %}
       {% set quoted_name = adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name %}
       {% call statement() %}
