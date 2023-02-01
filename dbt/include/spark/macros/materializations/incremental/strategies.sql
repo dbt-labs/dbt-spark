@@ -33,26 +33,29 @@
   {%- set merge_exclude_columns = config.get('merge_exclude_columns') -%}
   {%- set update_columns = get_merge_update_columns(merge_update_columns, merge_exclude_columns, dest_columns) -%}
 
-  {% set merge_condition %}
-    {% if unique_key %}
-        {# added support for multiple join condition, multiple unique_key #}
-        on  {% if unique_key is string %}
+  {% if unique_key %}
+      {% if unique_key is sequence and unique_key is not mapping and unique_key is not string %}
+          {% for key in unique_key %}
+              {% set this_key_match %}
+                  DBT_INTERNAL_SOURCE.{{ key }} = DBT_INTERNAL_DEST.{{ key }}
+              {% endset %}
+              {% do predicates.append(this_key_match) %}
+          {% endfor %}
+      {% else %}
+          {% set unique_key_match %}
               DBT_INTERNAL_SOURCE.{{ unique_key }} = DBT_INTERNAL_DEST.{{ unique_key }}
-            {% else %}
-              {%- for k in unique_key %}
-                DBT_INTERNAL_SOURCE.{{ k }} = DBT_INTERNAL_DEST.{{ k }}
-                {%- if not loop.last %} AND {%- endif %}
-              {%- endfor %}
-            {% endif %}
-    {% else %}
-        on false
-    {% endif %}
-  {% endset %}
+          {% endset %}
+          {% do predicates.append(unique_key_match) %}
+      {% endif %}
+  {% else %}
+      {% do predicates.append('FALSE') %}
+  {% endif %}
+
+  {{ sql_header if sql_header is not none }}
 
   merge into {{ target }} as DBT_INTERNAL_DEST
-    using {{ source.include(schema=false) }} as DBT_INTERNAL_SOURCE
-
-    {{ merge_condition }}
+      using {{ source }} as DBT_INTERNAL_SOURCE
+      on {{ predicates | join(' and ') }}
 
       when matched then update set
         {% if update_columns -%}{%- for column_name in update_columns %}
@@ -74,7 +77,7 @@
     {{ get_insert_overwrite_sql(source, target, existing) }}
   {%- elif strategy == 'merge' -%}
   {#-- merge all columns with databricks delta or iceberg - schema changes are handled for us #}
-    {{ get_merge_sql(target, source, unique_key, dest_columns=none, predicates=none, incremental_predicates=incremental_predicates) }}
+    {{ get_merge_sql(target, source, unique_key, dest_columns=none, incremental_predicates=incremental_predicates) }}
   {%- else -%}
     {% set no_sql_for_strategy_msg -%}
       No known SQL for the incremental strategy provided: {{ strategy }}

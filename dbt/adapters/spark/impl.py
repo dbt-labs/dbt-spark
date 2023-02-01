@@ -306,16 +306,7 @@ class SparkAdapter(SQLAdapter):
         return columns
 
     def _get_columns_for_catalog(self, relation: SparkRelation) -> Iterable[Dict[str, Any]]:
-        columns = []
-        if relation and relation.information:
-            columns = self.parse_columns_from_information(relation)
-        else:
-            # in open source delta 'show table extended' query output doesn't
-            # return relation's schema. if columns are empty from cache,
-            # use get_columns_in_relation spark macro
-            # which would execute 'describe extended tablename' query
-            rows: AttrDict = super().get_columns_in_relation(relation)
-            columns = self.parse_describe_extended(relation, rows)
+        columns = self.parse_columns_from_information(relation)
 
         for column in columns:
             # convert SparkColumns into catalog dicts

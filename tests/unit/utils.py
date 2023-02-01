@@ -303,9 +303,9 @@ def MockGenerateMacro(package, component='some_component', **kwargs):
 
 def MockSource(package, source_name, name, **kwargs):
     from dbt.node_types import NodeType
-    from dbt.contracts.graph.nodes import SourceDefinition
+    from dbt.contracts.graph.parsed import ParsedSourceDefinition
     src = mock.MagicMock(
-        __class__=SourceDefinition,
+        __class__=ParsedSourceDefinition,
         resource_type=NodeType.Source,
         source_name=source_name,
         package_name=package,
