@@ -182,10 +182,10 @@
 
   {% for column_name in column_dict %}
     {% set constraints_check = column_dict[column_name]['constraints_check'] %}
-    {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint_check) -%}
     {% if constraints_check and not is_incremental() %}
+      {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint_check) -%}
       {% call statement() %}
-        alter table {{ relation }} add constraint {{ constraint_hash }} check {{ constraint_check }};
+        alter table {{ relation }} add constraint {{ constraint_hash }} check {{ constraints_check }};
       {% endcall %}
     {% endif %}
   {% endfor %}
