@@ -138,7 +138,9 @@
       {% else %}
         create table {{ relation }}
       {% endif %}
-      {{ get_assert_columns_equivalent(sql) }}
+      {% if config.get('constraints_enabled', False) %}
+        {{ get_assert_columns_equivalent(sql) }}
+      {% endif %}
       {{ file_format_clause() }}
       {{ options_clause() }}
       {{ partition_cols(label="partitioned by") }}
