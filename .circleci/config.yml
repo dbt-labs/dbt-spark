@@ -125,8 +125,10 @@ workflows:
           requires:
             - integration-spark-thrift
       - integration-spark-databricks-odbc-cluster:
+          context: aws-credentials
           requires:
             - integration-spark-thrift
       - integration-spark-databricks-odbc-endpoint:
+          context: aws-credentials
           requires:
             - integration-spark-thrift
