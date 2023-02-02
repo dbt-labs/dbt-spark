@@ -12,9 +12,13 @@
   {{ run_hooks(pre_hooks) }}
 
   -- setup: if the target relation already exists, drop it
-  -- in case if the existing and future table is delta, we want to do a
+  -- in case if the existing and future table is delta or iceberg, we want to do a
   -- create or replace table instead of dropping, so we don't have the table unavailable
   {% if old_relation and not (old_relation.is_delta and config.get('file_format', validator=validation.any[basestring]) == 'delta') -%}
+    {{ adapter.drop_relation(old_relation) }}
+  {%- endif %}
+
+  {% if old_relation and not (old_relation.is_iceberg and config.get('file_format', validator=validation.any[basestring]) == 'iceberg') -%}
     {{ adapter.drop_relation(old_relation) }}
   {%- endif %}
 
