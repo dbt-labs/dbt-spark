@@ -45,6 +45,14 @@ class TestSparkConstraintsRuntimeEnforcement(BaseConstraintsRuntimeEnforcement):
 
     @pytest.fixture(scope="class")
     def expected_error_messages(self):
-        # the CHECK constraint is added before the NOT NULL constraint
-        return ['DELTA_NEW_CHECK_CONSTRAINT_VIOLATION']
-        # return ['violate the new NOT NULL constraint']
+        return [
+            "violate the new CHECK constraint",
+            "DELTA_NEW_CHECK_CONSTRAINT_VIOLATION",
+            "violate the new NOT NULL constraint",
+        ]
+
+    def assert_expected_error_messages(self, error_message, expected_error_messages):
+        # This needs to be ANY instead of ALL
+        # The CHECK constraint is added before the NOT NULL constraint
+        # and different connection types display/truncate the error message in different ways...
+        assert any(msg in error_message for msg in expected_error_messages)
