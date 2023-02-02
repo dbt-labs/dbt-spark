@@ -199,7 +199,7 @@
   {% for column_name in column_dict %}
     {% set constraints = column_dict[column_name]['constraints'] %}
     {% for constraint in constraints %}
-      {% if constraint != 'not_null' %}
+      {% if constraint != 'not null' %}
         {{ exceptions.warn('Invalid constraint for column ' ~ column_name ~ '. Only `not null` is supported.') }}
       {% else %}
         {% set quoted_name = adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name %}
