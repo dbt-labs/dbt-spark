@@ -4,7 +4,6 @@ from dbt.tests.adapter.store_test_failures_tests.test_store_test_failures import
 
 @pytest.mark.skip_profile('spark_session')
 class TestSparkStoreTestFailures(StoreTestFailuresBase):
-
     def test_store_and_assert(self, project):
         self.run_tests_store_one_failure(project)
         self.run_tests_store_failures_and_assert(project)
@@ -21,6 +20,6 @@ class TestSparkStoreTestFailuresWithDelta(StoreTestFailuresBase):
             }
         }
 
-    def test_store_and_assert(self, project):
+    def test_store_and_assert_failure_with_delta(self, project):
         self.run_tests_store_one_failure(project)
         self.run_tests_store_failures_and_assert(project)
