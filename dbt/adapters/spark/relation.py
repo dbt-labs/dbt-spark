@@ -1,6 +1,4 @@
-from typing import Optional, TypeVar, Any, Type, Dict
-from dbt.contracts.graph.nodes import SourceDefinition
-from dbt.utils import deep_merge
+from typing import Optional, TypeVar
 from dataclasses import dataclass, field
 
 from dbt.adapters.base.relation import BaseRelation, Policy
@@ -36,34 +34,10 @@ class SparkRelation(BaseRelation):
     is_hudi: Optional[bool] = None
     is_iceberg: Optional[bool] = None
     information: Optional[str] = None
-    loader: Optional[str] = None
-    source_meta: Optional[Dict[str, Any]] = None
-    meta: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if self.database != self.schema and self.database:
             raise DbtRuntimeError("Cannot set database in spark!")
-
-    @classmethod
-    def create_from_source(cls: Type[Self], source: SourceDefinition, **kwargs: Any) -> Self:
-        source_quoting = source.quoting.to_dict(omit_none=True)
-        source_quoting.pop("column", None)
-        quote_policy = deep_merge(
-            cls.get_default_quote_policy().to_dict(omit_none=True),
-            source_quoting,
-            kwargs.get("quote_policy", {}),
-        )
-
-        return cls.create(
-            database=source.database,
-            schema=source.schema,
-            identifier=source.identifier,
-            quote_policy=quote_policy,
-            loader=source.loader,
-            source_meta=source.source_meta,
-            meta=source.meta,
-            **kwargs,
-        )
 
     def render(self):
         if self.include_policy.database and self.include_policy.schema:
