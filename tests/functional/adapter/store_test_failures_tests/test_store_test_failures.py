@@ -4,7 +4,7 @@ from dbt.tests.adapter.store_test_failures_tests.test_store_test_failures import
     TEST_AUDIT_SCHEMA_SUFFIX
 
 
-@pytest.mark.skip_profile('spark_session')
+@pytest.mark.skip_profile('spark_session', 'databricks_cluster', 'databricks_sql_endpoint')
 class TestSparkStoreTestFailures(StoreTestFailuresBase):
 
     @pytest.fixture(scope="class")
