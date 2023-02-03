@@ -7,6 +7,14 @@ from dbt.tests.adapter.store_test_failures_tests.test_store_test_failures import
 @pytest.mark.skip_profile('spark_session')
 class TestSparkStoreTestFailures(StoreTestFailuresBase):
 
+    @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {
+            'tests': {
+                "+schema": TEST_AUDIT_SCHEMA_SUFFIX,
+                '+store_failures': True
+            }
+        }
     def test_store_and_assert(self, project):
         self.run_tests_store_one_failure(project)
         self.run_tests_store_failures_and_assert(project)
