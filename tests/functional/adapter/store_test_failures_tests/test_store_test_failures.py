@@ -10,6 +10,9 @@ class TestSparkStoreTestFailures(StoreTestFailuresBase):
     @pytest.fixture(scope="class")
     def project_config_update(self):
         return {
+            "seeds": {
+                "quote_columns": True,
+            },
             'tests': {
                 "+schema": TEST_AUDIT_SCHEMA_SUFFIX,
                 '+store_failures': True
