@@ -80,21 +80,20 @@ custom:
 footerFormat: |
   {{- $contributorDict := dict }}
   {{- /* ensure all names in this list are all lowercase for later matching purposes */}}
-  {{- $exclude_authors := list "dependabot[bot]" "snyk-bot"}}
   {{- $core_team := splitList " " .Env.CORE_TEAM }}
-  {{- $core_team_lower := list }}
+  {{- /* ensure we always skip snyk and dependabot in addition to the core team */}}
+  {{- $maintainers := list "dependabot[bot]" "snyk-bot"}}
   {{- range $team_member := $core_team }}
     {{- $team_member_lower := lower $team_member }}
-    {{- $core_team_lower = append $core_team_lower $team_member_lower }}
+    {{- $maintainers = append $maintainers $team_member_lower }}
   {{- end }}
-  {{- $exclude_authors := concat $exclude_authors $core_team_lower}}
   {{- range $change := .Changes }}
     {{- $authorList := splitList " " $change.Custom.Author }}
     {{- /* loop through all authors for a single changelog */}}
     {{- range $author := $authorList }}
       {{- $authorLower := lower $author }}
       {{- /* we only want to include non-core team contributors */}}
-      {{- if not (has $authorLower $exclude_authors)}}
+      {{- if not (has $authorLower $maintainers)}}
         {{- $changeList := splitList " " $change.Custom.Author }}
           {{- $changeLink := $change.Kind }}
           {{- if or (eq $change.Kind "Dependencies") (eq $change.Kind "Security") }}
