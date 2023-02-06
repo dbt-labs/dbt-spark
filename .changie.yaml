@@ -95,19 +95,28 @@ footerFormat: |
       {{- /* we only want to include non-core team contributors */}}
       {{- if not (has $authorLower $maintainers)}}
         {{- $changeList := splitList " " $change.Custom.Author }}
+          {{- $IssueList := list }}
           {{- $changeLink := $change.Kind }}
           {{- if or (eq $change.Kind "Dependencies") (eq $change.Kind "Security") }}
-            {{- $changeLink = "[#nbr](https://github.com/dbt-labs/dbt-spark/pull/nbr)" | replace "nbr" $change.Custom.PR }}
+            {{- $changes := splitList " " $change.Custom.PR }}
+            {{- range $issueNbr := $changes }}
+              {{- $changeLink := "[#nbr](https://github.com/dbt-labs/dbt-spark/pull/nbr)" | replace "nbr" $issueNbr }}
+              {{- $IssueList = append $IssueList $changeLink  }}
+            {{- end -}}
           {{- else }}
-            {{- $changeLink = "[#nbr](https://github.com/dbt-labs/dbt-spark/issues/nbr)" | replace "nbr" $change.Custom.Issue }}
+            {{- $changes := splitList " " $change.Custom.Issue }}
+            {{- range $issueNbr := $changes }}
+              {{- $changeLink := "[#nbr](https://github.com/dbt-labs/dbt-spark/issues/nbr)" | replace "nbr" $issueNbr }}
+              {{- $IssueList = append $IssueList $changeLink  }}
+            {{- end -}}
           {{- end }}
           {{- /* check if this contributor has other changes associated with them already */}}
           {{- if hasKey $contributorDict $author }}
             {{- $contributionList := get $contributorDict $author }}
-            {{- $contributionList = append $contributionList $changeLink  }}
+            {{- $contributionList = concat $contributionList $IssueList  }}
             {{- $contributorDict := set $contributorDict $author $contributionList }}
           {{- else }}
-            {{- $contributionList := list $changeLink }}
+            {{- $contributionList := $IssueList }}
             {{- $contributorDict := set $contributorDict $author $contributionList }}
           {{- end }}
         {{- end}}
