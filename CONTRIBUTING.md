@@ -104,7 +104,7 @@ You don't need to worry about which `dbt-spark` version your change will go into
 
 dbt Labs provides a CI environment to test changes to the `dbt-spark` adapter, and periodic checks against the development version of `dbt-core` through Github Actions.
 
-A `dbt-spark` maintainer will review your PR. They may suggest code revision for style or clarity, or request that you add unit or integration test(s). These are good things! We believe that, with a little bit of help, anyone can contribute high-quality code.
+A `dbt-spark` maintainer will review your PR. They may suggest code revision for style or clarity, or request that you add unit or functional test(s). These are good things! We believe that, with a little bit of help, anyone can contribute high-quality code.
 
 Once all requests and answers have been answered the `dbt-spark` maintainer can trigger CI testing.
 
