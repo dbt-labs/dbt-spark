@@ -24,6 +24,7 @@ from dbt.adapters.spark.python_submissions import (
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.events import AdapterLogger
+from dbt.flags import get_flags
 from dbt.utils import executor, AttrDict
 
 logger = AdapterLogger("Spark")
@@ -127,7 +128,7 @@ class SparkAdapter(SQLAdapter):
             raise dbt.exceptions.CompilationError(
                 "Attempted to cache a null schema for {}".format(name)
             )
-        if dbt.flags.USE_CACHE:  # type: ignore
+        if get_flags().USE_CACHE:  # type: ignore
             self.cache.add_schema(None, schema)
         # so jinja doesn't render things
         return ""
