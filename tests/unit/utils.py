@@ -46,6 +46,11 @@ def profile_from_dict(profile, profile_name, cli_vars='{}'):
         cli_vars = parse_cli_vars(cli_vars)
 
     renderer = ProfileRenderer(cli_vars)
+    # in order to call dbt's internal profile rendering, we need to set the
+    # flags global. This is a bit of a hack, but it's the best way to do it.
+    from dbt.flags import set_from_args
+    from argparse import Namespace
+    set_from_args(Namespace(), None)
     return Profile.from_raw_profile_info(
         profile,
         profile_name,
