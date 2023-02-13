@@ -22,7 +22,7 @@ on:
 
 jobs:
   version_bump_and_changie:
-    uses: dbt-labs/actions/.github/workflows/version-bump.yml@er/ct-890-pass-in-changie-team-membership
+    uses: dbt-labs/actions/.github/workflows/version-bump.yml@main
     with:
       version_number: ${{ inputs.version_number }}
     secrets: inherit  # ok since what we are calling is internally maintained
