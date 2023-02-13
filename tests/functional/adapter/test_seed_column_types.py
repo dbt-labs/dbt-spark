@@ -39,7 +39,13 @@ class TestSeedColumnTypesCast:
             "seed.yml": _SEED_YML
         }
 
+    def run_and_test(self):
+        results = run_dbt(["seed"])
+        assert len(results) == 1
+        results = run_dbt(["test"])
+        assert len(results) == 1
+
     #  We want to test seed types because hive would cause all fields to be strings.
     # setting column_types in project.yml should change them and pass.
     def test_column_seed_type(self):
-        run_dbt(["seed"])
+        self.run_and_test()
