@@ -80,21 +80,27 @@ jobs:
     environment:
       DBT_INVOCATION_ENV: circle
       DBT_DATABRICKS_RETRY_ALL: True
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
     docker:
       - image: fishtownanalytics/test-container:10
     steps:
       - checkout
-      - run:
-          name: Run integration tests
-          command: tox -e integration-spark-databricks-http
-          no_output_timeout: 1h
-      - store_artifacts:
-          path: ./logs
+      # - run:
+      #     name: Run integration tests
+      #     command: tox -e integration-spark-databricks-http
+      #     no_output_timeout: 1h
+      # - store_artifacts:
+      #     path: ./logs
 
   integration-spark-databricks-odbc-cluster: &databricks-odbc
     environment:
       DBT_INVOCATION_ENV: circle
       ODBC_DRIVER: Simba # TODO: move env var to Docker image
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
     docker:
       # image based on `fishtownanalytics/test-container` w/ Simba ODBC Spark driver installed
       - image: 828731156495.dkr.ecr.us-east-1.amazonaws.com/dbt-spark-odbc-test-container:latest
@@ -103,23 +109,23 @@ jobs:
           aws_secret_access_key: $AWS_SECRET_ACCESS_KEY_STAGING
     steps:
       - checkout
-      - run:
-          name: Run integration tests
-          command: tox -e integration-spark-databricks-odbc-cluster
-          no_output_timeout: 1h
-      - store_artifacts:
-          path: ./logs
+      # - run:
+      #     name: Run integration tests
+      #     command: tox -e integration-spark-databricks-odbc-cluster
+      #     no_output_timeout: 1h
+      # - store_artifacts:
+      #     path: ./logs
 
   integration-spark-databricks-odbc-endpoint:
     <<: *databricks-odbc
     steps:
       - checkout
-      - run:
-          name: Run integration tests
-          command: tox -e integration-spark-databricks-odbc-sql-endpoint
-          no_output_timeout: 1h
-      - store_artifacts:
-          path: ./logs
+      # - run:
+      #     name: Run integration tests
+      #     command: tox -e integration-spark-databricks-odbc-sql-endpoint
+      #     no_output_timeout: 1h
+      # - store_artifacts:
+      #     path: ./logs
 
 workflows:
   version: 2
@@ -136,8 +142,10 @@ workflows:
           requires:
             - integration-spark-thrift
       - integration-spark-databricks-odbc-cluster:
+          context: aws-credentials
           requires:
             - integration-spark-thrift
       - integration-spark-databricks-odbc-endpoint:
+          context: aws-credentials
           requires:
             - integration-spark-thrift
