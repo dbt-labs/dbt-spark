@@ -26,7 +26,7 @@ class TestColumnsInRelation:
             "parent.sql": _MODEL_PARENT,
         }
 
-    @pytest.mark.skip_profile("databricks_http_cluster", "spark_session")
+    @pytest.mark.skip_profile("databricks_http_cluster", "spark_session", "spark_thrift")
     def test_get_columns_in_relation(self, project):
         run_dbt(["run"])
         child = relation_from_name(project.adapter, "child")
