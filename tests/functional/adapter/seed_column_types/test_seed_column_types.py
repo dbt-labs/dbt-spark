@@ -21,8 +21,10 @@ class TestSeedColumnTypesCast:
         }
 
     def run_and_test(self):
-        results = run_dbt(["seed"])
+        results = run_dbt(["seed", "--select", "payments"])
         assert len(results) == 1
+        run_dbt(["test"], expect_pass=False)
+        run_dbt(["seed"])
         run_dbt(["test"])
 
 
