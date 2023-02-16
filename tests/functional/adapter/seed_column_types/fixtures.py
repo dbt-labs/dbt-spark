@@ -1,18 +1,16 @@
 _MACRO_TEST_IS_TYPE_SQL = """
 {% macro simple_type_check_column(column, check) %}
-    {% if check == 'string' %}
-        {{ return(column.is_string()) }}
-    {% elif check == 'float' %}
-        {{ return(column.is_float()) }}
-    {% elif check == 'number' %}
-        {{ return(column.is_number()) }}
-    {% elif check == 'numeric' %}
-        {{ return(column.is_numeric()) }}
-    {% elif check == 'integer' %}
-        {{ return(column.is_integer()) }}
-    {% else %}
+    {% set checks = {
+        'string': column.is_string,
+        'float': column.is_float,
+        'number': column.is_number,
+        'numeric': column.is_numeric,
+        'integer': column.is_integer,
+    } %}
+    {% if check not in checks %}
         {% do exceptions.raise_compiler_error('invalid type check value: ' ~ check) %}
     {% endif %}
+    {{ return(checks[check]()) }}
 {% endmacro %}
 
 {% macro type_check_column(column, type_checks) %}
