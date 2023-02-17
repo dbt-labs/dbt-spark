@@ -138,6 +138,9 @@
       {% else %}
         create table {{ relation }}
       {% endif %}
+      {% if config.get('constraints_enabled', False) %}
+        {{ get_assert_columns_equivalent(sql) }}
+      {% endif %}
       {{ file_format_clause() }}
       {{ options_clause() }}
       {{ partition_cols(label="partitioned by") }}
@@ -158,6 +161,55 @@
     {{ py_write_table(compiled_code=compiled_code, target_relation=relation) }}
   {%- endif -%}
 {%- endmacro -%}
+
+
+{% macro persist_constraints(relation, model) %}
+  {{ return(adapter.dispatch('persist_constraints', 'dbt')(relation, model)) }}
+{% endmacro %}
+
+{% macro spark__persist_constraints(relation, model) %}
+  {% if config.get('constraints_enabled', False) and config.get('file_format', 'delta') == 'delta' %}
+    {% do alter_table_add_constraints(relation, model.columns) %}
+    {% do alter_column_set_constraints(relation, model.columns) %}
+  {% endif %}
+{% endmacro %}
+
+{% macro alter_table_add_constraints(relation, constraints) %}
+  {{ return(adapter.dispatch('alter_table_add_constraints', 'dbt')(relation, constraints)) }}
+{% endmacro %}
+
+{% macro spark__alter_table_add_constraints(relation, column_dict) %}
+
+  {% for column_name in column_dict %}
+    {% set constraints_check = column_dict[column_name]['constraints_check'] %}
+    {% if constraints_check and not is_incremental() %}
+      {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint_check) -%}
+      {% call statement() %}
+        alter table {{ relation }} add constraint {{ constraint_hash }} check {{ constraints_check }};
+      {% endcall %}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+
+{% macro alter_column_set_constraints(relation, column_dict) %}
+  {{ return(adapter.dispatch('alter_column_set_constraints', 'dbt')(relation, column_dict)) }}
+{% endmacro %}
+
+{% macro spark__alter_column_set_constraints(relation, column_dict) %}
+  {% for column_name in column_dict %}
+    {% set constraints = column_dict[column_name]['constraints'] %}
+    {% for constraint in constraints %}
+      {% if constraint != 'not null' %}
+        {{ exceptions.warn('Invalid constraint for column ' ~ column_name ~ '. Only `not null` is supported.') }}
+      {% else %}
+        {% set quoted_name = adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name %}
+        {% call statement() %}
+          alter table {{ relation }} change column {{ quoted_name }} set {{ constraint }};
+        {% endcall %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endmacro %}
 
 
 {% macro spark__create_view_as(relation, sql) -%}
