@@ -1,7 +1,7 @@
 .DEFAULT_GOAL:=help
 
 .PHONY: dev
-dev: ## Installs adapter in develop mode along with development depedencies
+dev: ## Installs adapter in develop mode along with development dependencies
 	@\
 	pip install -r requirements.txt -r dev-requirements.txt && pre-commit install
 
