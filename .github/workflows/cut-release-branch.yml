@@ -1,6 +1,7 @@
 # **what?**
-# Cuts a new `*.latest` branch
-# Also cleans up all files in `.changes/unreleased` and `.changes/previous verion on
+# Calls a centralize3d workflow that will:
+# 1. Cut a new branch (generally `*.latest`)
+# 2. Also cleans up all files in `.changes/unreleased` and `.changes/previous version on
 # `main` and bumps `main` to the input version.
 
 # **why?**
@@ -31,7 +32,7 @@ permissions:
 jobs:
   cut_branch:
     name: "Cut branch and clean up main for dbt-spark"
-    uses: dbt-labs/actions/.github/workflows/cut-release-branch.yaml@main
+    uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml@main
     with:
       version_to_bump_main: ${{ inputs.version_to_bump_main }}
       new_branch_name: ${{ inputs.new_branch_name }}
