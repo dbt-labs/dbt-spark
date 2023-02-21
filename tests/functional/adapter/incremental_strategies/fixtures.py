@@ -1,6 +1,7 @@
 #
 # Models
 #
+
 default_append_sql = """
 {{ config(
     materialized = 'incremental',
@@ -23,6 +24,8 @@ select cast(3 as bigint) as id, 'anyway' as msg
 
 #
 # Bad Models
+#
+
 bad_file_format_sql = """
 {{ config(
     materialized = 'incremental',
@@ -110,6 +113,8 @@ select cast(3 as bigint) as id, 'anyway' as msg
 
 #
 # Delta Models
+#
+
 append_delta_sql = """
 {{ config(
     materialized = 'incremental',
@@ -203,7 +208,57 @@ select cast(3 as bigint) as id, 'anyway' as msg, 'purple' as color
 """.lstrip()
 
 #
+# Insert Overwrite
+#
+
+insert_overwrite_no_partitions_sql = """
+{{ config(
+    materialized = 'incremental',
+    incremental_strategy = 'insert_overwrite',
+    file_format = 'parquet',
+) }}
+
+{% if not is_incremental() %}
+
+select cast(1 as bigint) as id, 'hello' as msg
+union all
+select cast(2 as bigint) as id, 'goodbye' as msg
+
+{% else %}
+
+select cast(2 as bigint) as id, 'yo' as msg
+union all
+select cast(3 as bigint) as id, 'anyway' as msg
+
+{% endif %}
+""".lstrip()
+
+insert_overwrite_partitions_sql = """
+{{ config(
+    materialized = 'incremental',
+    incremental_strategy = 'insert_overwrite',
+    partition_by = 'id',
+    file_format = 'parquet',
+) }}
+
+{% if not is_incremental() %}
+
+select cast(1 as bigint) as id, 'hello' as msg
+union all
+select cast(2 as bigint) as id, 'goodbye' as msg
+
+{% else %}
+
+select cast(2 as bigint) as id, 'yo' as msg
+union all
+select cast(3 as bigint) as id, 'anyway' as msg
+
+{% endif %}
+""".lstrip()
+
+#
 # Hudi Models
+#
 
 append_hudi_sql = """
 {{ config(
@@ -338,54 +393,6 @@ select cast(2 as bigint) as id, 'goodbye' as msg, 'red' as color
 select cast(2 as bigint) as id, 'yo' as msg, 'green' as color
 union all
 select cast(3 as bigint) as id, 'anyway' as msg, 'purple' as color
-
-{% endif %}
-""".lstrip()
-
-#
-# Insert Overwrite
-
-insert_overwrite_no_partitions_sql = """
-{{ config(
-    materialized = 'incremental',
-    incremental_strategy = 'insert_overwrite',
-    file_format = 'parquet',
-) }}
-
-{% if not is_incremental() %}
-
-select cast(1 as bigint) as id, 'hello' as msg
-union all
-select cast(2 as bigint) as id, 'goodbye' as msg
-
-{% else %}
-
-select cast(2 as bigint) as id, 'yo' as msg
-union all
-select cast(3 as bigint) as id, 'anyway' as msg
-
-{% endif %}
-""".lstrip()
-
-insert_overwrite_partitions_sql = """
-{{ config(
-    materialized = 'incremental',
-    incremental_strategy = 'insert_overwrite',
-    partition_by = 'id',
-    file_format = 'parquet',
-) }}
-
-{% if not is_incremental() %}
-
-select cast(1 as bigint) as id, 'hello' as msg
-union all
-select cast(2 as bigint) as id, 'goodbye' as msg
-
-{% else %}
-
-select cast(2 as bigint) as id, 'yo' as msg
-union all
-select cast(3 as bigint) as id, 'anyway' as msg
 
 {% endif %}
 """.lstrip()

@@ -39,8 +39,7 @@ class TestDefaultAppend(TestIncrementalStrategies):
         self.assert_relations(project, "default_append", "expected_append")
 
 
-    @pytest.mark.skip_profile("databricks_http_cluster", "databricks_sql_endpoint", "spark_session",
-                              "spark-thrift")
+    @pytest.mark.skip_profile("apache_spark", "databricks_http_cluster", "databricks_sql_endpoint", "spark_session")
     def test_default_append(self, project):
         self.run_and_test(project)
 
@@ -60,8 +59,7 @@ class TestInsertOverwrite(TestIncrementalStrategies):
         self.assert_relations(project, "insert_overwrite_partitions",
                               "expected_upsert")
 
-    @pytest.mark.skip_profile("databricks_http_cluster", "databricks_sql_endpoint", "spark_session",
-                              "spark-thrift")
+    @pytest.mark.skip_profile("apache_spark", "databricks_http_cluster", "databricks_sql_endpoint", "spark_session")
     def test_insert_overwrite(self, project):
         self.run_and_test(project)
 
