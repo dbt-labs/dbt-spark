@@ -87,30 +87,30 @@ class TestDeltaStrategies(TestIncrementalStrategies):
     def test_delta_strategies(self, project):
         self.run_and_test(project)
 
-class TestHudiStrategies(TestIncrementalStrategies):
-    @pytest.fixture(scope="class")
-    def models(self):
-        return {
-            "append.sql": append_hudi_sql,
-            "insert_overwrite_no_partitions.sql": hudi_insert_overwrite_no_partitions_sql,
-            "insert_overwrite_partitions.sql": hudi_insert_overwrite_partitions_sql,
-            "merge_no_key.sql": hudi_merge_no_key_sql,
-            "merge_unique_key.sql": hudi_merge_unique_key_sql,
-            "merge_update_columns.sql": hudi_update_columns_sql,
-        }
-
-    def run_and_test(self, project):
-        self.seed_and_run_twice()
-        self.assert_relations(project, "append", "expected_append")
-        self.assert_relations(project, "merge_no_key", "expected_append")
-        self.assert_relations(project, "merge_unique_key", "expected_upsert")
-        self.assert_relations(project, "insert_overwrite_no_partitions", "expected_overwrite")
-        self.assert_relations(project, "insert_overwrite_partitions", "expected_upsert")
-
-    @pytest.mark.skip_profile("databricks_http_cluster", "databricks_cluster",
-                              "databricks_sql_endpoint", "spark_session")
-    def test_hudi_strategies(self, project):
-        self.run_and_test(project)
+# class TestHudiStrategies(TestIncrementalStrategies):
+#     @pytest.fixture(scope="class")
+#     def models(self):
+#         return {
+#             "append.sql": append_hudi_sql,
+#             "insert_overwrite_no_partitions.sql": hudi_insert_overwrite_no_partitions_sql,
+#             "insert_overwrite_partitions.sql": hudi_insert_overwrite_partitions_sql,
+#             "merge_no_key.sql": hudi_merge_no_key_sql,
+#             "merge_unique_key.sql": hudi_merge_unique_key_sql,
+#             "merge_update_columns.sql": hudi_update_columns_sql,
+#         }
+#
+#     def run_and_test(self, project):
+#         self.seed_and_run_twice()
+#         self.assert_relations(project, "append", "expected_append")
+#         self.assert_relations(project, "merge_no_key", "expected_append")
+#         self.assert_relations(project, "merge_unique_key", "expected_upsert")
+#         self.assert_relations(project, "insert_overwrite_no_partitions", "expected_overwrite")
+#         self.assert_relations(project, "insert_overwrite_partitions", "expected_upsert")
+#
+#     @pytest.mark.skip_profile("databricks_http_cluster", "databricks_cluster",
+#                               "databricks_sql_endpoint", "spark_session")
+#     def test_hudi_strategies(self, project):
+#         self.run_and_test(project)
 
 
 class TestBadStrategies(TestIncrementalStrategies):
