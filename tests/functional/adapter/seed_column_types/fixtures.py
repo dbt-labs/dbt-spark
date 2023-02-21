@@ -33,6 +33,20 @@ _MACRO_TEST_IS_TYPE_SQL = """
     {% do return((failures | length) == 0) %}
 {% endmacro %}
 
+{% macro is_bad_column(column, column_map) %}
+    {% set column_key = (column.name | lower) %}
+    {% if column_key not in column_map %}
+        {% do exceptions.raise_compiler_error('column key ' ~ column_key ~ ' not found in ' ~ (column_map | list | string)) %}
+    {% endif %}
+
+    {% set type_checks = column_map[column_key] %}
+    {% if not type_checks %}
+        {% do exceptions.raise_compiler_error('no type checks?') %}
+    {% endif %}
+
+    {{ return(not type_check_column(column, type_checks)) }}
+{% endmacro %}
+
 {% test is_type(seed, column_map) %}
     {% if not execute %}
         {{ return(None) }}
@@ -48,17 +62,8 @@ _MACRO_TEST_IS_TYPE_SQL = """
     {% endif %}
     {% set bad_columns = [] %}
     {% for column in columns %}
-        {% set column_key = (column.name | lower) %}
-        {% if column_key in column_map %}
-            {% set type_checks = column_map[column_key] %}
-            {% if not type_checks %}
-                {% do exceptions.raise_compiler_error('no type checks?') %}
-            {% endif %}
-            {% if not type_check_column(column, type_checks) %}
-                {% do bad_columns.append(column.name) %}
-            {% endif %}
-        {% else %}
-            {% do exceptions.raise_compiler_error('column key ' ~ column_key ~ ' not found in ' ~ (column_map | list | string)) %}
+        {% if is_bad_column(column, column_map) %}
+            {% do bad_columns.append(column.name) %}
         {% endif %}
     {% endfor %}
     {% do log('bad columns: ' ~ bad_columns, info=True) %}
