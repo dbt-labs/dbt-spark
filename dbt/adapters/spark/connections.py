@@ -492,6 +492,10 @@ class SparkConnectionManager(SQLConnectionManager):
         connection.state = ConnectionState.OPEN
         return connection
 
+    @classmethod
+    def data_type_code_to_name(cls, type_code: str) -> str:
+        return type_code
+
 
 def build_ssl_transport(host, port, username, auth, kerberos_service_name, password=None):
     transport = None
