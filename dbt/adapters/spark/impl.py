@@ -191,7 +191,7 @@ class SparkAdapter(SQLAdapter):
                 is_hudi: bool = "Provider: hudi" in information
                 is_iceberg: bool = "Provider: iceberg" in information
 
-                relation: BaseRelation = self.Relation.create(
+                relation: BaseRelation = self.Relation.create(  # type: ignore
                     schema=_schema,
                     identifier=name,
                     type=rel_type,
@@ -199,7 +199,7 @@ class SparkAdapter(SQLAdapter):
                     is_delta=is_delta,
                     is_iceberg=is_iceberg,
                     is_hudi=is_hudi,
-                )  # type: ignore
+                )
                 relations.append(relation)
 
             return relations
