@@ -149,7 +149,7 @@
       {% else %}
         create table {{ relation }}
       {% endif %}
-      {% if config.get('constraints_enabled', False) %}
+      {% if config.get('contract', False) %}
         {{ get_assert_columns_equivalent(sql) }}
       {% endif %}
       {{ file_format_clause() }}
@@ -179,7 +179,7 @@
 {% endmacro %}
 
 {% macro spark__persist_constraints(relation, model) %}
-  {% if config.get('constraints_enabled', False) and config.get('file_format', 'delta') == 'delta' %}
+  {% if config.get('contract', False) and config.get('file_format', 'delta') == 'delta' %}
     {% do alter_table_add_constraints(relation, model.columns) %}
     {% do alter_column_set_constraints(relation, model.columns) %}
   {% endif %}
