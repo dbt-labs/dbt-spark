@@ -3,7 +3,7 @@
 .PHONY: dev
 dev: ## Installs adapter in develop mode along with development dependencies
 	@\
-	pip install -r requirements.txt -r dev-requirements.txt && pre-commit install
+	pip install -e . -r requirements.txt -r dev-requirements.txt && pre-commit install
 
 .PHONY: mypy
 mypy: ## Runs mypy against staged changes for static type checking.
