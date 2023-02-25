@@ -5,10 +5,6 @@ from dbt.tests.adapter.simple_seed.test_seed import SeedConfigBase
 from tests.functional.adapter.incremental_strategies.fixtures import *
 
 class TestIncrementalStrategies(SeedConfigBase):
-    @pytest.fixture(scope="class")
-    def schema(self):
-        return "incremental_strategies"
-
     @staticmethod
     def seed_and_run_once():
         run_dbt(["seed"])
