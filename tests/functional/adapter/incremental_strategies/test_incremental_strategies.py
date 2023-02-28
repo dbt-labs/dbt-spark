@@ -4,7 +4,7 @@ from dbt.tests.util import run_dbt, check_relations_equal
 from dbt.tests.adapter.simple_seed.test_seed import SeedConfigBase
 from tests.functional.adapter.incremental_strategies.fixtures import *
 
-class TestIncrementalStrategies(SeedConfigBase):
+class BaseIncrementalStrategies:
     @staticmethod
     def seed_and_run_once():
         run_dbt(["seed"])
@@ -16,7 +16,7 @@ class TestIncrementalStrategies(SeedConfigBase):
         run_dbt(["run"])
         run_dbt(["run"])
 
-class TestDefaultAppend(TestIncrementalStrategies):
+class TestDefaultAppend(BaseIncrementalStrategies):
     @pytest.fixture(scope="class")
     def models(self):
         return {
@@ -33,7 +33,7 @@ class TestDefaultAppend(TestIncrementalStrategies):
         self.run_and_test(project)
 
 
-class TestInsertOverwrite(TestIncrementalStrategies):
+class TestInsertOverwrite(BaseIncrementalStrategies):
     @pytest.fixture(scope="class")
     def models(self):
         return {
@@ -50,7 +50,7 @@ class TestInsertOverwrite(TestIncrementalStrategies):
     def test_insert_overwrite(self, project):
         self.run_and_test(project)
 
-class TestDeltaStrategies(TestIncrementalStrategies):
+class TestDeltaStrategies(BaseIncrementalStrategies):
     @pytest.fixture(scope="class")
     def models(self):
         return {
@@ -72,7 +72,7 @@ class TestDeltaStrategies(TestIncrementalStrategies):
     def test_delta_strategies(self, project):
         self.run_and_test(project)
 
-# class TestHudiStrategies(TestIncrementalStrategies):
+# class TestHudiStrategies(BaseIncrementalStrategies):
 #     @pytest.fixture(scope="class")
 #     def models(self):
 #         return {
@@ -98,7 +98,7 @@ class TestDeltaStrategies(TestIncrementalStrategies):
 #         self.run_and_test(project)
 
 
-class TestBadStrategies(TestIncrementalStrategies):
+class TestBadStrategies(BaseIncrementalStrategies):
     @pytest.fixture(scope="class")
     def models(self):
         return {
