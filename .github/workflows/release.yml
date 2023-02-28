@@ -98,8 +98,7 @@ jobs:
       env_setup_script_path: ""
       test_run: ${{ inputs.test_run }}
 
-    secrets:
-      FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
+    secrets: inherit
 
   log-outputs-audit-version-and-changelog:
     name: "[Log output] Bump package version, Generate changelog"
