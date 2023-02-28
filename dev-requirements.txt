@@ -10,19 +10,22 @@ git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-tests-adapter&subdirectory=
 black~=23.1
 bumpversion~=0.6.0
 click~=8.1
-flake8~=6.0
+flake8~=5.0;python_version=="3.7"
+flake8~=6.0;python_version>="3.8"
 flaky~=3.7
 freezegun~=1.2
 ipdb~=0.13.11
 mypy==1.0.1  # patch updates have historically introduced breaking changes
-pre-commit~=3.1
+pre-commit~=2.21;python_version=="3.7"
+pre-commit~=3.1;python_version>="3.8"
 pytest~=7.2
 pytest-csv~=3.0
 pytest-dotenv~=0.5.2
 pytest-logbook~=1.2
 pytest-xdist~=3.2
 pytz~=2022.7
-tox~=4.4
+tox~=3.0;python_version=="3.7"
+tox~=4.4;python_version>="3.8"
 
 # Adapter specific dependencies
 mock~=5.0
