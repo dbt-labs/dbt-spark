@@ -2,9 +2,19 @@ import pytest
 
 from dbt.tests.util import run_dbt, check_relations_equal
 from dbt.tests.adapter.simple_seed.test_seed import SeedConfigBase
+from tests.functional.adapter.incremental_strategies.seeds import *
 from tests.functional.adapter.incremental_strategies.fixtures import *
 
-class BaseIncrementalStrategies:
+class BaseIncrementalStrategies(SeedConfigBase):
+    @pytest.fixture(scope="class", autouse=False)
+    def seeds(self):
+        return {
+            "expected_append.csv": expected_append_csv,
+            "expected_overwrite.csv": expected_overwrite_csv,
+            "expected_upsert.csv": expected_upsert_csv,
+            "expected_partial_upsert.csv": expected_partial_upsert_csv
+        }
+
     @staticmethod
     def seed_and_run_once():
         run_dbt(["seed"])
