@@ -55,12 +55,12 @@ repos:
     # of our control to the mix.  Unfortunately, there's nothing we can
     # do about per pre-commit's author.
     # See https://github.com/pre-commit/pre-commit/issues/730 for details.
-    args: [--show-error-codes, --ignore-missing-imports]
+    args: [--show-error-codes, --ignore-missing-imports, --explicit-package-bases]
     files: ^dbt/adapters/.*
     language: system
   - id: mypy
     alias: mypy-check
     stages: [manual]
-    args: [--show-error-codes, --pretty, --ignore-missing-imports]
+    args: [--show-error-codes, --pretty, --ignore-missing-imports, --explicit-package-bases]
     files: ^dbt/adapters
     language: system
