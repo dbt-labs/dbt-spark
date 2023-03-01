@@ -6,7 +6,7 @@ from tests.functional.adapter.incremental_strategies.seeds import *
 from tests.functional.adapter.incremental_strategies.fixtures import *
 
 class BaseIncrementalStrategies(SeedConfigBase):
-    @pytest.fixture(scope="class", autouse=False)
+    @pytest.fixture(scope="class")
     def seeds(self):
         return {
             "expected_append.csv": expected_append_csv,
@@ -38,7 +38,7 @@ class TestDefaultAppend(BaseIncrementalStrategies):
         check_relations_equal(project.adapter, ["default_append", "expected_append"])
 
 
-    @pytest.mark.skip_profile("apache_spark", "databricks_http_cluster", "databricks_sql_endpoint", "spark_session")
+    @pytest.mark.skip_profile("databricks_http_cluster", "databricks_sql_endpoint", "spark_session")
     def test_default_append(self, project):
         self.run_and_test(project)
 
@@ -56,7 +56,7 @@ class TestInsertOverwrite(BaseIncrementalStrategies):
         check_relations_equal(project.adapter, ["insert_overwrite_no_partitions", "expected_overwrite"])
         check_relations_equal(project.adapter, ["insert_overwrite_partitions", "expected_upsert"])
 
-    @pytest.mark.skip_profile("apache_spark", "databricks_http_cluster", "databricks_sql_endpoint", "spark_session")
+    @pytest.mark.skip_profile("databricks_http_cluster", "databricks_sql_endpoint", "spark_session")
     def test_insert_overwrite(self, project):
         self.run_and_test(project)
 

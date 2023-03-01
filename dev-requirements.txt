@@ -17,7 +17,7 @@ pytest-csv
 pytest-dotenv
 pytest-xdist
 pytest>=6.0.2
-pytz==2021.1
+pytz
 tox>=3.2.0
 
 # Test requirements
