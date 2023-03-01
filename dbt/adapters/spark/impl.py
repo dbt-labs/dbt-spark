@@ -133,9 +133,7 @@ class SparkAdapter(SQLAdapter):
         # so jinja doesn't render things
         return ""
 
-    def list_relations_without_caching(
-        self, schema_relation: SparkRelation
-    ) -> List[SparkRelation]:
+    def list_relations_without_caching(self, schema_relation: BaseRelation) -> List[BaseRelation]:
         kwargs = {"schema_relation": schema_relation}
         try:
             results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
@@ -177,7 +175,9 @@ class SparkAdapter(SQLAdapter):
 
         return super().get_relation(database, schema, identifier)
 
-    def parse_describe_extended(self, relation: Relation, raw_rows: AttrDict) -> List[SparkColumn]:
+    def parse_describe_extended(
+        self, relation: BaseRelation, raw_rows: AttrDict
+    ) -> List[SparkColumn]:
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
         # Find the separator between the rows and the metadata provided
@@ -214,7 +214,7 @@ class SparkAdapter(SQLAdapter):
             pos += 1
         return pos
 
-    def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
+    def get_columns_in_relation(self, relation: BaseRelation) -> List[SparkColumn]:
         columns = []
         try:
             rows: AttrDict = self.execute_macro(
@@ -235,12 +235,16 @@ class SparkAdapter(SQLAdapter):
         columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
         return columns
 
-    def parse_columns_from_information(self, relation: SparkRelation) -> List[SparkColumn]:
-        owner_match = re.findall(self.INFORMATION_OWNER_REGEX, relation.information)
+    def parse_columns_from_information(self, relation: BaseRelation) -> List[SparkColumn]:
+        if hasattr(relation, "information"):
+            information = relation.information or ""
+        else:
+            information = ""
+        owner_match = re.findall(self.INFORMATION_OWNER_REGEX, information)
         owner = owner_match[0] if owner_match else None
-        matches = re.finditer(self.INFORMATION_COLUMNS_REGEX, relation.information)
+        matches = re.finditer(self.INFORMATION_COLUMNS_REGEX, information)
         columns = []
-        stats_match = re.findall(self.INFORMATION_STATISTICS_REGEX, relation.information)
+        stats_match = re.findall(self.INFORMATION_STATISTICS_REGEX, information)
         raw_table_stats = stats_match[0] if stats_match else None
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
         for match_num, match in enumerate(matches):
@@ -259,7 +263,7 @@ class SparkAdapter(SQLAdapter):
             columns.append(column)
         return columns
 
-    def _get_columns_for_catalog(self, relation: SparkRelation) -> Iterable[Dict[str, Any]]:
+    def _get_columns_for_catalog(self, relation: BaseRelation) -> Iterable[Dict[str, Any]]:
         columns = self.parse_columns_from_information(relation)
 
         for column in columns:
