@@ -84,7 +84,7 @@ class Cursor:
         self._df = None
         self._rows = None
 
-    def execute(self, sql: str, *parameters: Any) -> None:
+    def execute(self, sql: str, server_side_parameters, *parameters: Any) -> None:
         """
         Execute a sql statement.
 
@@ -106,7 +106,12 @@ class Cursor:
         """
         if len(parameters) > 0:
             sql = sql % parameters
-        spark_session = SparkSession.builder.enableHiveSupport().getOrCreate()
+        builder = SparkSession.builder.enableHiveSupport()
+
+        for k, v in server_side_parameters.items():
+            builder = builder.config(k, v)
+
+        spark_session = builder.getOrCreate()
         self._df = spark_session.sql(sql)
 
     def fetchall(self) -> Optional[List[Row]]:
@@ -172,10 +177,11 @@ class Connection:
 
 
 class SessionConnectionWrapper(object):
-    """Connection wrapper for the sessoin connection method."""
+    """Connection wrapper for the session connection method."""
 
-    def __init__(self, handle):
+    def __init__(self, handle, server_side_parameters):
         self.handle = handle
+        self.server_side_parameters = server_side_parameters
         self._cursor = None
 
     def cursor(self):
@@ -200,10 +206,10 @@ class SessionConnectionWrapper(object):
             sql = sql.strip()[:-1]
 
         if bindings is None:
-            self._cursor.execute(sql)
+            self._cursor.execute(sql, self.server_side_parameters)
         else:
             bindings = [self._fix_binding(binding) for binding in bindings]
-            self._cursor.execute(sql, *bindings)
+            self._cursor.execute(sql, self.server_side_parameters, *bindings)
 
     @property
     def description(self):
