@@ -8,5 +8,5 @@ from dbt.adapters.base import AdapterPlugin
 from dbt.include import spark  # type: ignore
 
 Plugin = AdapterPlugin(
-    adapter=SparkAdapter, credentials=SparkCredentials, include_path=spark.PACKAGE_PATH
+    adapter=SparkAdapter, credentials=SparkCredentials, include_path=spark.PACKAGE_PATH  # type: ignore
 )
