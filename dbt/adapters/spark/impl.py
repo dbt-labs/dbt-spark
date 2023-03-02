@@ -46,6 +46,8 @@ TABLE_OR_VIEW_NOT_FOUND_MESSAGES = (
     "NoSuchTableException",
 )
 
+RelationInfo = Tuple[str, str, str]
+
 
 @dataclass
 class SparkConfig(AdapterConfig):
@@ -135,45 +137,47 @@ class SparkAdapter(SQLAdapter):
         # so jinja doesn't render things
         return ""
 
-    def _get_relation_information(self, row: agate.Row) -> Tuple[str, str, str]:
+    def _get_relation_information(self, row: agate.Row) -> RelationInfo:
         """relation info was fetched with SHOW TABLES EXTENDED"""
-        if len(row) == 4:
+        try:
             _schema, name, _, information = row
-            return _schema, name, information
-        else:
+        except ValueError:
             raise dbt.exceptions.DbtRuntimeError(
                 f'Invalid value from "show tables extended ...", got {len(row)} values, expected 4'
             )
 
-    def _get_relation_information_using_describe(self, row: agate.Row) -> Tuple[str, str, str]:
+        return _schema, name, information
+
+    def _get_relation_information_using_describe(self, row: agate.Row) -> RelationInfo:
         """Relation info fetched using SHOW TABLES and an auxiliary DESCRIBE statement"""
-        if len(row) == 3:
+        try:
             _schema, name, _ = row
-
-            table_name = f"{_schema}.{name}"
-            information = ""
-            try:
-                table_results = self.execute_macro(
-                    DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name}
-                )
-
-                for info_row in table_results:
-                    info_type, info_value, _ = info_row
-                    if not info_type.startswith("#"):
-                        information += f"{info_type}: {info_value}\n"
-            except dbt.exceptions.DbtRuntimeError as e:
-                logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
-
-            return _schema, name, information
-        else:
+        except ValueError:
             raise dbt.exceptions.DbtRuntimeError(
                 f'Invalid value from "show tables ...", got {len(row)} values, expected 3'
             )
 
+        table_name = f"{_schema}.{name}"
+        try:
+            table_results = self.execute_macro(
+                DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name}
+            )
+        except dbt.exceptions.DbtRuntimeError as e:
+            logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
+            table_results = AttrDict()
+
+        information = ""
+        for info_row in table_results:
+            info_type, info_value, _ = info_row
+            if not info_type.startswith("#"):
+                information += f"{info_type}: {info_value}\n"
+
+        return _schema, name, information
+
     def _build_spark_relation_list(
         self,
         row_list: agate.Table,
-        relation_info_func: Callable[[agate.Row], Tuple[str, str, str]],
+        relation_info_func: Callable[[agate.Row], RelationInfo],
     ) -> List[SparkRelation]:
         """Aggregate relations with format metadata included."""
         relations = []
