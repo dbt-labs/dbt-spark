@@ -6,6 +6,7 @@ from tests.functional.adapter.seed_column_types.fixtures import (
     _SEED_YML
 )
 
+
 @pytest.mark.skip_profile('spark_session')
 class TestSeedColumnTypesCast:
 
@@ -20,13 +21,9 @@ class TestSeedColumnTypesCast:
             "schema.yml": _SEED_YML
         }
 
-    def run_and_test(self):
+    #  We want to test seed types because hive would cause all fields to be strings.
+    # setting column_types in project.yml should change them and pass.
+    def test_column_seed_type(self, project):
         results = run_dbt(["seed"])
         assert len(results) == 1
         run_dbt(["test"])
-
-
-    #  We want to test seed types because hive would cause all fields to be strings.
-    # setting column_types in project.yml should change them and pass.
-    def test_column_seed_type(self):
-        self.run_and_test()
