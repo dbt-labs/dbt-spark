@@ -23,7 +23,6 @@ class TestSeedColumnTypesCast:
 
     def run_and_test(self):
         results = run_dbt(["seed"])
-        print(results)  # somehow this changes the outcome of this test?
         assert len(results) == 1
         run_dbt(["test"])
 
