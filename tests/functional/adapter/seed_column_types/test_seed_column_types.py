@@ -26,4 +26,6 @@ class TestSeedColumnTypesCast:
     def test_column_seed_type(self, project):
         results = run_dbt(["seed"])
         assert len(results) == 1
-        run_dbt(["test"])
+        results = run_dbt(["test"], expect_pass=False)
+        print(results)
+        assert False
