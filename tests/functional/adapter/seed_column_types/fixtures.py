@@ -90,6 +90,8 @@ ID,ORDERID,PAYMENTMETHOD,STATUS,AMOUNT,AMOUNT_USD,CREATED
 """
 
 _SEED_YML = """
+version: 2
+
 seeds:
   - name: payments
     config:
