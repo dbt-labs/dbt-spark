@@ -6,7 +6,6 @@ from tests.functional.adapter.seed_column_types.fixtures import (
     _SEED_YML
 )
 
-
 @pytest.mark.skip_profile('spark_session')
 class TestSeedColumnTypesCast:
 
