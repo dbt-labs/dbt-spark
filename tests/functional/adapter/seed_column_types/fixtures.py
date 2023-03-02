@@ -61,12 +61,11 @@ _MACRO_TEST_IS_TYPE_SQL = """
         {% endif %}
     {% endfor %}
     
-    {% for bad_column in bad_columns %}
-        select '{{ bad_column }}' as bad_column
-        {{ 'union all' if not loop.last }}
-    {% endfor %}
-    
-    select * from (select 1 limit 0) as nothing
+    {% set num_bad_columns = (bad_columns | length) %}
+
+    select '{{ num_bad_columns }}' as bad_column
+    group by 1
+    having bad_column > 0
 
 {% endtest %}
 """
@@ -92,13 +91,13 @@ seeds:
   - name: payments
     config:
         column_types:
-            id: string
-            orderid: string
-            paymentmethod: string
-            status: string
-            amount: integer
-            amount_usd: decimal(20,2)
-            created: timestamp
+            ID: string
+            ORDERID: string
+            PAYMENTMETHOD: string
+            STATUS: string
+            AMOUNT: integer
+            AMOUNT_USD: decimal(20,2)
+            CREATED: timestamp
     tests:
         - is_type:
             column_map:
