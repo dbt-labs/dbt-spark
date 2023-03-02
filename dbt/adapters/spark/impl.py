@@ -1,7 +1,7 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Union, Type
+from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable
 from typing_extensions import TypeAlias
 
 import agate
@@ -32,6 +32,8 @@ logger = AdapterLogger("Spark")
 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
+LIST_RELATIONS_SHOW_TABLES_MACRO_NAME = "list_relations_show_tables_without_caching"
+DESCRIBE_TABLE_EXTENDED_MACRO_NAME = "describe_table_extended_without_caching"
 DROP_RELATION_MACRO_NAME = "drop_relation"
 FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 
@@ -89,6 +91,7 @@ class SparkAdapter(SQLAdapter):
     ]
 
     Relation: TypeAlias = SparkRelation
+    RelationInfo = Tuple[str, str, str]
     Column: TypeAlias = SparkColumn
     ConnectionManager: TypeAlias = SparkConnectionManager
     AdapterSpecificConfigs: TypeAlias = SparkConfig
@@ -133,41 +136,112 @@ class SparkAdapter(SQLAdapter):
         # so jinja doesn't render things
         return ""
 
-    def list_relations_without_caching(self, schema_relation: BaseRelation) -> List[BaseRelation]:
-        kwargs = {"schema_relation": schema_relation}
+    def _get_relation_information(self, row: agate.Row) -> RelationInfo:
+        """relation info was fetched with SHOW TABLES EXTENDED"""
         try:
-            results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
-        except dbt.exceptions.DbtRuntimeError as e:
-            errmsg = getattr(e, "msg", "")
-            if f"Database '{schema_relation}' not found" in errmsg:
-                return []
-            else:
-                description = "Error while retrieving information about"
-                logger.debug(f"{description} {schema_relation}: {e.msg}")
-                return []
-
-        relations = []
-        for row in results:
-            if len(row) != 4:
-                raise dbt.exceptions.DbtRuntimeError(
-                    f'Invalid value from "show table extended ...", '
-                    f"got {len(row)} values, expected 4"
-                )
             _schema, name, _, information = row
-            rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
-            is_delta = "Provider: delta" in information
-            is_hudi = "Provider: hudi" in information
-            relation: BaseRelation = self.Relation.create(
+        except ValueError:
+            raise dbt.exceptions.DbtRuntimeError(
+                f'Invalid value from "show tables extended ...", got {len(row)} values, expected 4'
+            )
+
+        return _schema, name, information
+
+    def _get_relation_information_using_describe(self, row: agate.Row) -> RelationInfo:
+        """Relation info fetched using SHOW TABLES and an auxiliary DESCRIBE statement"""
+        try:
+            _schema, name, _ = row
+        except ValueError:
+            raise dbt.exceptions.DbtRuntimeError(
+                f'Invalid value from "show tables ...", got {len(row)} values, expected 3'
+            )
+
+        table_name = f"{_schema}.{name}"
+        try:
+            table_results = self.execute_macro(
+                DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name}
+            )
+        except dbt.exceptions.DbtRuntimeError as e:
+            logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
+            table_results = AttrDict()
+
+        information = ""
+        for info_row in table_results:
+            info_type, info_value, _ = info_row
+            if not info_type.startswith("#"):
+                information += f"{info_type}: {info_value}\n"
+
+        return _schema, name, information
+
+    def _build_spark_relation_list(
+        self,
+        row_list: agate.Table,
+        relation_info_func: Callable[[agate.Row], RelationInfo],
+    ) -> List[BaseRelation]:
+        """Aggregate relations with format metadata included."""
+        relations = []
+        for row in row_list:
+            _schema, name, information = relation_info_func(row)
+
+            rel_type: RelationType = (
+                RelationType.View if "Type: VIEW" in information else RelationType.Table
+            )
+            is_delta: bool = "Provider: delta" in information
+            is_hudi: bool = "Provider: hudi" in information
+            is_iceberg: bool = "Provider: iceberg" in information
+
+            relation: BaseRelation = self.Relation.create(  # type: ignore
                 schema=_schema,
                 identifier=name,
                 type=rel_type,
                 information=information,
                 is_delta=is_delta,
+                is_iceberg=is_iceberg,
                 is_hudi=is_hudi,
             )
             relations.append(relation)
 
         return relations
+
+    def list_relations_without_caching(self, schema_relation: BaseRelation) -> List[BaseRelation]:
+        """Distinct Spark compute engines may not support the same SQL featureset. Thus, we must
+        try different methods to fetch relation information."""
+
+        kwargs = {"schema_relation": schema_relation}
+
+        try:
+            # Default compute engine behavior: show tables extended
+            show_table_extended_rows = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
+            return self._build_spark_relation_list(
+                row_list=show_table_extended_rows,
+                relation_info_func=self._get_relation_information,
+            )
+        except dbt.exceptions.DbtRuntimeError as e:
+            errmsg = getattr(e, "msg", "")
+            if f"Database '{schema_relation}' not found" in errmsg:
+                return []
+            # Iceberg compute engine behavior: show table
+            elif "SHOW TABLE EXTENDED is not supported for v2 tables" in errmsg:
+                # this happens with spark-iceberg with v2 iceberg tables
+                # https://issues.apache.org/jira/browse/SPARK-33393
+                try:
+                    # Iceberg behavior: 3-row result of relations obtained
+                    show_table_rows = self.execute_macro(
+                        LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs=kwargs
+                    )
+                    return self._build_spark_relation_list(
+                        row_list=show_table_rows,
+                        relation_info_func=self._get_relation_information_using_describe,
+                    )
+                except dbt.exceptions.DbtRuntimeError as e:
+                    description = "Error while retrieving information about"
+                    logger.debug(f"{description} {schema_relation}: {e.msg}")
+                    return []
+            else:
+                logger.debug(
+                    f"Error while retrieving information about {schema_relation}: {errmsg}"
+                )
+                return []
 
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.get_default_include_policy().database:
