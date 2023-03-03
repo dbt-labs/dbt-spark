@@ -5,6 +5,7 @@ from dbt.tests.adapter.constraints.test_constraints import (
     BaseConstraintsRuntimeEnforcement
 )
 from dbt.tests.adapter.constraints.fixtures import (
+    my_model_sql,
     my_model_wrong_order_sql,
     my_model_wrong_name_sql,
     model_schema_yml,
@@ -27,8 +28,8 @@ select
 constraints_yml = model_schema_yml.replace("text", "string").replace("primary key", "")
 
 
-@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_sql_endpoint', 'databricks_cluster')
-class TestSparkConstraintsColumnsEqual(BaseConstraintsColumnsEqual):
+@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_http_cluster')
+class TestSparkConstraintsColumnsEqualPyodbc(BaseConstraintsColumnsEqual):
     @pytest.fixture(scope="class")
     def models(self):
         return {
@@ -38,12 +39,12 @@ class TestSparkConstraintsColumnsEqual(BaseConstraintsColumnsEqual):
         }
 
     @pytest.fixture
-    def int_type(self):
-        return "INT_TYPE"
-
-    @pytest.fixture
     def string_type(self):
         return "STRING"
+
+    @pytest.fixture
+    def int_type(self):
+        return "INT"
 
     @pytest.fixture
     def schema_int_type(self):
@@ -56,8 +57,46 @@ class TestSparkConstraintsColumnsEqual(BaseConstraintsColumnsEqual):
             ['1', schema_int_type, int_type],
         ]
 
+
+@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_sql_endpoint', 'databricks_cluster')
+class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model_wrong_order.sql": my_model_wrong_order_sql,
+            "my_model_wrong_name.sql": my_model_wrong_name_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
+
+    @pytest.fixture
+    def string_type(self):
+        return "STRING"
+
+    @pytest.fixture
+    def int_type(self):
+        return "INT_TYPE"
+
+    @pytest.fixture
+    def schema_int_type(self):
+        return "INT"
+
+    @pytest.fixture
+    def data_types(self, int_type, schema_int_type, string_type):
+        # sql_column_value, schema_data_type, error_data_type
+        return [
+            ['1', schema_int_type, int_type],
+        ]
+
+
 @pytest.mark.skip_profile('spark_session', 'apache_spark')
 class TestSparkConstraintsRuntimeEnforcement(BaseConstraintsRuntimeEnforcement):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
+
     @pytest.fixture(scope="class")
     def project_config_update(self):
         return {
