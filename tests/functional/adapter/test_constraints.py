@@ -71,7 +71,7 @@ class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual
 
     @pytest.fixture
     def string_type(self):
-        return "STRING"
+        return "STRING_TYPE"
 
     @pytest.fixture
     def int_type(self):
@@ -86,7 +86,7 @@ class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual
         # sql_column_value, schema_data_type, error_data_type
         return [
             # ['1', schema_int_type, int_type],
-            ['"1', string_type, "STRING_TYPE"]
+            ['"1', "STRING", string_type]
         ]
 
 
