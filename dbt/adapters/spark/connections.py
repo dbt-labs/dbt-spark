@@ -493,10 +493,18 @@ class SparkConnectionManager(SQLConnectionManager):
         return connection
 
     @classmethod
-    def data_type_code_to_name(cls, type_code: Union[int, str]) -> str:
-        print(f"type_code: {type_code}, {type(type_code)}")
-        assert isinstance(type_code, str)
-        return type_code
+    def data_type_code_to_name(cls, type_code: Union[type, str]) -> str:  # type: ignore
+        """
+        :param Union[type, str] type_code: The sql to execute.
+            * type_code is a python type (!) in pyodbc https://github.com/mkleehammer/pyodbc/wiki/Cursor#description, and a string for other spark runtimes.
+            * ignoring the type annotation on the signature for this adapter instead of updating the base class because this feels like a really special case.
+        :return: stringified the cursor type_code
+        :rtype: str
+        """
+        if isinstance(type_code, str):
+            return type_code
+        else:
+            return type_code.__name__.upper()
 
 
 def build_ssl_transport(host, port, username, auth, kerberos_service_name, password=None):

@@ -4,6 +4,11 @@ from dbt.tests.adapter.constraints.test_constraints import (
     BaseConstraintsColumnsEqual,
     BaseConstraintsRuntimeEnforcement
 )
+from dbt.tests.adapter.constraints.fixtures import (
+    my_model_wrong_order_sql,
+    my_model_wrong_name_sql,
+    model_schema_yml,
+)
 
 # constraints are enforced via 'alter' statements that run after table creation
 _expected_sql_spark = """
@@ -17,8 +22,21 @@ select
     cast('2019-01-01' as date) as date_day
 """.lstrip()
 
-@pytest.mark.skip_profile('spark_session', 'apache_spark')
+# Different on Spark:
+# - does not support a data type named 'text' (TODO handle this in the base test classes using string_type
+constraints_yml = model_schema_yml.replace("text", "string").replace("primary key", "")
+
+
+@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_sql_endpoint', 'databricks_cluster')
 class TestSparkConstraintsColumnsEqual(BaseConstraintsColumnsEqual):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model_wrong_order.sql": my_model_wrong_order_sql,
+            "my_model_wrong_name.sql": my_model_wrong_name_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
+
     @pytest.fixture
     def int_type(self):
         return "INT_TYPE"
