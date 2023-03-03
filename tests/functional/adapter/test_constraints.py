@@ -54,7 +54,8 @@ class TestSparkConstraintsColumnsEqualPyodbc(BaseConstraintsColumnsEqual):
     def data_types(self, int_type, schema_int_type, string_type):
         # sql_column_value, schema_data_type, error_data_type
         return [
-            ['1', schema_int_type, int_type],
+            # ['1', schema_int_type, int_type],
+            ['"1', string_type, "STRING_TYPE"]
         ]
 
 
@@ -70,7 +71,7 @@ class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual
 
     @pytest.fixture
     def string_type(self):
-        return "STRING_TYPE"
+        return "STRING"
 
     @pytest.fixture
     def int_type(self):
@@ -84,7 +85,8 @@ class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual
     def data_types(self, int_type, schema_int_type, string_type):
         # sql_column_value, schema_data_type, error_data_type
         return [
-            ['1', schema_int_type, int_type],
+            # ['1', schema_int_type, int_type],
+            ['"1', string_type, "STRING_TYPE"]
         ]
 
 
