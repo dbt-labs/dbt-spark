@@ -494,6 +494,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
     @classmethod
     def data_type_code_to_name(cls, type_code: Union[int, str]) -> str:
+        print(f"type_code: {type_code}, {type(type_code)}")
         assert isinstance(type_code, str)
         return type_code
 

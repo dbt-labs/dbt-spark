@@ -15,7 +15,7 @@ select
     1 as id,
     'blue' as color,
     cast('2019-01-01' as date) as date_day
-"""
+""".lstrip()
 
 @pytest.mark.skip_profile('spark_session', 'apache_spark')
 class TestSparkConstraintsColumnsEqual(BaseConstraintsColumnsEqual):
