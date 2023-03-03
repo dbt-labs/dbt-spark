@@ -134,7 +134,10 @@
 
 {#-- We can't use temporary tables with `create ... as ()` syntax --#}
 {% macro spark__create_temporary_view(relation, compiled_code) -%}
-    create temporary view {{ relation }} as
+    create temporary view {{ relation }}
+    {% if config.get('contract', False) -%}
+      {{ get_assert_columns_equivalent(sql) }}
+    {%- endif %} as
       {{ compiled_code }}
 {%- endmacro -%}
 
@@ -226,6 +229,9 @@
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
   {{ comment_clause() }}
+  {% if config.get('contract', False) -%}
+    {{ get_assert_columns_equivalent(sql) }}
+  {%- endif %}
   as
     {{ sql }}
 {% endmacro %}
