@@ -25,7 +25,7 @@ import sqlparams
 
 from hologram.helpers import StrEnum
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 try:
     from thrift.transport.TSSLSocket import TSSLSocket
@@ -493,7 +493,8 @@ class SparkConnectionManager(SQLConnectionManager):
         return connection
 
     @classmethod
-    def data_type_code_to_name(cls, type_code: str) -> str:
+    def data_type_code_to_name(cls, type_code: Union[int, str]) -> str:
+        assert isinstance(type_code, str)
         return type_code
 
 
