@@ -40,7 +40,7 @@ class TestSparkConstraintsColumnsEqualPyodbc(BaseConstraintsColumnsEqual):
 
     @pytest.fixture
     def string_type(self):
-        return "STRING"
+        return "STR"
 
     @pytest.fixture
     def int_type(self):
@@ -55,7 +55,7 @@ class TestSparkConstraintsColumnsEqualPyodbc(BaseConstraintsColumnsEqual):
         # sql_column_value, schema_data_type, error_data_type
         return [
             # ['1', schema_int_type, int_type],
-            ['"1', string_type, "STRING_TYPE"]
+            ['"1', string_type, string_type]
         ]
 
 
