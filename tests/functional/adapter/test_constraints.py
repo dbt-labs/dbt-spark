@@ -19,7 +19,25 @@ select
 
 @pytest.mark.skip_profile('spark_session', 'apache_spark')
 class TestSparkConstraintsColumnsEqual(BaseConstraintsColumnsEqual):
-    pass
+    @pytest.fixture
+    def int_type(self):
+        return "INT_TYPE"
+
+    @pytest.fixture
+    def string_type(self):
+        return "STRING"
+
+    @pytest.fixture
+    def schema_int_type(self):
+        return "INT"
+
+    @pytest.fixture
+    def data_types(self, int_type, schema_int_type, string_type):
+        # sql_column_value, schema_data_type, error_data_type
+        return [
+            ['1', schema_int_type, int_type],
+            ["'1'", string_type, string_type],
+        ]
 
 @pytest.mark.skip_profile('spark_session', 'apache_spark')
 class TestSparkConstraintsRuntimeEnforcement(BaseConstraintsRuntimeEnforcement):
