@@ -70,7 +70,7 @@ class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual
 
     @pytest.fixture
     def string_type(self):
-        return "STRING"
+        return "STRING_TYPE"
 
     @pytest.fixture
     def int_type(self):
@@ -104,7 +104,7 @@ class TestSparkConstraintsRuntimeEnforcement(BaseConstraintsRuntimeEnforcement):
                 "+file_format": "delta",
             }
         }
-    
+
     @pytest.fixture(scope="class")
     def expected_sql(self, project):
         relation = relation_from_name(project.adapter, "my_model")
