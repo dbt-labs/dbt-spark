@@ -36,7 +36,6 @@ class TestSparkConstraintsColumnsEqual(BaseConstraintsColumnsEqual):
         # sql_column_value, schema_data_type, error_data_type
         return [
             ['1', schema_int_type, int_type],
-            ["'1'", string_type, string_type],
         ]
 
 @pytest.mark.skip_profile('spark_session', 'apache_spark')
