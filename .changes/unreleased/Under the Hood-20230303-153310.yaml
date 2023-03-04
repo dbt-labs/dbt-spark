@@ -1,6 +1,0 @@
-kind: Under the Hood
-body: fix type annotation on data_type_code_to_name
-time: 2023-03-03T15:33:10.351007-05:00
-custom:
-  Author: michelleark
-  Issue: "665"
