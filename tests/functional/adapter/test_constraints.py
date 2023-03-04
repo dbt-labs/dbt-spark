@@ -54,15 +54,16 @@ class TestSparkConstraintsColumnsEqualPyodbc(BaseConstraintsColumnsEqual):
     def data_types(self, int_type, schema_int_type, string_type):
         # sql_column_value, schema_data_type, error_data_type
         return [
-            # TODO: the int type is tricky to test in test__constraints_wrong_column_order without a schema_string_type to override.
+            # TODO: the int type is tricky to test in test__constraints_wrong_column_data_type without a schema_string_type to override.
             # uncomment the line below once https://github.com/dbt-labs/dbt-core/issues/7121 is resolved
             # ['1', schema_int_type, int_type],
             ['"1"', "string", string_type],
             ["true", "boolean", "BOOL"],
             ['array("1","2","3")', "string", string_type],
             ['array(1,2,3)', "string", string_type],
-            ["cast('2019-01-01' as date)", "date", "DATE"],
-            # ["cast('2019-01-01' as timestamp)", "string", string_type],
+            # TODO: test__constraints_correct_column_data_type isn't able to run the following statements in create table statements with pyodbc
+            # ["cast('2019-01-01' as date)", "date", "DATE"],
+            # ["cast('2019-01-01' as timestamp)", "date", "DATE"],
             # ["cast(1.0 AS DECIMAL(4, 2))", "string", string_type],
         ]
 
@@ -93,7 +94,7 @@ class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual
     def data_types(self, int_type, schema_int_type, string_type):
         # sql_column_value, schema_data_type, error_data_type
         return [
-            # TODO: the int type is tricky to test in test__constraints_wrong_column_order without a schema_string_type to override.
+            # TODO: the int type is tricky to test in test__constraints_wrong_column_data_type without a schema_string_type to override.
             # uncomment the line below once https://github.com/dbt-labs/dbt-core/issues/7121 is resolved
             # ['1', schema_int_type, int_type],
             ['"1"', "string", string_type],
