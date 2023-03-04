@@ -21,6 +21,7 @@ select
 class TestSparkConstraintsColumnsEqual(BaseConstraintsColumnsEqual):
     pass
 
+
 @pytest.mark.skip_profile('spark_session', 'apache_spark')
 class TestSparkConstraintsRuntimeEnforcement(BaseConstraintsRuntimeEnforcement):
     @pytest.fixture(scope="class")
