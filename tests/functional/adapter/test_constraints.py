@@ -86,7 +86,13 @@ class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual
         # sql_column_value, schema_data_type, error_data_type
         return [
             # ['1', schema_int_type, int_type],
-            ['"1"', "STRING", string_type]
+            ['"1"', "string", string_type],
+            ["true", "boolean", "BOOLEAN_TYPE"],
+            ['array("1","2","3")', "array<string>", "ARRAY_TYPE"],
+            ['array(1,2,3)', "array<int>", "ARRAY_TYPE"],
+            ["cast('2019-01-01' as date)", "date", "DATE_TYPE"],
+            ["cast('2019-01-01' as timestamp)", "timestamp", "TIMESTAMP_TYPE"],
+            ["cast(1.0 AS DECIMAL(4, 2))", "decimal", "DECIMAL_TYPE"],
         ]
 
 
