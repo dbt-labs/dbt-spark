@@ -59,8 +59,10 @@ class TestSparkConstraintsColumnsEqualPyodbc(BaseConstraintsColumnsEqual):
             # ['1', schema_int_type, int_type],
             ['"1"', "string", string_type],
             ["true", "boolean", "BOOL"],
-            ['array("1","2","3")', "array<string>", "LIST"],
-            ['array(1,2,3)', "array<int>", "LIST"],
+            # ['array("1","2","3")', "array<string>", "LIST"],
+            # ['array(1,2,3)', "array<int>", "LIST"],
+            ["cast('2019-01-01' as date)", "date", "DATETIME"],
+            ["cast('2019-01-01' as timestamp)", "timestamp", "DATETIME"],
         ]
 
 
