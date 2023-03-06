@@ -503,8 +503,7 @@ class SparkConnectionManager(SQLConnectionManager):
         """
         if isinstance(type_code, str):
             return type_code
-        else:
-            return type_code.__name__.upper()
+        return type_code.__name__.upper()
 
 
 def build_ssl_transport(host, port, username, auth, kerberos_service_name, password=None):
