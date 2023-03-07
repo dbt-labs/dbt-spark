@@ -32,7 +32,7 @@ permissions:
 jobs:
   cut_branch:
     name: "Cut branch and clean up main for dbt-spark"
-    uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml
+    uses: dbt-labs/actions/.github/workflows/@mcknight/update_dependencies
     with:
       version_to_bump_main: ${{ inputs.version_to_bump_main }}
       new_branch_name: ${{ inputs.new_branch_name }}
