@@ -111,7 +111,7 @@ class TestSparkTableConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseTableConstrai
     pass
 
 
-@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_sql_endpoint', 'databricks_cluster')
+@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_http_cluster')
 class TestSparkViewConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseViewConstraintsColumnsEqual):
     pass
 
