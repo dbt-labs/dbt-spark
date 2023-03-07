@@ -1,7 +1,7 @@
 # install latest changes in dbt-core
 # TODO: how to automate switching from develop to version branches?
-git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-core&subdirectory=core
-git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-tests-adapter&subdirectory=tests/adapter
+git+https://github.com/dbt-labs/dbt-core.git@er/ct-2167-model-contracts-mats#egg=dbt-core&subdirectory=core
+git+https://github.com/dbt-labs/dbt-core.git@er/ct-2167-model-contracts-mats#egg=dbt-tests-adapter&subdirectory=tests/adapter
 
 # if version 1.x or greater -> pin to major version
 # if version 0.x -> pin to minor
