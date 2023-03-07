@@ -18,7 +18,6 @@
 ### Contributors
 - [@dparent1](https://github.com/dparent1) ([#294](https://github.com/dbt-labs/dbt-spark/issues/294))
 
-
 ## dbt-spark 1.5.0-b1 - February 22, 2023
 
 ### Features
@@ -51,3 +50,4 @@ For information on prior major and minor releases, see their changelogs:
 - [0.21](https://github.com/dbt-labs/dbt-spark/blob/0.21.latest/CHANGELOG.md)
 - [0.20](https://github.com/dbt-labs/dbt-spark/blob/0.20.latest/CHANGELOG.md)
 - [0.19 and earlier](https://github.com/dbt-labs/dbt-spark/blob/0.19.latest/CHANGELOG.md)
+
