@@ -1,7 +1,8 @@
 import pytest
 from dbt.tests.util import relation_from_name
 from dbt.tests.adapter.constraints.test_constraints import (
-    BaseConstraintsColumnsEqual,
+    BaseTableConstraintsColumnsEqual,
+    BaseViewConstraintsColumnsEqual,
     BaseConstraintsRuntimeEnforcement
 )
 from dbt.tests.adapter.constraints.fixtures import (
@@ -28,8 +29,7 @@ select
 constraints_yml = model_schema_yml.replace("text", "string").replace("primary key", "")
 
 
-@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_http_cluster')
-class TestSparkConstraintsColumnsEqualPyodbc(BaseConstraintsColumnsEqual):
+class PyodbcSetup:
     @pytest.fixture(scope="class")
     def models(self):
         return {
@@ -68,8 +68,7 @@ class TestSparkConstraintsColumnsEqualPyodbc(BaseConstraintsColumnsEqual):
         ]
 
 
-@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_sql_endpoint', 'databricks_cluster')
-class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual):
+class DatabricksHTTPSetup:
     @pytest.fixture(scope="class")
     def models(self):
         return {
@@ -105,6 +104,26 @@ class TestSparkConstraintsColumnsEqualDatabricksHTTP(BaseConstraintsColumnsEqual
             ["cast('2019-01-01' as timestamp)", "timestamp", "TIMESTAMP_TYPE"],
             ["cast(1.0 AS DECIMAL(4, 2))", "decimal", "DECIMAL_TYPE"],
         ]
+
+
+@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_http_cluster')
+class TestSparkTableConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseTableConstraintsColumnsEqual):
+    pass
+
+
+@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_http_cluster')
+class TestSparkViewConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseViewConstraintsColumnsEqual):
+    pass
+
+
+@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_sql_endpoint', 'databricks_cluster')
+class TestSparkTableConstraintsColumnsEqualDatabricksHTTP(DatabricksHTTPSetup, BaseTableConstraintsColumnsEqual):
+    pass
+
+
+@pytest.mark.skip_profile('spark_session', 'apache_spark', 'databricks_sql_endpoint', 'databricks_cluster')
+class TestSparkViewConstraintsColumnsEqualDatabricksHTTP(DatabricksHTTPSetup, BaseViewConstraintsColumnsEqual):
+    pass
 
 
 @pytest.mark.skip_profile('spark_session', 'apache_spark')

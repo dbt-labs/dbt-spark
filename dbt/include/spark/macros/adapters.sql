@@ -226,6 +226,9 @@
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
   {{ comment_clause() }}
+  {% if config.get('contract', False) -%}
+    {{ get_assert_columns_equivalent(sql) }}
+  {%- endif %}
   as
     {{ sql }}
 {% endmacro %}

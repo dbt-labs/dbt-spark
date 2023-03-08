@@ -1,6 +1,6 @@
 kind: Features
-body: implement data_type_code_to_name on SparkConnectionManager
+body: Enforce contracts on models materialized as tables and views
 time: 2023-02-23T18:09:23.787675-05:00
 custom:
-  Author: michelleark
-  Issue: "639"
+  Author: michelleark emmyoop
+  Issue: 639 654
