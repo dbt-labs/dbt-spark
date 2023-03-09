@@ -58,7 +58,7 @@ odbc_extras = [
     "pyodbc~=4.0.34",
 ]
 pyhive_extras = [
-    "PyHive[hive]~=0.6.5",
+    "PyHive[hive]~=0.6.5",  # hive extras requires sasl, which is not supported on Python 3.11
     "thrift>=0.11.0,<0.17.0",
 ]
 session_extras = [

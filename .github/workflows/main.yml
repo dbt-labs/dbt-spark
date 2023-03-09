@@ -58,12 +58,6 @@ jobs:
           sudo apt-get install libsasl2-dev
           python -m pip install --user --upgrade pip
           python -m pip --version
-          python -m pip install pre-commit
-          pre-commit --version
-          python -m pip install mypy==0.942
-          python -m pip install types-requests
-          mypy --version
-          python -m pip install -r requirements.txt
           python -m pip install -r dev-requirements.txt
           dbt --version
 
