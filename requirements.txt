@@ -1,12 +1,12 @@
 # TODO: can this be replaced by pip installing [all] in tox?
 
 # odbc extras
-pyodbc~=4.0.34
-sqlparse~=0.4.3 # not directly required, pinned by Snyk to avoid a vulnerability
+# pyodbc~=4.0.34
+# sqlparse~=0.4.3 # not directly required, pinned by Snyk to avoid a vulnerability
 
 # pyhive extras
-PyHive[hive]~=0.6.5
-thrift>=0.11.0,<0.17.0
+# PyHive[hive]~=0.6.5
+# thrift>=0.11.0,<0.17.0
 
 # session extras
-pyspark~=3.0
+# pyspark~=3.0
