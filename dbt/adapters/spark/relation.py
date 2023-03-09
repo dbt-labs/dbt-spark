@@ -1,9 +1,14 @@
-from typing import Optional
-
+from typing import Optional, TypeVar
 from dataclasses import dataclass, field
 
 from dbt.adapters.base.relation import BaseRelation, Policy
-from dbt.exceptions import RuntimeException
+
+from dbt.exceptions import DbtRuntimeError
+from dbt.events import AdapterLogger
+
+logger = AdapterLogger("Spark")
+
+Self = TypeVar("Self", bound="BaseRelation")
 
 
 @dataclass
@@ -27,15 +32,17 @@ class SparkRelation(BaseRelation):
     quote_character: str = "`"
     is_delta: Optional[bool] = None
     is_hudi: Optional[bool] = None
+    is_iceberg: Optional[bool] = None
+    # TODO: make this a dict everywhere
     information: Optional[str] = None
 
     def __post_init__(self):
         if self.database != self.schema and self.database:
-            raise RuntimeException("Cannot set database in spark!")
+            raise DbtRuntimeError("Cannot set database in spark!")
 
     def render(self):
         if self.include_policy.database and self.include_policy.schema:
-            raise RuntimeException(
+            raise DbtRuntimeError(
                 "Got a spark relation with schema and database set to "
                 "include, but only one can be set"
             )
