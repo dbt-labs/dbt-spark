@@ -1,14 +1,20 @@
 # **what?**
-# Take the given commit, run unit tests specifically on that sha, build and
-# package it, and then release to GitHub with that specific build (PyPi to follow later)
-
+# Release workflow provides the following steps:
+# - checkout the given commit;
+# - validate version in sources and changelog file for given version;
+# - run unit tests against given commit;
+# - build and package that SHA;
+# - release it to GitHub and PyPI with that specific build;
+#
 # **why?**
 # Ensure an automated and tested release process
-
+#
 # **when?**
-# This will only run manually with a given sha and version
+# This will only run manually. Run this workflow only after the
+# version bump workflow is completed and related changes are reviewed and merged.
+#
 
-name: Build, Test, and Package
+name: Release to GitHub and PyPI
 
 on:
   workflow_dispatch:
@@ -17,27 +23,42 @@ on:
         description: "The last commit sha in the release"
         type: string
         required: true
-      changelog_path:
-        description: "Path to changes log"
+      target_branch:
+        description: "The branch to release from"
         type: string
-        default: "./CHANGELOG.md"
-        required: false
+        required: true
       version_number:
         description: "The release version number (i.e. 1.0.0b1)"
         type: string
         required: true
+      build_script_path:
+        description: "Build script path"
+        type: string
+        default: "scripts/build-dist.sh"
+        required: true
+      s3_bucket_name:
+        description: "AWS S3 bucket name"
+        type: string
+        default: "core-team-artifacts"
+        required: true
+      package_test_command:
+        description: "Package test command"
+        type: string
+        default: "dbt --version"
+        required: true
+      env_setup_script_path:
+        description: "Environment setup script path"
+        type: string
+        default: ""
+        required: false
       test_run:
-        description: "Test run (Publish release as draft to GitHub)"
+        description: "Test run (Publish release as draft)"
         type: boolean
-        default: false
+        default: true
         required: false
 
 permissions:
   contents: write # this is the permission that allows creating a new release
-
-env:
-  PYTHON_TARGET_VERSION: 3.8
-  ARTIFACT_RETENTION_DAYS: 2
 
 defaults:
   run:
@@ -50,166 +71,113 @@ jobs:
     steps:
       - name: "[DEBUG] Print Variables"
         run: |
-          echo The last commit sha in the release:  ${{ inputs.sha }}
-          echo The release version number:          ${{ inputs.version_number }}
-          echo The path to the changelog markdpown: ${{ inputs.changelog_path }}
-          echo This is a test run:                  ${{ inputs.test_run }}
-          echo Python target version:               ${{ env.PYTHON_TARGET_VERSION }}
-          echo Artifact retention days:             ${{ env.ARTIFACT_RETENTION_DAYS }}
+          echo The last commit sha in the release: ${{ inputs.sha }}
+          echo The branch to release from:         ${{ inputs.target_branch }}
+          echo The release version number:         ${{ inputs.version_number }}
+          echo Build script path:                  ${{ inputs.build_script_path }}
+          echo Environment setup script path:      ${{ inputs.env_setup_script_path }}
+          echo AWS S3 bucket name:                 ${{ inputs.s3_bucket_name }}
+          echo Package test command:               ${{ inputs.package_test_command }}
+          echo Test run:                           ${{ inputs.test_run }}
 
-  unit:
-    name: Unit Test
-    runs-on: ubuntu-latest
+  # The Spark repository uses CircleCI to run integration tests.
+  # Because of this, the process of version bumps will be manual
+  # which means that this stage will be used to audit the version
+  # and changelog in sources.
+  # We are passing `env_setup_script_path` as an empty string
+  # so that the integration tests stage will be skipped.
+  audit-version-and-changelog:
+    name: Bump package version, Generate changelog
 
-    env:
-      TOXENV: "unit"
-
-    steps:
-      - name: "Checkout Commit - ${{ inputs.sha }}"
-        uses: actions/checkout@v3
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.inputs.sha }}
-
-      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_TARGET_VERSION }}
-
-      - name: "Install Python Dependencies"
-        run: |
-          sudo apt-get install libsasl2-dev
-          python -m pip install --user --upgrade pip
-          python -m pip install tox
-          python -m pip --version
-          python -m tox --version
-
-      - name: "Run Tox"
-        run: tox
-
-  build:
-    name: Build Packages
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: "Checkout Commit - ${{ inputs.sha }}"
-        uses: actions/checkout@v3
-        with:
-          persist-credentials: false
-          ref: ${{ inputs.sha }}
-
-      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_TARGET_VERSION }}
-
-      - name: "Install Python Dependencies"
-        run: |
-          sudo apt-get install libsasl2-dev
-          python -m pip install --user --upgrade pip
-          python -m pip install --upgrade setuptools wheel twine check-wheel-contents
-          python -m pip --version
-
-      - name: "Build Distributions"
-        run: ./scripts/build-dist.sh
-
-      - name: "[DEBUG] Show Distributions"
-        run: ls -lh dist/
-
-      - name: "Check Distribution Descriptions"
-        run: |
-          twine check dist/*
-
-      - name: "[DEBUG] Check Wheel Contents"
-        run: |
-          check-wheel-contents dist/*.whl --ignore W007,W008
-
-      - name: "Upload Build Artifact - ${{ inputs.version_number }}"
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ inputs.version_number }}
-          path: |
-            dist/
-            !dist/dbt-${{ inputs.version_number }}.tar.gz
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-  test-build:
-    name: Verify Packages
-
-    needs: [unit, build]
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_TARGET_VERSION }}
-
-      - name: "Install Python Dependencies"
-        run: |
-          sudo apt-get install libsasl2-dev
-          python -m pip install --user --upgrade pip
-          python -m pip install --upgrade wheel
-          python -m pip --version
-
-      - name: "Download Build Artifact - ${{ inputs.version_number }}"
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ inputs.version_number }}
-          path: dist/
-
-      - name: "[DEBUG] Show Distributions"
-        run: ls -lh dist/
-
-      - name: "Install Wheel Distributions"
-        run: |
-          find ./dist/*.whl -maxdepth 1 -type f | xargs python -m pip install --force-reinstall --find-links=dist/
-
-      - name: "[DEBUG] Check Wheel Distributions"
-        run: |
-          dbt --version
-
-      - name: "Install Source Distributions"
-        run: |
-          find ./dist/*.gz -maxdepth 1 -type f | xargs python -m pip install --force-reinstall --find-links=dist/
-
-      - name: "[DEBUG] Check Source Distributions"
-        run: |
-          dbt --version
-
-  github-release:
-    name: GitHub Release
-    if: ${{ !failure() && !cancelled() }}
-    needs: test-build
-
-    # pin to commit since this is workflow is WIP but this commit has been tested as working
-    uses: dbt-labs/dbt-release/.github/workflows/github-release.yml@7b6e01d73d2c8454e06302cc66ef4c2dbd4dbe4e
+    uses: dbt-labs/dbt-release/.github/workflows/release-prep.yml@main
 
     with:
       sha: ${{ inputs.sha }}
       version_number: ${{ inputs.version_number }}
-      changelog_path: ${{ inputs.changelog_path }}
+      target_branch: ${{ inputs.target_branch }}
+      env_setup_script_path: ""
       test_run: ${{ inputs.test_run }}
 
-  pypi-release:
-    name: Pypi release
-    # only release to PyPi if we're not testing - will release to PyPi test when workflow gets rewritten
-    if: inputs.test_run  == 'false'
+    secrets: inherit
+
+  log-outputs-audit-version-and-changelog:
+    name: "[Log output] Bump package version, Generate changelog"
+    if: ${{ !failure() && !cancelled() }}
+
+    needs: [audit-version-and-changelog]
 
     runs-on: ubuntu-latest
 
-    needs: github-release
-
-    environment: PypiProd
     steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: dist
-          path: 'dist'
+      - name: Print variables
+        run: |
+          echo Final SHA     : ${{ needs.audit-version-and-changelog.outputs.final_sha }}
+          echo Changelog path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
 
-      - name: Publish distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.4.2
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+  build-test-package:
+    name: Build, Test, Package
+    if: ${{ !failure() && !cancelled() }}
+    needs: [audit-version-and-changelog]
+
+    uses: dbt-labs/dbt-release/.github/workflows/build.yml@main
+
+    with:
+      sha: ${{ needs.audit-version-and-changelog.outputs.final_sha }}
+      version_number: ${{ inputs.version_number }}
+      changelog_path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
+      build_script_path: ${{ inputs.build_script_path }}
+      s3_bucket_name: ${{ inputs.s3_bucket_name }}
+      package_test_command: ${{ inputs.package_test_command }}
+      test_run: ${{ inputs.test_run }}
+
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  github-release:
+    name: GitHub Release
+    if: ${{ !failure() && !cancelled() }}
+
+    needs: [audit-version-and-changelog, build-test-package]
+
+    uses: dbt-labs/dbt-release/.github/workflows/github-release.yml@main
+
+    with:
+      sha: ${{ needs.audit-version-and-changelog.outputs.final_sha }}
+      version_number: ${{ inputs.version_number }}
+      changelog_path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
+      test_run: ${{ inputs.test_run }}
+
+  pypi-release:
+    name: PyPI Release
+
+    needs: [github-release]
+
+    uses: dbt-labs/dbt-release/.github/workflows/pypi-release.yml@main
+
+    with:
+      version_number: ${{ inputs.version_number }}
+      test_run: ${{ inputs.test_run }}
+
+    secrets:
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+  slack-notification:
+    name: Slack Notification
+    if: ${{ failure() && (!inputs.test_run || inputs.nightly_release) }}
+
+    needs:
+      [
+        audit-version-and-changelog,
+        build-test-package,
+        github-release,
+        pypi-release,
+      ]
+
+    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    with:
+      status: "failure"
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}

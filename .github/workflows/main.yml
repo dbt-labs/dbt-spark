@@ -54,6 +54,7 @@ jobs:
 
       - name: Install python dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install libsasl2-dev
           python -m pip install --user --upgrade pip
           python -m pip --version
@@ -95,6 +96,7 @@ jobs:
 
       - name: Install python dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install libsasl2-dev
           python -m pip install --user --upgrade pip
           python -m pip --version
