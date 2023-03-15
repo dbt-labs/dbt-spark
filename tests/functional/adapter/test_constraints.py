@@ -24,8 +24,8 @@ select
 from
 
 ( select
-    1 as id,
     'blue' as color,
+    1 as id,
     cast('2019-01-01' as date) as date_day ) as model_subq
 """
 
