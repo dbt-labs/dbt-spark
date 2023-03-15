@@ -213,11 +213,11 @@
     {% set constraints = column_dict[column_name]['constraints'] %}
     {% for constraint in constraints %}
       {% if constraint.type != 'not_null' %}
-        {{ exceptions.warn('Invalid constraint for column ' ~ column_name ~ '. Only `not null` is supported.') }}
+        {{ exceptions.warn('Invalid constraint for column ' ~ column_name ~ '. Only `not_null` is supported.') }}
       {% else %}
         {% set quoted_name = adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name %}
         {% call statement() %}
-          alter table {{ relation }} change column {{ quoted_name }} set {{ constraint }};
+          alter table {{ relation }} change column {{ quoted_name }} set not null {{ constraint.expression or "" }};
         {% endcall %}
       {% endif %}
     {% endfor %}
