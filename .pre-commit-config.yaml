@@ -1,8 +1,5 @@
 # For more on configuring pre-commit hooks (see https://pre-commit.com/)
 
-# TODO: remove global exclusion of tests when testing overhaul is complete
-exclude: '^tests/.*'
-
 # Force all unspecified python hooks to run python 3.8
 default_language_version:
   python: python3
