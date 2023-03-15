@@ -26,7 +26,7 @@ from
 ( select
     'blue' as color,
     1 as id,
-    cast('2019-01-01' as date) as date_day ) as model_subq
+    '2019-01-01'as date_day ) as model_subq
 """
 
 # Different on Spark:
@@ -66,6 +66,7 @@ class PyodbcSetup:
             ["true", "boolean", "BOOL"],
             ['array("1","2","3")', "string", string_type],
             ["array(1,2,3)", "string", string_type],
+            # pyodbc doesn't like the "6.45"
             # ["6.45", "decimal", "DECIMAL"],
             # TODO: test__constraints_correct_column_data_type isn't able to run the following statements in create table statements with pyodbc
             # ["cast('2019-01-01' as date)", "date", "DATE"],
