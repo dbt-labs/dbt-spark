@@ -46,21 +46,21 @@ _MACRO_TEST_IS_TYPE_SQL = """
     {% if not execute %}
         {{ return(None) }}
     {% endif %}
-    
+
     {% set columns = adapter.get_columns_in_relation(model) %}
     {% if (column_map | length) != (columns | length) %}
         {% set column_map_keys = (column_map | list | string) %}
         {% set column_names = (columns | map(attribute='name') | list | string) %}
         {% do exceptions.raise_compiler_error('did not get all the columns/all columns not specified:\n' ~ column_map_keys ~ '\nvs\n' ~ column_names) %}
     {% endif %}
-    
+
     {% set bad_columns = [] %}
     {% for column in columns %}
         {% if is_bad_column(column, column_map) %}
             {% do bad_columns.append(column.name) %}
         {% endif %}
     {% endfor %}
-    
+
     {% set num_bad_columns = (bad_columns | length) %}
 
     select '{{ num_bad_columns }}' as bad_column
