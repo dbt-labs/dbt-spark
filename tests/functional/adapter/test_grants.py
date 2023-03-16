@@ -55,6 +55,6 @@ class TestSnapshotGrantsSpark(BaseSnapshotGrants):
 class TestInvalidGrantsSpark(BaseInvalidGrants):
     def grantee_does_not_exist_error(self):
         return "RESOURCE_DOES_NOT_EXIST"
-        
+
     def privilege_does_not_exist_error(self):
         return "Action Unknown"
