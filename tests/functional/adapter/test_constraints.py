@@ -209,6 +209,7 @@ class BaseSparkConstraintsRollbackSetup:
         return [
             "violate the new CHECK constraint",
             "DELTA_NEW_CHECK_CONSTRAINT_VIOLATION",
+            "DELTA_VIOLATE_CONSTRAINT_WITH_VALUES",
             "violate the new NOT NULL constraint",
         ]
 
