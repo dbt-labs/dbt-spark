@@ -1,9 +1,12 @@
 import pytest
-from dbt.tests.util import relation_from_name
 from dbt.tests.adapter.constraints.test_constraints import (
     BaseTableConstraintsColumnsEqual,
     BaseViewConstraintsColumnsEqual,
-    BaseConstraintsRuntimeEnforcement,
+    BaseIncrementalConstraintsColumnsEqual,
+    BaseConstraintsRuntimeDdlEnforcement,
+    BaseConstraintsRollback,
+    BaseIncrementalConstraintsRuntimeDdlEnforcement,
+    BaseIncrementalConstraintsRollback,
 )
 from dbt.tests.adapter.constraints.fixtures import (
     my_model_sql,
@@ -14,7 +17,7 @@ from dbt.tests.adapter.constraints.fixtures import (
 
 # constraints are enforced via 'alter' statements that run after table creation
 _expected_sql_spark = """
-create or replace table {0}
+create or replace table <model_identifier>
     using delta
     as
 select
@@ -128,6 +131,13 @@ class TestSparkViewConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseViewConstraint
     pass
 
 
+@pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
+class TestSparkIncrementalConstraintsColumnsEqualPyodbc(
+    PyodbcSetup, BaseIncrementalConstraintsColumnsEqual
+):
+    pass
+
+
 @pytest.mark.skip_profile(
     "spark_session", "apache_spark", "databricks_sql_endpoint", "databricks_cluster"
 )
@@ -146,8 +156,17 @@ class TestSparkViewConstraintsColumnsEqualDatabricksHTTP(
     pass
 
 
+@pytest.mark.skip_profile(
+    "spark_session", "apache_spark", "databricks_sql_endpoint", "databricks_cluster"
+)
+class TestSparkIncrementalConstraintsColumnsEqualDatabricksHTTP(
+    DatabricksHTTPSetup, BaseIncrementalConstraintsColumnsEqual
+):
+    pass
+
+
 @pytest.mark.skip_profile("spark_session", "apache_spark")
-class TestSparkConstraintsRuntimeEnforcement(BaseConstraintsRuntimeEnforcement):
+class BaseSparkConstraintsDdlEnforcementSetup:
     @pytest.fixture(scope="class")
     def models(self):
         return {
@@ -165,8 +184,25 @@ class TestSparkConstraintsRuntimeEnforcement(BaseConstraintsRuntimeEnforcement):
 
     @pytest.fixture(scope="class")
     def expected_sql(self, project):
-        relation = relation_from_name(project.adapter, "my_model")
-        return _expected_sql_spark.format(relation)
+        return _expected_sql_spark
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark")
+class BaseSparkConstraintsRollbackSetup:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
+
+    @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {
+            "models": {
+                "+file_format": "delta",
+            }
+        }
 
     # On Spark/Databricks, constraints are applied *after* the table is replaced.
     # We don't have any way to "rollback" the table to its previous happy state.
@@ -188,3 +224,31 @@ class TestSparkConstraintsRuntimeEnforcement(BaseConstraintsRuntimeEnforcement):
         # The CHECK constraint is added before the NOT NULL constraint
         # and different connection types display/truncate the error message in different ways...
         assert any(msg in error_message for msg in expected_error_messages)
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark")
+class TestSparkTableConstraintsDdlEnforcement(
+    BaseSparkConstraintsDdlEnforcementSetup, BaseConstraintsRuntimeDdlEnforcement
+):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark")
+class TestSparkTableConstraintsRollback(
+    BaseSparkConstraintsRollbackSetup, BaseConstraintsRollback
+):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark")
+class TestSparkIncrementalConstraintsDdlEnforcement(
+    BaseSparkConstraintsDdlEnforcementSetup, BaseIncrementalConstraintsRuntimeDdlEnforcement
+):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark")
+class TestSparkIncrementalConstraintsRollback(
+    BaseSparkConstraintsRollbackSetup, BaseIncrementalConstraintsRollback
+):
+    pass
