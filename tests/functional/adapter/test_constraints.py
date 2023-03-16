@@ -43,6 +43,14 @@ class PyodbcSetup:
             "constraints_schema.yml": constraints_yml,
         }
 
+    @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {
+            "models": {
+                "+file_format": "delta",
+            }
+        }
+
     @pytest.fixture
     def string_type(self):
         return "STR"
@@ -66,8 +74,7 @@ class PyodbcSetup:
             ["true", "boolean", "BOOL"],
             ['array("1","2","3")', "string", string_type],
             ["array(1,2,3)", "string", string_type],
-            # pyodbc doesn't like the "6.45"
-            # ["6.45", "decimal", "DECIMAL"],
+            ["6.45", "decimal", "DECIMAL"],
             # TODO: test__constraints_correct_column_data_type isn't able to run the following statements in create table statements with pyodbc
             # ["cast('2019-01-01' as date)", "date", "DATE"],
             # ["cast('2019-01-01' as timestamp)", "date", "DATE"],
