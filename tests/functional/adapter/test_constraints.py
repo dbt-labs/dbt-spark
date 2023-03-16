@@ -204,13 +204,6 @@ class BaseSparkConstraintsRollbackSetup:
             }
         }
 
-    # On Spark/Databricks, constraints are applied *after* the table is replaced.
-    # We don't have any way to "rollback" the table to its previous happy state.
-    # So the 'color' column will be updated to 'red', instead of 'blue'.
-    @pytest.fixture(scope="class")
-    def expected_color(self):
-        return "red"
-
     @pytest.fixture(scope="class")
     def expected_error_messages(self):
         return [
@@ -237,7 +230,12 @@ class TestSparkTableConstraintsDdlEnforcement(
 class TestSparkTableConstraintsRollback(
     BaseSparkConstraintsRollbackSetup, BaseConstraintsRollback
 ):
-    pass
+    # On Spark/Databricks, constraints are applied *after* the table is replaced.
+    # We don't have any way to "rollback" the table to its previous happy state.
+    # So the 'color' column will be updated to 'red', instead of 'blue'.
+    @pytest.fixture(scope="class")
+    def expected_color(self):
+        return "red"
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark")
