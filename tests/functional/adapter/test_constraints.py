@@ -26,7 +26,7 @@ from
 ( select
     'blue' as color,
     1 as id,
-    '2019-01-01'as date_day ) as model_subq
+    '2019-01-01' as date_day ) as model_subq
 """
 
 # Different on Spark:
