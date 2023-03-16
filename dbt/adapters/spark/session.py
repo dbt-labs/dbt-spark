@@ -140,7 +140,7 @@ class Cursor:
         https://github.com/mkleehammer/pyodbc/wiki/Cursor#fetchone
         """
         if self._rows is None and self._df is not None:
-            self._rows = self._df.collect()
+            self._rows = self._df.take(1)
 
         if self._rows is not None and len(self._rows) > 0:
             row = self._rows.pop(0)
