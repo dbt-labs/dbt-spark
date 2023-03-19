@@ -30,7 +30,7 @@
             )[(
                 length({{ string_text }})
                 - length(
-                    replace({{ string_text }},  {{ delimiter_expr }}, '')
+                    replace({{ string_text }},  {{ delimiter_text }}, '')
                 ) + 1 {{ part_number }}
             )]
 
