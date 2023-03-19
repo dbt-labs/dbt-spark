@@ -18,7 +18,6 @@ from {{ ref('child') }}
 
 
 class TestColumnsInRelation:
-
     @pytest.fixture(scope="class")
     def models(self):
         return {

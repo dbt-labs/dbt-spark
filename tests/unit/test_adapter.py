@@ -10,144 +10,161 @@ from .utils import config_from_parts_or_dicts
 
 
 class TestSparkAdapter(unittest.TestCase):
-
     def setUp(self):
         flags.STRICT_MODE = False
 
         self.project_cfg = {
-            'name': 'X',
-            'version': '0.1',
-            'profile': 'test',
-            'project-root': '/tmp/dbt/does-not-exist',
-            'quoting': {
-                'identifier': False,
-                'schema': False,
+            "name": "X",
+            "version": "0.1",
+            "profile": "test",
+            "project-root": "/tmp/dbt/does-not-exist",
+            "quoting": {
+                "identifier": False,
+                "schema": False,
             },
-            'config-version': 2
+            "config-version": 2,
         }
 
     def _get_target_http(self, project):
-        return config_from_parts_or_dicts(project, {
-            'outputs': {
-                'test': {
-                    'type': 'spark',
-                    'method': 'http',
-                    'schema': 'analytics',
-                    'host': 'myorg.sparkhost.com',
-                    'port': 443,
-                    'token': 'abc123',
-                    'organization': '0123456789',
-                    'cluster': '01234-23423-coffeetime',
-                }
+        return config_from_parts_or_dicts(
+            project,
+            {
+                "outputs": {
+                    "test": {
+                        "type": "spark",
+                        "method": "http",
+                        "schema": "analytics",
+                        "host": "myorg.sparkhost.com",
+                        "port": 443,
+                        "token": "abc123",
+                        "organization": "0123456789",
+                        "cluster": "01234-23423-coffeetime",
+                    }
+                },
+                "target": "test",
             },
-            'target': 'test'
-        })
+        )
 
     def _get_target_thrift(self, project):
-        return config_from_parts_or_dicts(project, {
-            'outputs': {
-                'test': {
-                    'type': 'spark',
-                    'method': 'thrift',
-                    'schema': 'analytics',
-                    'host': 'myorg.sparkhost.com',
-                    'port': 10001,
-                    'user': 'dbt'
-                }
+        return config_from_parts_or_dicts(
+            project,
+            {
+                "outputs": {
+                    "test": {
+                        "type": "spark",
+                        "method": "thrift",
+                        "schema": "analytics",
+                        "host": "myorg.sparkhost.com",
+                        "port": 10001,
+                        "user": "dbt",
+                    }
+                },
+                "target": "test",
             },
-            'target': 'test'
-        })
+        )
 
     def _get_target_thrift_kerberos(self, project):
-        return config_from_parts_or_dicts(project, {
-            'outputs': {
-                'test': {
-                    'type': 'spark',
-                    'method': 'thrift',
-                    'schema': 'analytics',
-                    'host': 'myorg.sparkhost.com',
-                    'port': 10001,
-                    'user': 'dbt',
-                    'auth': 'KERBEROS',
-                    'kerberos_service_name': 'hive'
-                }
+        return config_from_parts_or_dicts(
+            project,
+            {
+                "outputs": {
+                    "test": {
+                        "type": "spark",
+                        "method": "thrift",
+                        "schema": "analytics",
+                        "host": "myorg.sparkhost.com",
+                        "port": 10001,
+                        "user": "dbt",
+                        "auth": "KERBEROS",
+                        "kerberos_service_name": "hive",
+                    }
+                },
+                "target": "test",
             },
-            'target': 'test'
-        })
+        )
 
     def _get_target_use_ssl_thrift(self, project):
-        return config_from_parts_or_dicts(project, {
-            'outputs': {
-                'test': {
-                    'type': 'spark',
-                    'method': 'thrift',
-                    'use_ssl': True,
-                    'schema': 'analytics',
-                    'host': 'myorg.sparkhost.com',
-                    'port': 10001,
-                    'user': 'dbt'
-                }
+        return config_from_parts_or_dicts(
+            project,
+            {
+                "outputs": {
+                    "test": {
+                        "type": "spark",
+                        "method": "thrift",
+                        "use_ssl": True,
+                        "schema": "analytics",
+                        "host": "myorg.sparkhost.com",
+                        "port": 10001,
+                        "user": "dbt",
+                    }
+                },
+                "target": "test",
             },
-            'target': 'test'
-        })
+        )
 
     def _get_target_odbc_cluster(self, project):
-        return config_from_parts_or_dicts(project, {
-            'outputs': {
-                'test': {
-                    'type': 'spark',
-                    'method': 'odbc',
-                    'schema': 'analytics',
-                    'host': 'myorg.sparkhost.com',
-                    'port': 443,
-                    'token': 'abc123',
-                    'organization': '0123456789',
-                    'cluster': '01234-23423-coffeetime',
-                    'driver': 'Simba',
-                }
+        return config_from_parts_or_dicts(
+            project,
+            {
+                "outputs": {
+                    "test": {
+                        "type": "spark",
+                        "method": "odbc",
+                        "schema": "analytics",
+                        "host": "myorg.sparkhost.com",
+                        "port": 443,
+                        "token": "abc123",
+                        "organization": "0123456789",
+                        "cluster": "01234-23423-coffeetime",
+                        "driver": "Simba",
+                    }
+                },
+                "target": "test",
             },
-            'target': 'test'
-        })
+        )
 
     def _get_target_odbc_sql_endpoint(self, project):
-        return config_from_parts_or_dicts(project, {
-            'outputs': {
-                'test': {
-                    'type': 'spark',
-                    'method': 'odbc',
-                    'schema': 'analytics',
-                    'host': 'myorg.sparkhost.com',
-                    'port': 443,
-                    'token': 'abc123',
-                    'endpoint': '012342342393920a',
-                    'driver': 'Simba',
-                }
+        return config_from_parts_or_dicts(
+            project,
+            {
+                "outputs": {
+                    "test": {
+                        "type": "spark",
+                        "method": "odbc",
+                        "schema": "analytics",
+                        "host": "myorg.sparkhost.com",
+                        "port": 443,
+                        "token": "abc123",
+                        "endpoint": "012342342393920a",
+                        "driver": "Simba",
+                    }
+                },
+                "target": "test",
             },
-            'target': 'test'
-        })
+        )
 
     def test_http_connection(self):
         config = self._get_target_http(self.project_cfg)
         adapter = SparkAdapter(config)
 
         def hive_http_connect(thrift_transport):
-            self.assertEqual(thrift_transport.scheme, 'https')
+            self.assertEqual(thrift_transport.scheme, "https")
             self.assertEqual(thrift_transport.port, 443)
-            self.assertEqual(thrift_transport.host, 'myorg.sparkhost.com')
+            self.assertEqual(thrift_transport.host, "myorg.sparkhost.com")
             self.assertEqual(
-                thrift_transport.path, '/sql/protocolv1/o/0123456789/01234-23423-coffeetime')
+                thrift_transport.path, "/sql/protocolv1/o/0123456789/01234-23423-coffeetime"
+            )
 
         # with mock.patch.object(hive, 'connect', new=hive_http_connect):
-        with mock.patch('dbt.adapters.spark.connections.hive.connect', new=hive_http_connect):
-            connection = adapter.acquire_connection('dummy')
+        with mock.patch("dbt.adapters.spark.connections.hive.connect", new=hive_http_connect):
+            connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load
 
-            self.assertEqual(connection.state, 'open')
+            self.assertEqual(connection.state, "open")
             self.assertIsNotNone(connection.handle)
-            self.assertEqual(connection.credentials.cluster,
-                             '01234-23423-coffeetime')
-            self.assertEqual(connection.credentials.token, 'abc123')
-            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertEqual(connection.credentials.cluster, "01234-23423-coffeetime")
+            self.assertEqual(connection.credentials.token, "abc123")
+            self.assertEqual(connection.credentials.schema, "analytics")
             self.assertIsNone(connection.credentials.database)
 
     def test_thrift_connection(self):
@@ -155,20 +172,20 @@ class TestSparkAdapter(unittest.TestCase):
         adapter = SparkAdapter(config)
 
         def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password):
-            self.assertEqual(host, 'myorg.sparkhost.com')
+            self.assertEqual(host, "myorg.sparkhost.com")
             self.assertEqual(port, 10001)
-            self.assertEqual(username, 'dbt')
+            self.assertEqual(username, "dbt")
             self.assertIsNone(auth)
             self.assertIsNone(kerberos_service_name)
             self.assertIsNone(password)
 
-        with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
-            connection = adapter.acquire_connection('dummy')
+        with mock.patch.object(hive, "connect", new=hive_thrift_connect):
+            connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load
 
-            self.assertEqual(connection.state, 'open')
+            self.assertEqual(connection.state, "open")
             self.assertIsNotNone(connection.handle)
-            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertEqual(connection.credentials.schema, "analytics")
             self.assertIsNone(connection.credentials.database)
 
     def test_thrift_ssl_connection(self):
@@ -178,16 +195,16 @@ class TestSparkAdapter(unittest.TestCase):
         def hive_thrift_connect(thrift_transport):
             self.assertIsNotNone(thrift_transport)
             transport = thrift_transport._trans
-            self.assertEqual(transport.host, 'myorg.sparkhost.com')
+            self.assertEqual(transport.host, "myorg.sparkhost.com")
             self.assertEqual(transport.port, 10001)
 
-        with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
-            connection = adapter.acquire_connection('dummy')
+        with mock.patch.object(hive, "connect", new=hive_thrift_connect):
+            connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load
 
-            self.assertEqual(connection.state, 'open')
+            self.assertEqual(connection.state, "open")
             self.assertIsNotNone(connection.handle)
-            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertEqual(connection.credentials.schema, "analytics")
             self.assertIsNone(connection.credentials.database)
 
     def test_thrift_connection_kerberos(self):
@@ -195,20 +212,20 @@ class TestSparkAdapter(unittest.TestCase):
         adapter = SparkAdapter(config)
 
         def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password):
-            self.assertEqual(host, 'myorg.sparkhost.com')
+            self.assertEqual(host, "myorg.sparkhost.com")
             self.assertEqual(port, 10001)
-            self.assertEqual(username, 'dbt')
-            self.assertEqual(auth, 'KERBEROS')
-            self.assertEqual(kerberos_service_name, 'hive')
+            self.assertEqual(username, "dbt")
+            self.assertEqual(auth, "KERBEROS")
+            self.assertEqual(kerberos_service_name, "hive")
             self.assertIsNone(password)
 
-        with mock.patch.object(hive, 'connect', new=hive_thrift_connect):
-            connection = adapter.acquire_connection('dummy')
+        with mock.patch.object(hive, "connect", new=hive_thrift_connect):
+            connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load
 
-            self.assertEqual(connection.state, 'open')
+            self.assertEqual(connection.state, "open")
             self.assertIsNotNone(connection.handle)
-            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertEqual(connection.credentials.schema, "analytics")
             self.assertIsNone(connection.credentials.database)
 
     def test_odbc_cluster_connection(self):
@@ -217,23 +234,25 @@ class TestSparkAdapter(unittest.TestCase):
 
         def pyodbc_connect(connection_str, autocommit):
             self.assertTrue(autocommit)
-            self.assertIn('driver=simba;', connection_str.lower())
-            self.assertIn('port=443;', connection_str.lower())
-            self.assertIn('host=myorg.sparkhost.com;',
-                          connection_str.lower())
+            self.assertIn("driver=simba;", connection_str.lower())
+            self.assertIn("port=443;", connection_str.lower())
+            self.assertIn("host=myorg.sparkhost.com;", connection_str.lower())
             self.assertIn(
-                'httppath=/sql/protocolv1/o/0123456789/01234-23423-coffeetime;', connection_str.lower())  # noqa
+                "httppath=/sql/protocolv1/o/0123456789/01234-23423-coffeetime;",
+                connection_str.lower(),
+            )  # noqa
 
-        with mock.patch('dbt.adapters.spark.connections.pyodbc.connect', new=pyodbc_connect):  # noqa
-            connection = adapter.acquire_connection('dummy')
+        with mock.patch(
+            "dbt.adapters.spark.connections.pyodbc.connect", new=pyodbc_connect
+        ):  # noqa
+            connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load
 
-            self.assertEqual(connection.state, 'open')
+            self.assertEqual(connection.state, "open")
             self.assertIsNotNone(connection.handle)
-            self.assertEqual(connection.credentials.cluster,
-                             '01234-23423-coffeetime')
-            self.assertEqual(connection.credentials.token, 'abc123')
-            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertEqual(connection.credentials.cluster, "01234-23423-coffeetime")
+            self.assertEqual(connection.credentials.token, "abc123")
+            self.assertEqual(connection.credentials.schema, "analytics")
             self.assertIsNone(connection.credentials.database)
 
     def test_odbc_endpoint_connection(self):
@@ -242,23 +261,24 @@ class TestSparkAdapter(unittest.TestCase):
 
         def pyodbc_connect(connection_str, autocommit):
             self.assertTrue(autocommit)
-            self.assertIn('driver=simba;', connection_str.lower())
-            self.assertIn('port=443;', connection_str.lower())
-            self.assertIn('host=myorg.sparkhost.com;',
-                          connection_str.lower())
+            self.assertIn("driver=simba;", connection_str.lower())
+            self.assertIn("port=443;", connection_str.lower())
+            self.assertIn("host=myorg.sparkhost.com;", connection_str.lower())
             self.assertIn(
-                'httppath=/sql/1.0/endpoints/012342342393920a;', connection_str.lower())  # noqa
+                "httppath=/sql/1.0/endpoints/012342342393920a;", connection_str.lower()
+            )  # noqa
 
-        with mock.patch('dbt.adapters.spark.connections.pyodbc.connect', new=pyodbc_connect):  # noqa
-            connection = adapter.acquire_connection('dummy')
+        with mock.patch(
+            "dbt.adapters.spark.connections.pyodbc.connect", new=pyodbc_connect
+        ):  # noqa
+            connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load
 
-            self.assertEqual(connection.state, 'open')
+            self.assertEqual(connection.state, "open")
             self.assertIsNotNone(connection.handle)
-            self.assertEqual(connection.credentials.endpoint,
-                             '012342342393920a')
-            self.assertEqual(connection.credentials.token, 'abc123')
-            self.assertEqual(connection.credentials.schema, 'analytics')
+            self.assertEqual(connection.credentials.endpoint, "012342342393920a")
+            self.assertEqual(connection.credentials.token, "abc123")
+            self.assertEqual(connection.credentials.schema, "analytics")
             self.assertIsNone(connection.credentials.database)
 
     def test_parse_relation(self):
@@ -266,235 +286,238 @@ class TestSparkAdapter(unittest.TestCase):
         rel_type = SparkRelation.get_relation_type.Table
 
         relation = SparkRelation.create(
-            schema='default_schema',
-            identifier='mytable',
-            type=rel_type
+            schema="default_schema", identifier="mytable", type=rel_type
         )
         assert relation.database is None
 
         # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
         plain_rows = [
-            ('col1', 'decimal(22,0)'),
-            ('col2', 'string',),
-            ('dt', 'date'),
-            ('struct_col', 'struct<struct_inner_col:string>'),
-            ('# Partition Information', 'data_type'),
-            ('# col_name', 'data_type'),
-            ('dt', 'date'),
+            ("col1", "decimal(22,0)"),
+            (
+                "col2",
+                "string",
+            ),
+            ("dt", "date"),
+            ("struct_col", "struct<struct_inner_col:string>"),
+            ("# Partition Information", "data_type"),
+            ("# col_name", "data_type"),
+            ("dt", "date"),
             (None, None),
-            ('# Detailed Table Information', None),
-            ('Database', None),
-            ('Owner', 'root'),
-            ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
-            ('Last Access', 'Wed May 20 19:25:00 UTC 1925'),
-            ('Type', 'MANAGED'),
-            ('Provider', 'delta'),
-            ('Location', '/mnt/vo'),
-            ('Serde Library', 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'),
-            ('InputFormat', 'org.apache.hadoop.mapred.SequenceFileInputFormat'),
-            ('OutputFormat', 'org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat'),
-            ('Partition Provider', 'Catalog')
+            ("# Detailed Table Information", None),
+            ("Database", None),
+            ("Owner", "root"),
+            ("Created Time", "Wed Feb 04 18:15:00 UTC 1815"),
+            ("Last Access", "Wed May 20 19:25:00 UTC 1925"),
+            ("Type", "MANAGED"),
+            ("Provider", "delta"),
+            ("Location", "/mnt/vo"),
+            ("Serde Library", "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"),
+            ("InputFormat", "org.apache.hadoop.mapred.SequenceFileInputFormat"),
+            ("OutputFormat", "org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat"),
+            ("Partition Provider", "Catalog"),
         ]
 
-        input_cols = [Row(keys=['col_name', 'data_type'], values=r)
-                      for r in plain_rows]
+        input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config).parse_describe_extended(
-            relation, input_cols)
+        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 4)
-        self.assertEqual(rows[0].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'col1',
-            'column_index': 0,
-            'dtype': 'decimal(22,0)',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None
-        })
+        self.assertEqual(
+            rows[0].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "col1",
+                "column_index": 0,
+                "dtype": "decimal(22,0)",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+            },
+        )
 
-        self.assertEqual(rows[1].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'col2',
-            'column_index': 1,
-            'dtype': 'string',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None
-        })
+        self.assertEqual(
+            rows[1].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "col2",
+                "column_index": 1,
+                "dtype": "string",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+            },
+        )
 
-        self.assertEqual(rows[2].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'dt',
-            'column_index': 2,
-            'dtype': 'date',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None
-        })
+        self.assertEqual(
+            rows[2].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "dt",
+                "column_index": 2,
+                "dtype": "date",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+            },
+        )
 
-        self.assertEqual(rows[3].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'struct_col',
-            'column_index': 3,
-            'dtype': 'struct<struct_inner_col:string>',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None
-        })
+        self.assertEqual(
+            rows[3].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "struct_col",
+                "column_index": 3,
+                "dtype": "struct<struct_inner_col:string>",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+            },
+        )
 
     def test_parse_relation_with_integer_owner(self):
         self.maxDiff = None
         rel_type = SparkRelation.get_relation_type.Table
 
         relation = SparkRelation.create(
-            schema='default_schema',
-            identifier='mytable',
-            type=rel_type
+            schema="default_schema", identifier="mytable", type=rel_type
         )
         assert relation.database is None
 
         # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
         plain_rows = [
-            ('col1', 'decimal(22,0)'),
-            ('# Detailed Table Information', None),
-            ('Owner', 1234)
+            ("col1", "decimal(22,0)"),
+            ("# Detailed Table Information", None),
+            ("Owner", 1234),
         ]
 
-        input_cols = [Row(keys=['col_name', 'data_type'], values=r)
-                      for r in plain_rows]
+        input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config).parse_describe_extended(
-            relation, input_cols)
+        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
 
-        self.assertEqual(rows[0].to_column_dict().get('table_owner'), '1234')
+        self.assertEqual(rows[0].to_column_dict().get("table_owner"), "1234")
 
     def test_parse_relation_with_statistics(self):
         self.maxDiff = None
         rel_type = SparkRelation.get_relation_type.Table
 
         relation = SparkRelation.create(
-            schema='default_schema',
-            identifier='mytable',
-            type=rel_type
+            schema="default_schema", identifier="mytable", type=rel_type
         )
         assert relation.database is None
 
         # Mimics the output of Spark with a DESCRIBE TABLE EXTENDED
         plain_rows = [
-            ('col1', 'decimal(22,0)'),
-            ('# Partition Information', 'data_type'),
+            ("col1", "decimal(22,0)"),
+            ("# Partition Information", "data_type"),
             (None, None),
-            ('# Detailed Table Information', None),
-            ('Database', None),
-            ('Owner', 'root'),
-            ('Created Time', 'Wed Feb 04 18:15:00 UTC 1815'),
-            ('Last Access', 'Wed May 20 19:25:00 UTC 1925'),
-            ('Statistics', '1109049927 bytes, 14093476 rows'),
-            ('Type', 'MANAGED'),
-            ('Provider', 'delta'),
-            ('Location', '/mnt/vo'),
-            ('Serde Library', 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'),
-            ('InputFormat', 'org.apache.hadoop.mapred.SequenceFileInputFormat'),
-            ('OutputFormat', 'org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat'),
-            ('Partition Provider', 'Catalog')
+            ("# Detailed Table Information", None),
+            ("Database", None),
+            ("Owner", "root"),
+            ("Created Time", "Wed Feb 04 18:15:00 UTC 1815"),
+            ("Last Access", "Wed May 20 19:25:00 UTC 1925"),
+            ("Statistics", "1109049927 bytes, 14093476 rows"),
+            ("Type", "MANAGED"),
+            ("Provider", "delta"),
+            ("Location", "/mnt/vo"),
+            ("Serde Library", "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"),
+            ("InputFormat", "org.apache.hadoop.mapred.SequenceFileInputFormat"),
+            ("OutputFormat", "org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat"),
+            ("Partition Provider", "Catalog"),
         ]
 
-        input_cols = [Row(keys=['col_name', 'data_type'], values=r)
-                      for r in plain_rows]
+        input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config).parse_describe_extended(
-            relation, input_cols)
+        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'col1',
-            'column_index': 0,
-            'dtype': 'decimal(22,0)',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None,
-
-            'stats:bytes:description': '',
-            'stats:bytes:include': True,
-            'stats:bytes:label': 'bytes',
-            'stats:bytes:value': 1109049927,
-
-            'stats:rows:description': '',
-            'stats:rows:include': True,
-            'stats:rows:label': 'rows',
-            'stats:rows:value': 14093476,
-        })
+        self.assertEqual(
+            rows[0].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "col1",
+                "column_index": 0,
+                "dtype": "decimal(22,0)",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+                "stats:bytes:description": "",
+                "stats:bytes:include": True,
+                "stats:bytes:label": "bytes",
+                "stats:bytes:value": 1109049927,
+                "stats:rows:description": "",
+                "stats:rows:include": True,
+                "stats:rows:label": "rows",
+                "stats:rows:value": 14093476,
+            },
+        )
 
     def test_relation_with_database(self):
         config = self._get_target_http(self.project_cfg)
         adapter = SparkAdapter(config)
         # fine
-        adapter.Relation.create(schema='different', identifier='table')
+        adapter.Relation.create(schema="different", identifier="table")
         with self.assertRaises(DbtRuntimeError):
             # not fine - database set
-            adapter.Relation.create(
-                database='something', schema='different', identifier='table')
+            adapter.Relation.create(database="something", schema="different", identifier="table")
 
     def test_profile_with_database(self):
         profile = {
-            'outputs': {
-                'test': {
-                    'type': 'spark',
-                    'method': 'http',
+            "outputs": {
+                "test": {
+                    "type": "spark",
+                    "method": "http",
                     # not allowed
-                    'database': 'analytics2',
-                    'schema': 'analytics',
-                    'host': 'myorg.sparkhost.com',
-                    'port': 443,
-                    'token': 'abc123',
-                    'organization': '0123456789',
-                    'cluster': '01234-23423-coffeetime',
+                    "database": "analytics2",
+                    "schema": "analytics",
+                    "host": "myorg.sparkhost.com",
+                    "port": 443,
+                    "token": "abc123",
+                    "organization": "0123456789",
+                    "cluster": "01234-23423-coffeetime",
                 }
             },
-            'target': 'test'
+            "target": "test",
         }
         with self.assertRaises(DbtRuntimeError):
             config_from_parts_or_dicts(self.project_cfg, profile)
 
     def test_profile_with_cluster_and_sql_endpoint(self):
         profile = {
-            'outputs': {
-                'test': {
-                    'type': 'spark',
-                    'method': 'odbc',
-                    'schema': 'analytics',
-                    'host': 'myorg.sparkhost.com',
-                    'port': 443,
-                    'token': 'abc123',
-                    'organization': '0123456789',
-                    'cluster': '01234-23423-coffeetime',
-                    'endpoint': '0123412341234e',
+            "outputs": {
+                "test": {
+                    "type": "spark",
+                    "method": "odbc",
+                    "schema": "analytics",
+                    "host": "myorg.sparkhost.com",
+                    "port": 443,
+                    "token": "abc123",
+                    "organization": "0123456789",
+                    "cluster": "01234-23423-coffeetime",
+                    "endpoint": "0123412341234e",
                 }
             },
-            'target': 'test'
+            "target": "test",
         }
         with self.assertRaises(DbtRuntimeError):
             config_from_parts_or_dicts(self.project_cfg, profile)
@@ -528,53 +551,53 @@ class TestSparkAdapter(unittest.TestCase):
             " |    |-- struct_inner_col: string (nullable = true)\n"
         )
         relation = SparkRelation.create(
-            schema='default_schema',
-            identifier='mytable',
-            type=rel_type,
-            information=information
+            schema="default_schema", identifier="mytable", type=rel_type, information=information
         )
 
         config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config).parse_columns_from_information(
-            relation)
+        columns = SparkAdapter(config).parse_columns_from_information(relation)
         self.assertEqual(len(columns), 4)
-        self.assertEqual(columns[0].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'col1',
-            'column_index': 0,
-            'dtype': 'decimal(22,0)',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None,
+        self.assertEqual(
+            columns[0].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "col1",
+                "column_index": 0,
+                "dtype": "decimal(22,0)",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+                "stats:bytes:description": "",
+                "stats:bytes:include": True,
+                "stats:bytes:label": "bytes",
+                "stats:bytes:value": 123456789,
+            },
+        )
 
-            'stats:bytes:description': '',
-            'stats:bytes:include': True,
-            'stats:bytes:label': 'bytes',
-            'stats:bytes:value': 123456789,
-        })
-
-        self.assertEqual(columns[3].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'struct_col',
-            'column_index': 3,
-            'dtype': 'struct',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None,
-
-            'stats:bytes:description': '',
-            'stats:bytes:include': True,
-            'stats:bytes:label': 'bytes',
-            'stats:bytes:value': 123456789,
-        })
+        self.assertEqual(
+            columns[3].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "struct_col",
+                "column_index": 3,
+                "dtype": "struct",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+                "stats:bytes:description": "",
+                "stats:bytes:include": True,
+                "stats:bytes:label": "bytes",
+                "stats:bytes:value": 123456789,
+            },
+        )
 
     def test_parse_columns_from_information_with_view_type(self):
         self.maxDiff = None
@@ -613,43 +636,45 @@ class TestSparkAdapter(unittest.TestCase):
             " |    |-- struct_inner_col: string (nullable = true)\n"
         )
         relation = SparkRelation.create(
-            schema='default_schema',
-            identifier='myview',
-            type=rel_type,
-            information=information
+            schema="default_schema", identifier="myview", type=rel_type, information=information
         )
 
         config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config).parse_columns_from_information(
-            relation)
+        columns = SparkAdapter(config).parse_columns_from_information(relation)
         self.assertEqual(len(columns), 4)
-        self.assertEqual(columns[1].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'col2',
-            'column_index': 1,
-            'dtype': 'string',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None
-        })
+        self.assertEqual(
+            columns[1].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "col2",
+                "column_index": 1,
+                "dtype": "string",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+            },
+        )
 
-        self.assertEqual(columns[3].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'struct_col',
-            'column_index': 3,
-            'dtype': 'struct',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None
-        })
+        self.assertEqual(
+            columns[3].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "struct_col",
+                "column_index": 3,
+                "dtype": "struct",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+            },
+        )
 
     def test_parse_columns_from_information_with_table_type_and_parquet_provider(self):
         self.maxDiff = None
@@ -677,61 +702,58 @@ class TestSparkAdapter(unittest.TestCase):
             " |    |-- struct_inner_col: string (nullable = true)\n"
         )
         relation = SparkRelation.create(
-            schema='default_schema',
-            identifier='mytable',
-            type=rel_type,
-            information=information
+            schema="default_schema", identifier="mytable", type=rel_type, information=information
         )
 
         config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config).parse_columns_from_information(
-            relation)
+        columns = SparkAdapter(config).parse_columns_from_information(relation)
         self.assertEqual(len(columns), 4)
-        self.assertEqual(columns[2].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'dt',
-            'column_index': 2,
-            'dtype': 'date',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None,
+        self.assertEqual(
+            columns[2].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "dt",
+                "column_index": 2,
+                "dtype": "date",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+                "stats:bytes:description": "",
+                "stats:bytes:include": True,
+                "stats:bytes:label": "bytes",
+                "stats:bytes:value": 1234567890,
+                "stats:rows:description": "",
+                "stats:rows:include": True,
+                "stats:rows:label": "rows",
+                "stats:rows:value": 12345678,
+            },
+        )
 
-            'stats:bytes:description': '',
-            'stats:bytes:include': True,
-            'stats:bytes:label': 'bytes',
-            'stats:bytes:value': 1234567890,
-
-            'stats:rows:description': '',
-            'stats:rows:include': True,
-            'stats:rows:label': 'rows',
-            'stats:rows:value': 12345678
-        })
-
-        self.assertEqual(columns[3].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'struct_col',
-            'column_index': 3,
-            'dtype': 'struct',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None,
-
-            'stats:bytes:description': '',
-            'stats:bytes:include': True,
-            'stats:bytes:label': 'bytes',
-            'stats:bytes:value': 1234567890,
-
-            'stats:rows:description': '',
-            'stats:rows:include': True,
-            'stats:rows:label': 'rows',
-            'stats:rows:value': 12345678
-        })
-
+        self.assertEqual(
+            columns[3].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "struct_col",
+                "column_index": 3,
+                "dtype": "struct",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+                "stats:bytes:description": "",
+                "stats:bytes:include": True,
+                "stats:bytes:label": "bytes",
+                "stats:bytes:value": 1234567890,
+                "stats:rows:description": "",
+                "stats:rows:include": True,
+                "stats:rows:label": "rows",
+                "stats:rows:value": 12345678,
+            },
+        )
