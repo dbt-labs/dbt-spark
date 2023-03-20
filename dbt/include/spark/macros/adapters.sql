@@ -150,7 +150,8 @@
         create table {{ relation }}
       {% endif %}
       {% if config.get('contract', False) %}
-        {{ get_assert_columns_equivalent(sql) }}
+        {{ get_assert_columns_equivalent(compiled_code) }}
+        {%- set compiled_code = get_select_subquery(compiled_code) %}
       {% endif %}
       {{ file_format_clause() }}
       {{ options_clause() }}
