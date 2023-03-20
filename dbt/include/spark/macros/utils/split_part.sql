@@ -19,7 +19,7 @@
             )[({{ part_number - 1 if part_number > 0 else part_number }})]
 
         {% endset %}
-    
+
     {% else %}
 
         {% set split_part_expr %}
@@ -35,7 +35,7 @@
             )]
 
         {% endset %}
-    
+
     {% endif %}
 
     {{ return(split_part_expr) }}
