@@ -13,6 +13,11 @@ from dbt.tests.adapter.constraints.fixtures import (
     my_model_wrong_order_sql,
     my_model_wrong_name_sql,
     model_schema_yml,
+    my_model_view_wrong_order_sql,
+    my_model_view_wrong_name_sql,
+    my_model_incremental_wrong_order_sql,
+    my_model_incremental_wrong_name_sql,
+    my_incremental_model_sql,
 )
 
 # constraints are enforced via 'alter' statements that run after table creation
@@ -38,14 +43,6 @@ constraints_yml = model_schema_yml.replace("text", "string").replace("primary ke
 
 
 class PyodbcSetup:
-    @pytest.fixture(scope="class")
-    def models(self):
-        return {
-            "my_model_wrong_order.sql": my_model_wrong_order_sql,
-            "my_model_wrong_name.sql": my_model_wrong_name_sql,
-            "constraints_schema.yml": constraints_yml,
-        }
-
     @pytest.fixture(scope="class")
     def project_config_update(self):
         return {
@@ -84,14 +81,6 @@ class PyodbcSetup:
 
 
 class DatabricksHTTPSetup:
-    @pytest.fixture(scope="class")
-    def models(self):
-        return {
-            "my_model_wrong_order.sql": my_model_wrong_order_sql,
-            "my_model_wrong_name.sql": my_model_wrong_name_sql,
-            "constraints_schema.yml": constraints_yml,
-        }
-
     @pytest.fixture
     def string_type(self):
         return "STRING_TYPE"
@@ -123,19 +112,37 @@ class DatabricksHTTPSetup:
 
 @pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
 class TestSparkTableConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseTableConstraintsColumnsEqual):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model_wrong_order.sql": my_model_wrong_order_sql,
+            "my_model_wrong_name.sql": my_model_wrong_name_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
 class TestSparkViewConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseViewConstraintsColumnsEqual):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model_wrong_order.sql": my_model_view_wrong_order_sql,
+            "my_model_wrong_name.sql": my_model_view_wrong_name_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
 class TestSparkIncrementalConstraintsColumnsEqualPyodbc(
     PyodbcSetup, BaseIncrementalConstraintsColumnsEqual
 ):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model_wrong_order.sql": my_model_incremental_wrong_order_sql,
+            "my_model_wrong_name.sql": my_model_incremental_wrong_name_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
 @pytest.mark.skip_profile(
@@ -144,7 +151,13 @@ class TestSparkIncrementalConstraintsColumnsEqualPyodbc(
 class TestSparkTableConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseTableConstraintsColumnsEqual
 ):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model_wrong_order.sql": my_model_wrong_order_sql,
+            "my_model_wrong_name.sql": my_model_wrong_name_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
 @pytest.mark.skip_profile(
@@ -153,7 +166,13 @@ class TestSparkTableConstraintsColumnsEqualDatabricksHTTP(
 class TestSparkViewConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseViewConstraintsColumnsEqual
 ):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model_wrong_order.sql": my_model_view_wrong_order_sql,
+            "my_model_wrong_name.sql": my_model_view_wrong_name_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
 @pytest.mark.skip_profile(
@@ -162,10 +181,15 @@ class TestSparkViewConstraintsColumnsEqualDatabricksHTTP(
 class TestSparkIncrementalConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseIncrementalConstraintsColumnsEqual
 ):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model_wrong_order.sql": my_model_incremental_wrong_order_sql,
+            "my_model_wrong_name.sql": my_model_incremental_wrong_name_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
 class BaseSparkConstraintsDdlEnforcementSetup:
     @pytest.fixture(scope="class")
     def models(self):
@@ -187,15 +211,7 @@ class BaseSparkConstraintsDdlEnforcementSetup:
         return _expected_sql_spark
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
 class BaseSparkConstraintsRollbackSetup:
-    @pytest.fixture(scope="class")
-    def models(self):
-        return {
-            "my_model.sql": my_model_sql,
-            "constraints_schema.yml": constraints_yml,
-        }
-
     @pytest.fixture(scope="class")
     def project_config_update(self):
         return {
@@ -225,13 +241,25 @@ class BaseSparkConstraintsRollbackSetup:
 class TestSparkTableConstraintsDdlEnforcement(
     BaseSparkConstraintsDdlEnforcementSetup, BaseConstraintsRuntimeDdlEnforcement
 ):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark")
 class TestSparkTableConstraintsRollback(
     BaseSparkConstraintsRollbackSetup, BaseConstraintsRollback
 ):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
+
     # On Spark/Databricks, constraints are applied *after* the table is replaced.
     # We don't have any way to "rollback" the table to its previous happy state.
     # So the 'color' column will be updated to 'red', instead of 'blue'.
@@ -244,11 +272,21 @@ class TestSparkTableConstraintsRollback(
 class TestSparkIncrementalConstraintsDdlEnforcement(
     BaseSparkConstraintsDdlEnforcementSetup, BaseIncrementalConstraintsRuntimeDdlEnforcement
 ):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_incremental_model_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark")
 class TestSparkIncrementalConstraintsRollback(
     BaseSparkConstraintsRollbackSetup, BaseIncrementalConstraintsRollback
 ):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_incremental_model_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
