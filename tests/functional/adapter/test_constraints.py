@@ -192,13 +192,6 @@ class TestSparkIncrementalConstraintsColumnsEqualDatabricksHTTP(
 
 class BaseSparkConstraintsDdlEnforcementSetup:
     @pytest.fixture(scope="class")
-    def models(self):
-        return {
-            "my_model.sql": my_model_sql,
-            "constraints_schema.yml": constraints_yml,
-        }
-
-    @pytest.fixture(scope="class")
     def project_config_update(self):
         return {
             "models": {
@@ -244,7 +237,7 @@ class TestSparkTableConstraintsDdlEnforcement(
     @pytest.fixture(scope="class")
     def models(self):
         return {
-            "my_model.sql": my_model_sql,
+            "my_model.sql": my_model_wrong_order_sql,
             "constraints_schema.yml": constraints_yml,
         }
 
@@ -275,7 +268,7 @@ class TestSparkIncrementalConstraintsDdlEnforcement(
     @pytest.fixture(scope="class")
     def models(self):
         return {
-            "my_model.sql": my_incremental_model_sql,
+            "my_model.sql": my_model_incremental_wrong_order_sql,
             "constraints_schema.yml": constraints_yml,
         }
 
