@@ -37,6 +37,6 @@ jobs:
       version_to_bump_main: ${{ inputs.version_to_bump_main }}
       new_branch_name: ${{ inputs.new_branch_name }}
       PR_title: "Cleanup main after cutting new ${{ inputs.new_branch_name }} branch"
-      PR_body: "This PR will fail CI until the dbt-core PR has been merged due to release version conflicts.  dev-requirements.txt needs to be updated to have the dbt-core dependencies point to this new branch."
+      PR_body: "This PR will fail CI until the dbt-core PR has been merged due to release version conflicts."
     secrets:
       FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
