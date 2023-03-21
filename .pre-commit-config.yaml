@@ -1,8 +1,5 @@
 # For more on configuring pre-commit hooks (see https://pre-commit.com/)
 
-# TODO: remove global exclusion of tests when testing overhaul is complete
-exclude: '^tests/.*'
-
 # Force all unspecified python hooks to run python 3.8
 default_language_version:
   python: python3
@@ -42,7 +39,7 @@ repos:
     alias: flake8-check
     stages: [manual]
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.0.1
+  rev: v1.1.1
   hooks:
   - id: mypy
     # N.B.: Mypy is... a bit fragile.
