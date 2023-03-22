@@ -200,8 +200,32 @@ class BaseSparkConstraintsDdlEnforcementSetup:
         }
 
     @pytest.fixture(scope="class")
-    def expected_sql(self, project):
+    def expected_sql(self):
         return _expected_sql_spark
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark")
+class TestSparkTableConstraintsDdlEnforcement(
+    BaseSparkConstraintsDdlEnforcementSetup, BaseConstraintsRuntimeDdlEnforcement
+):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_wrong_order_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark")
+class TestSparkIncrementalConstraintsDdlEnforcement(
+    BaseSparkConstraintsDdlEnforcementSetup, BaseIncrementalConstraintsRuntimeDdlEnforcement
+):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_incremental_wrong_order_sql,
+            "constraints_schema.yml": constraints_yml,
+        }
 
 
 class BaseSparkConstraintsRollbackSetup:
@@ -231,18 +255,6 @@ class BaseSparkConstraintsRollbackSetup:
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark")
-class TestSparkTableConstraintsDdlEnforcement(
-    BaseSparkConstraintsDdlEnforcementSetup, BaseConstraintsRuntimeDdlEnforcement
-):
-    @pytest.fixture(scope="class")
-    def models(self):
-        return {
-            "my_model.sql": my_model_wrong_order_sql,
-            "constraints_schema.yml": constraints_yml,
-        }
-
-
-@pytest.mark.skip_profile("spark_session", "apache_spark")
 class TestSparkTableConstraintsRollback(
     BaseSparkConstraintsRollbackSetup, BaseConstraintsRollback
 ):
@@ -262,18 +274,6 @@ class TestSparkTableConstraintsRollback(
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark")
-class TestSparkIncrementalConstraintsDdlEnforcement(
-    BaseSparkConstraintsDdlEnforcementSetup, BaseIncrementalConstraintsRuntimeDdlEnforcement
-):
-    @pytest.fixture(scope="class")
-    def models(self):
-        return {
-            "my_model.sql": my_model_incremental_wrong_order_sql,
-            "constraints_schema.yml": constraints_yml,
-        }
-
-
-@pytest.mark.skip_profile("spark_session", "apache_spark")
 class TestSparkIncrementalConstraintsRollback(
     BaseSparkConstraintsRollbackSetup, BaseIncrementalConstraintsRollback
 ):
@@ -283,3 +283,10 @@ class TestSparkIncrementalConstraintsRollback(
             "my_model.sql": my_incremental_model_sql,
             "constraints_schema.yml": constraints_yml,
         }
+
+    # On Spark/Databricks, constraints are applied *after* the table is replaced.
+    # We don't have any way to "rollback" the table to its previous happy state.
+    # So the 'color' column will be updated to 'red', instead of 'blue'.
+    @pytest.fixture(scope="class")
+    def expected_color(self):
+        return "red"
