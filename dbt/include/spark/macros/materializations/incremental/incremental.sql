@@ -63,7 +63,7 @@
       See note in dbt-spark/dbt/include/spark/macros/adapters.sql
       re: python models and temporary views.
 
-      Also, why doesn't either drop_relation or adapter.drop_relation work here?!
+      Also, why do neither drop_relation or adapter.drop_relation work here?!
       --#}
       {% call statement('drop_relation') -%}
         drop table if exists {{ tmp_relation }}
