@@ -11,7 +11,6 @@ from dbt.tests.adapter.utils.test_current_timestamp import BaseCurrentTimestampN
 from dbt.tests.adapter.utils.test_dateadd import BaseDateAdd
 from dbt.tests.adapter.utils.test_datediff import BaseDateDiff
 from dbt.tests.adapter.utils.test_date_trunc import BaseDateTrunc
-from dbt.tests.adapter.utils.test_escape_single_quotes import BaseEscapeSingleQuotesQuote
 from dbt.tests.adapter.utils.test_escape_single_quotes import BaseEscapeSingleQuotesBackslash
 from dbt.tests.adapter.utils.test_except import BaseExcept
 from dbt.tests.adapter.utils.test_hash import BaseHash
@@ -55,7 +54,7 @@ class TestCastBoolToText(BaseCastBoolToText):
     pass
 
 
-@pytest.mark.skip_profile('spark_session')
+@pytest.mark.skip_profile("spark_session")
 class TestConcat(BaseConcat):
     pass
 
@@ -70,7 +69,7 @@ class TestDateAdd(BaseDateAdd):
 
 
 # this generates too much SQL to run successfully in our testing environments :(
-@pytest.mark.skip_profile('apache_spark', 'spark_session')
+@pytest.mark.skip_profile("apache_spark", "spark_session")
 class TestDateDiff(BaseDateDiff):
     pass
 
@@ -87,7 +86,7 @@ class TestExcept(BaseExcept):
     pass
 
 
-@pytest.mark.skip_profile('spark_session')
+@pytest.mark.skip_profile("spark_session")
 class TestHash(BaseHash):
     pass
 
@@ -121,12 +120,12 @@ class TestPosition(BasePosition):
     pass
 
 
-@pytest.mark.skip_profile('spark_session')
+@pytest.mark.skip_profile("spark_session")
 class TestReplace(BaseReplace):
     pass
 
 
-@pytest.mark.skip_profile('spark_session')
+@pytest.mark.skip_profile("spark_session")
 class TestRight(BaseRight):
     pass
 

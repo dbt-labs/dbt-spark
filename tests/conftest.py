@@ -60,7 +60,7 @@ def databricks_cluster_target():
         "connect_retries": 3,
         "connect_timeout": 5,
         "retry_all": True,
-        "user": os.getenv('DBT_DATABRICKS_USER'),
+        "user": os.getenv("DBT_DATABRICKS_USER"),
     }
 
 
@@ -82,17 +82,17 @@ def databricks_sql_endpoint_target():
 def databricks_http_cluster_target():
     return {
         "type": "spark",
-        "host": os.getenv('DBT_DATABRICKS_HOST_NAME'),
-        "cluster": os.getenv('DBT_DATABRICKS_CLUSTER_NAME'),
-        "token": os.getenv('DBT_DATABRICKS_TOKEN'),
+        "host": os.getenv("DBT_DATABRICKS_HOST_NAME"),
+        "cluster": os.getenv("DBT_DATABRICKS_CLUSTER_NAME"),
+        "token": os.getenv("DBT_DATABRICKS_TOKEN"),
         "method": "http",
         "port": 443,
         # more retries + longer timout to handle unavailability while cluster is restarting
         # return failures quickly in dev, retry all failures in CI (up to 5 min)
         "connect_retries": 5,
-        "connect_timeout": 60, 
-        "retry_all": bool(os.getenv('DBT_DATABRICKS_RETRY_ALL', False)),
-        "user": os.getenv('DBT_DATABRICKS_USER'),
+        "connect_timeout": 60,
+        "retry_all": bool(os.getenv("DBT_DATABRICKS_RETRY_ALL", False)),
+        "user": os.getenv("DBT_DATABRICKS_USER"),
     }
 
 

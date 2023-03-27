@@ -55,7 +55,7 @@
     {%- endcall -%}
     {%- do process_schema_changes(on_schema_change, tmp_relation, existing_relation) -%}
     {%- call statement('main') -%}
-      {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key, incremental_predicates) }}
+      {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, existing_relation, unique_key, incremental_predicates) }}
     {%- endcall -%}
     {%- if language == 'python' -%}
       {#--
