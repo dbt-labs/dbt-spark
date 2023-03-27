@@ -23,7 +23,7 @@ pytest-csv~=3.0
 pytest-dotenv~=0.5.2
 pytest-logbook~=1.2
 pytest-xdist~=3.2
-pytz~=2022.7
+pytz~=2023.2
 tox~=3.0;python_version=="3.7"
 tox~=4.4;python_version>="3.8"
 types-pytz~=2022.7
