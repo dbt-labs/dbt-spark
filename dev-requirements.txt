@@ -3,6 +3,7 @@
 git+https://github.com/dbt-labs/dbt-core.git@7121/test_constraints_schema_string_type#egg=dbt-core&subdirectory=core
 git+https://github.com/dbt-labs/dbt-core.git@7121/test_constraints_schema_string_type#egg=dbt-tests-adapter&subdirectory=tests/adapter
 
+
 # if version 1.x or greater -> pin to major version
 # if version 0.x -> pin to minor
 black~=23.1
