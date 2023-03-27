@@ -277,11 +277,11 @@ class TestSparkTableConstraintsRollback(
 class TestSparkIncrementalConstraintsRollback(
     BaseSparkConstraintsRollbackSetup, BaseIncrementalConstraintsRollback
 ):
+    # color stays blue for incremental models since it's a new row that just
+    # doesn't get inserted
     @pytest.fixture(scope="class")
     def models(self):
         return {
             "my_model.sql": my_incremental_model_sql,
             "constraints_schema.yml": constraints_yml,
         }
-
-    # The insert never gets applied so for this materialization the color stays blue
