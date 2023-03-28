@@ -149,7 +149,8 @@
       {% else %}
         create table {{ relation }}
       {% endif %}
-      {% if config.get('contract', False) %}
+      {%- set contract_config = config.get('contract') -%}
+      {%- if contract_config.enforced -%}
         {{ get_assert_columns_equivalent(compiled_code) }}
         {%- set compiled_code = get_select_subquery(compiled_code) %}
       {% endif %}
@@ -180,7 +181,8 @@
 {% endmacro %}
 
 {% macro spark__persist_constraints(relation, model) %}
-  {% if config.get('contract', False) and config.get('file_format', 'delta') == 'delta' %}
+  {%- set contract_config = config.get('contract') -%}
+  {% if contract_config.enforced and config.get('file_format', 'delta') == 'delta' %}
     {% do alter_table_add_constraints(relation, model.columns) %}
     {% do alter_column_set_constraints(relation, model.columns) %}
   {% endif %}
@@ -229,7 +231,8 @@
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
   {{ comment_clause() }}
-  {% if config.get('contract', False) -%}
+  {%- set contract_config = config.get('contract') -%}
+  {%- if contract_config.enforced -%}
     {{ get_assert_columns_equivalent(sql) }}
   {%- endif %}
   as
