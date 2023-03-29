@@ -394,7 +394,7 @@ class SparkAdapter(SQLAdapter):
 
         columns: List[Dict[str, Any]] = []
         for relation in self.list_relations(database, schema):
-            logger.debug("Getting table schema for relation {}", relation)
+            logger.debug("Getting table schema for relation {}", str(relation))
             columns.extend(self._get_columns_for_catalog(relation))
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 

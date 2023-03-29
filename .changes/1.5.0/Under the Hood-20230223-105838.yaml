@@ -1,6 +1,0 @@
-kind: Under the Hood
-body: Rename constraints_enabled to contract
-time: 2023-02-23T10:58:38.092981-05:00
-custom:
-  Author: gshank
-  Issue: "645"
