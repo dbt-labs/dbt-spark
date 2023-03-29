@@ -10,7 +10,6 @@ from tests.functional.adapter.incremental_strategies.seeds import (
 )
 from tests.functional.adapter.incremental_strategies.fixtures import (
     bad_file_format_sql,
-    bad_insert_overwrite_delta_sql,
     bad_merge_not_delta_sql,
     bad_strategy_sql,
     default_append_sql,
@@ -20,6 +19,7 @@ from tests.functional.adapter.incremental_strategies.fixtures import (
     delta_merge_no_key_sql,
     delta_merge_unique_key_sql,
     delta_merge_update_columns_sql,
+    insert_overwrite_partitions_delta_sql,
 )
 
 
@@ -91,6 +91,7 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
             "merge_no_key.sql": delta_merge_no_key_sql,
             "merge_unique_key.sql": delta_merge_unique_key_sql,
             "merge_update_columns.sql": delta_merge_update_columns_sql,
+            "insert_overwrite_partitions_delta.sql": insert_overwrite_partitions_delta_sql,
         }
 
     def run_and_test(self, project):
@@ -99,6 +100,9 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
         check_relations_equal(project.adapter, ["merge_no_key", "expected_append"])
         check_relations_equal(project.adapter, ["merge_unique_key", "expected_upsert"])
         check_relations_equal(project.adapter, ["merge_update_columns", "expected_partial_upsert"])
+        check_relations_equal(
+            project.adapter, ["insert_overwrite_partitions_delta", "expected_upsert"]
+        )
 
     @pytest.mark.skip_profile(
         "apache_spark", "databricks_http_cluster", "databricks_sql_endpoint", "spark_session"
@@ -112,7 +116,6 @@ class TestBadStrategies(BaseIncrementalStrategies):
     def models(self):
         return {
             "bad_file_format.sql": bad_file_format_sql,
-            "bad_insert_overwrite_delta.sql": bad_insert_overwrite_delta_sql,
             "bad_merge_not_delta.sql": bad_merge_not_delta_sql,
             "bad_strategy.sql": bad_strategy_sql,
         }
