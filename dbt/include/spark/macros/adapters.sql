@@ -149,8 +149,10 @@
       {% else %}
         create table {{ relation }}
       {% endif %}
-      {% if config.get('contract', False) %}
-        {{ get_assert_columns_equivalent(sql) }}
+      {%- set contract_config = config.get('contract') -%}
+      {%- if contract_config.enforced -%}
+        {{ get_assert_columns_equivalent(compiled_code) }}
+        {%- set compiled_code = get_select_subquery(compiled_code) %}
       {% endif %}
       {{ file_format_clause() }}
       {{ options_clause() }}
@@ -179,7 +181,8 @@
 {% endmacro %}
 
 {% macro spark__persist_constraints(relation, model) %}
-  {% if config.get('contract', False) and config.get('file_format', 'delta') == 'delta' %}
+  {%- set contract_config = config.get('contract') -%}
+  {% if contract_config.enforced and config.get('file_format', 'delta') == 'delta' %}
     {% do alter_table_add_constraints(relation, model.columns) %}
     {% do alter_column_set_constraints(relation, model.columns) %}
   {% endif %}
@@ -192,13 +195,15 @@
 {% macro spark__alter_table_add_constraints(relation, column_dict) %}
 
   {% for column_name in column_dict %}
-    {% set constraints_check = column_dict[column_name]['constraints_check'] %}
-    {% if constraints_check and not is_incremental() %}
-      {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint_check) -%}
-      {% call statement() %}
-        alter table {{ relation }} add constraint {{ constraint_hash }} check {{ constraints_check }};
-      {% endcall %}
-    {% endif %}
+    {% set constraints = column_dict[column_name]['constraints'] %}
+    {% for constraint in constraints %}
+      {% if constraint.type == 'check' and not is_incremental() %}
+        {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint.expression ~ ";" ~ loop.index) -%}
+        {% call statement() %}
+          alter table {{ relation }} add constraint {{ constraint_hash }} check {{ constraint.expression }};
+        {% endcall %}
+      {% endif %}
+    {% endfor %}
   {% endfor %}
 {% endmacro %}
 
@@ -210,12 +215,12 @@
   {% for column_name in column_dict %}
     {% set constraints = column_dict[column_name]['constraints'] %}
     {% for constraint in constraints %}
-      {% if constraint != 'not null' %}
-        {{ exceptions.warn('Invalid constraint for column ' ~ column_name ~ '. Only `not null` is supported.') }}
+      {% if constraint.type != 'not_null' %}
+        {{ exceptions.warn('Invalid constraint for column ' ~ column_name ~ '. Only `not_null` is supported.') }}
       {% else %}
         {% set quoted_name = adapter.quote(column_name) if column_dict[column_name]['quote'] else column_name %}
         {% call statement() %}
-          alter table {{ relation }} change column {{ quoted_name }} set {{ constraint }};
+          alter table {{ relation }} change column {{ quoted_name }} set not null {{ constraint.expression or "" }};
         {% endcall %}
       {% endif %}
     {% endfor %}
@@ -226,7 +231,8 @@
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
   {{ comment_clause() }}
-  {% if config.get('contract', False) -%}
+  {%- set contract_config = config.get('contract') -%}
+  {%- if contract_config.enforced -%}
     {{ get_assert_columns_equivalent(sql) }}
   {%- endif %}
   as
