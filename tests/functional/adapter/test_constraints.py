@@ -92,6 +92,10 @@ class DatabricksHTTPSetup:
         return "INT_TYPE"
 
     @pytest.fixture
+    def schema_string_type(self):
+        return "STRING"
+
+    @pytest.fixture
     def schema_int_type(self):
         return "INT"
 
