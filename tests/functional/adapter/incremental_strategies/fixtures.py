@@ -115,7 +115,7 @@ select cast(3 as bigint) as id, 'anyway' as msg
 {% endif %}
 """.lstrip()
 
-insert_overwrite_partitions_delta = """
+insert_overwrite_partitions_delta_sql = """
 {{ config(
     materialized='incremental',
     incremental_strategy='insert_overwrite',
