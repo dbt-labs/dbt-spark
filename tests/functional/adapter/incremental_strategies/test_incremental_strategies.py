@@ -100,15 +100,19 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
         check_relations_equal(project.adapter, ["merge_no_key", "expected_append"])
         check_relations_equal(project.adapter, ["merge_unique_key", "expected_upsert"])
         check_relations_equal(project.adapter, ["merge_update_columns", "expected_partial_upsert"])
-        check_relations_equal(
-            project.adapter, ["insert_overwrite_partitions_delta", "expected_upsert"]
-        )
 
     @pytest.mark.skip_profile(
         "apache_spark", "databricks_http_cluster", "databricks_sql_endpoint", "spark_session"
     )
     def test_delta_strategies(self, project):
         self.run_and_test(project)
+
+    @pytest.mark.skip_profile("apache_spark", "databricks_cluster", "spark_session")
+    def test_delta_strategies_overwrite(self, project):
+        self.seed_and_run_twice()
+        check_relations_equal(
+            project.adapter, ["insert_overwrite_partitions_delta", "expected_upsert"]
+        )
 
 
 class TestBadStrategies(BaseIncrementalStrategies):
