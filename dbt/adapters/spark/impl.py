@@ -10,7 +10,7 @@ from dbt.contracts.relation import RelationType
 import dbt
 import dbt.exceptions
 
-from dbt.adapters.base import AdapterConfig, PythonJobHelper
+from dbt.adapters.base import AdapterConfig, ConstraintSupport, PythonJobHelper
 from dbt.adapters.base.impl import catch_as_completed
 from dbt.contracts.connection import AdapterResponse
 from dbt.adapters.sql import SQLAdapter
@@ -23,6 +23,7 @@ from dbt.adapters.spark.python_submissions import (
 )
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
+from dbt.contracts.graph.nodes import ConstraintType
 from dbt.events import AdapterLogger
 from dbt.flags import get_flags
 from dbt.utils import executor, AttrDict
@@ -95,6 +96,14 @@ class SparkAdapter(SQLAdapter):
     Column: TypeAlias = SparkColumn
     ConnectionManager: TypeAlias = SparkConnectionManager
     AdapterSpecificConfigs: TypeAlias = SparkConfig
+
+    CONSTRAINT_SUPPORT = {
+        ConstraintType.check: ConstraintSupport.NOT_ENFORCED,
+        ConstraintType.not_null: ConstraintSupport.NOT_ENFORCED,
+        ConstraintType.unique: ConstraintSupport.NOT_ENFORCED,
+        ConstraintType.primary_key: ConstraintSupport.NOT_ENFORCED,
+        ConstraintType.foreign_key: ConstraintSupport.NOT_ENFORCED,
+    }
 
     @classmethod
     def date_function(cls) -> str:
