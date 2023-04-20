@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update types-pytz requirement from ~=2022.7 to ~=2023.2"
-time: 2023-03-27T23:06:53.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 697

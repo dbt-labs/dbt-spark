@@ -1,7 +1,0 @@
-kind: Dependencies
-body: Allow thrift 0.16.0
-time: 2023-01-26T15:23:19.978823-08:00
-custom:
-  Author: colin-rogers-dbt
-  Issue: "606"
-  PR: "605"
