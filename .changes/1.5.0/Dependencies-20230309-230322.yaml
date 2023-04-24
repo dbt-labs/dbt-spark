@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update ipdb requirement from ~=0.13.11 to ~=0.13.13"
-time: 2023-03-09T23:03:22.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 677
