@@ -50,11 +50,11 @@ def _get_dbt_core_version():
 
 
 package_name = "dbt-spark"
-package_version = "1.5.0b3"
+package_version = "1.6.0a1"
 dbt_core_version = _get_dbt_core_version()
 description = """The Apache Spark adapter plugin for dbt"""
 
-odbc_extras = ["pyodbc>=4.0.30"]
+odbc_extras = ["pyodbc~=4.0.30"]
 pyhive_extras = [
     "PyHive[hive]>=0.6.0,<0.7.0",
     "thrift>=0.11.0,<0.17.0",

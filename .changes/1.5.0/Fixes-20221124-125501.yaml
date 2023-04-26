@@ -1,7 +1,0 @@
-kind: Fixes
-body: Use take() instead of collect on dataframe to improve the performance
-time: 2022-11-24T12:55:01.928275+05:30
-custom:
-  Author: akashrn5
-  Issue: "526"
-  PR: "527"
