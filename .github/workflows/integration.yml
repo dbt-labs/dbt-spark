@@ -125,11 +125,12 @@ jobs:
 
     strategy:
       fail-fast: false
-      # matrix: ${{ fromJSON(needs.test-metadata.outputs.matrix) }}
-      matrix:
-        python-version: ["3.8", "3.9"]
-        os: ["ubuntu-latest"]
-        adapter: ["spark"]
+      matrix: ${{ fromJSON(needs.test-metadata.outputs.matrix) }}
+      # TODO: remove evenutally, used below testing with act
+      # matrix:
+      #   python-version: ["3.8", "3.9"]
+      #   os: ["ubuntu-latest"]
+      #   adapter: ["spark"]
 
     env:
       TOXENV: integration-spark-session
