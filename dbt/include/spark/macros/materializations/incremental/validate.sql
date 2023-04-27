@@ -40,14 +40,14 @@
     You cannot use this strategy when connecting via endpoint
     Use the 'append' or 'merge' strategy instead
   {%- endset %}
-  {{ log("=========", info=True) }}}
-  {{ log(raw_strategy, info=True) }}}
-  {{ log(file_format, info=True) }}}
   {% if raw_strategy not in ['append', 'merge', 'insert_overwrite'] %}
     {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
   {%-else %}
     {% if raw_strategy == 'merge' and file_format not in ['delta', 'iceberg', 'hudi'] %}
       {% do exceptions.raise_compiler_error(invalid_merge_msg) %}
+    {% endif %}
+    {% if raw_strategy == 'insert_overwrite' and target.endpoint %}
+      {% do exceptions.raise_compiler_error(invalid_insert_overwrite_endpoint_msg) %}
     {% endif %}
   {% endif %}
 
