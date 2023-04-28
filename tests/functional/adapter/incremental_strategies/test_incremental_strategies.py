@@ -107,8 +107,9 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
     def test_delta_strategies(self, project):
         self.run_and_test(project)
 
-    @pytest.mark.skip_profile("apache_spark", "databricks_cluster", "spark_session")
-    @pytest.mark.skip(reason="this feature is incompatible with settings required for grants")
+    @pytest.mark.skip(
+        reason="this feature is incompatible with databricks settings required for grants"
+    )
     def test_delta_strategies_overwrite(self, project):
         self.seed_and_run_twice()
         check_relations_equal(
