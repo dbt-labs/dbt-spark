@@ -10,7 +10,6 @@ from tests.functional.adapter.incremental_strategies.seeds import (
 )
 from tests.functional.adapter.incremental_strategies.fixtures import (
     bad_file_format_sql,
-    bad_insert_overwrite_delta_sql,
     bad_merge_not_delta_sql,
     bad_strategy_sql,
     default_append_sql,
@@ -20,6 +19,7 @@ from tests.functional.adapter.incremental_strategies.fixtures import (
     delta_merge_no_key_sql,
     delta_merge_unique_key_sql,
     delta_merge_update_columns_sql,
+    # Skip: CT-1873 insert_overwrite_partitions_delta_sql,
 )
 
 
@@ -91,6 +91,8 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
             "merge_no_key.sql": delta_merge_no_key_sql,
             "merge_unique_key.sql": delta_merge_unique_key_sql,
             "merge_update_columns.sql": delta_merge_update_columns_sql,
+            # Skip: cannot be acnive on any endpoint with grants
+            # "insert_overwrite_partitions_delta.sql": insert_overwrite_partitions_delta_sql,
         }
 
     def run_and_test(self, project):
@@ -106,13 +108,21 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
     def test_delta_strategies(self, project):
         self.run_and_test(project)
 
+    @pytest.mark.skip(
+        reason="this feature is incompatible with databricks settings required for grants"
+    )
+    def test_delta_strategies_overwrite(self, project):
+        self.seed_and_run_twice()
+        check_relations_equal(
+            project.adapter, ["insert_overwrite_partitions_delta", "expected_upsert"]
+        )
+
 
 class TestBadStrategies(BaseIncrementalStrategies):
     @pytest.fixture(scope="class")
     def models(self):
         return {
             "bad_file_format.sql": bad_file_format_sql,
-            "bad_insert_overwrite_delta.sql": bad_insert_overwrite_delta_sql,
             "bad_merge_not_delta.sql": bad_merge_not_delta_sql,
             "bad_strategy.sql": bad_strategy_sql,
         }
