@@ -19,7 +19,7 @@ from tests.functional.adapter.incremental_strategies.fixtures import (
     delta_merge_no_key_sql,
     delta_merge_unique_key_sql,
     delta_merge_update_columns_sql,
-    insert_overwrite_partitions_delta_sql,
+    # Skip: CT-1873 insert_overwrite_partitions_delta_sql,
 )
 
 
@@ -91,7 +91,8 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
             "merge_no_key.sql": delta_merge_no_key_sql,
             "merge_unique_key.sql": delta_merge_unique_key_sql,
             "merge_update_columns.sql": delta_merge_update_columns_sql,
-            "insert_overwrite_partitions_delta.sql": insert_overwrite_partitions_delta_sql,
+            # Skip: cannot be acnive on any endpoint with grants
+            # "insert_overwrite_partitions_delta.sql": insert_overwrite_partitions_delta_sql,
         }
 
     def run_and_test(self, project):
