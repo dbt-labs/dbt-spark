@@ -16,7 +16,7 @@ ipdb~=0.13.13
 mypy==1.2.0  # patch updates have historically introduced breaking changes
 pip-tools~=6.13
 pre-commit~=2.21;python_version=="3.7"
-pre-commit~=3.2;python_version>="3.8"
+pre-commit~=3.3;python_version>="3.8"
 pre-commit-hooks~=4.4
 pytest~=7.3
 pytest-csv~=3.0
