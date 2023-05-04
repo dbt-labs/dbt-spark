@@ -1,0 +1,7 @@
+kind: Features
+body: Support insert_overwrite strategy with delta
+time: 2022-08-12T09:16:52.7995122+02:00
+custom:
+  Author: flvndh
+  Issue: "1013"
+  PR: "430"
