@@ -1,4 +1,4 @@
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, List, Tuple, Dict
 from dataclasses import dataclass, field
 
 from dbt.adapters.base.relation import BaseRelation, Policy
@@ -33,8 +33,8 @@ class SparkRelation(BaseRelation):
     is_delta: Optional[bool] = None
     is_hudi: Optional[bool] = None
     is_iceberg: Optional[bool] = None
-    # TODO: make this a dict everywhere
-    information: Optional[str] = None
+    columns: List[Tuple[str, str]] = field(default_factory=list)
+    properties: Dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self):
         if self.database != self.schema and self.database:
