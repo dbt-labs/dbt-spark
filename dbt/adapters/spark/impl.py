@@ -131,7 +131,7 @@ class SparkAdapter(SQLAdapter):
             raise dbt.exceptions.CompilationError(
                 "Attempted to cache a null schema for {}".format(name)
             )
-        if get_flags().USE_CACHE:  # type: ignore
+        if get_flags().USE_CACHE:
             self.cache.add_schema(None, schema)
         # so jinja doesn't render things
         return ""
@@ -190,7 +190,7 @@ class SparkAdapter(SQLAdapter):
             is_hudi: bool = "Provider: hudi" in information
             is_iceberg: bool = "Provider: iceberg" in information
 
-            relation: BaseRelation = self.Relation.create(  # type: ignore
+            relation: BaseRelation = self.Relation.create(
                 schema=_schema,
                 identifier=name,
                 type=rel_type,
