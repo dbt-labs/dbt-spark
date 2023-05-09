@@ -458,51 +458,30 @@ class TestSparkAdapter(unittest.TestCase):
         )
         rows = SparkAdapter(config).parse_columns_from_information(spark_relation)
         self.assertEqual(len(rows), 1)
-        # self.assertEqual(
-        #     rows[0].to_column_dict(omit_none=False),
-        #     {
-        #         "table_database": None,
-        #         "table_schema": relation.schema,
-        #         "table_name": relation.name,
-        #         "table_type": rel_type,
-        #         "table_owner": "root",
-        #         "column": "col1",
-        #         "column_index": 0,
-        #         "dtype": "decimal(22,0)",
-        #         "numeric_scale": None,
-        #         "numeric_precision": None,
-        #         "char_size": None,
-        #         "stats:bytes:description": "",
-        #         "stats:bytes:include": True,
-        #         "stats:bytes:label": "bytes",
-        #         "stats:bytes:value": 1109049927,
-        #         "stats:rows:description": "",
-        #         "stats:rows:include": True,
-        #         "stats:rows:label": "rows",
-        #         "stats:rows:value": 14093476,
-        #     },
-        # )
-        assert rows[0].to_column_dict(omit_none=False) == {
-            "table_database": None,
-            "table_schema": relation.schema,
-            "table_name": relation.name,
-            "table_type": rel_type,
-            "table_owner": "root",
-            "column": "col1",
-            "column_index": 0,
-            "dtype": "decimal(22,0)",
-            "numeric_scale": None,
-            "numeric_precision": None,
-            "char_size": None,
-            "stats:bytes:description": "",
-            "stats:bytes:include": True,
-            "stats:bytes:label": "bytes",
-            "stats:bytes:value": 1109049927,
-            "stats:rows:description": "",
-            "stats:rows:include": True,
-            "stats:rows:label": "rows",
-            "stats:rows:value": 14093476,
-        }
+        self.assertEqual(
+            rows[0].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "col1",
+                "column_index": 0,
+                "dtype": "decimal(22,0)",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+                "stats:bytes:description": "",
+                "stats:bytes:include": True,
+                "stats:bytes:label": "bytes",
+                "stats:bytes:value": 1109049927,
+                "stats:rows:description": "",
+                "stats:rows:include": True,
+                "stats:rows:label": "rows",
+                "stats:rows:value": 14093476,
+            },
+        )
 
     def test_relation_with_database(self):
         config = self._get_target_http(self.project_cfg)
@@ -592,7 +571,19 @@ class TestSparkAdapter(unittest.TestCase):
         )
         self.assertEqual(len(tables), 1)
 
-        columns = adapter.parse_describe_extended(tables[0], None)
+        table = tables[0]
+
+        assert isinstance(table, SparkRelation)
+
+        columns = adapter.get_columns_in_relation(
+            SparkRelation.create(
+                type=rel_type,
+                schema="default_schema",
+                identifier="mytable",
+                columns=table.columns,
+                properties=table.properties,
+            )
+        )
 
         self.assertEqual(len(columns), 5)
         self.assertEqual(
@@ -684,7 +675,19 @@ class TestSparkAdapter(unittest.TestCase):
         )
         self.assertEqual(len(tables), 1)
 
-        columns = adapter.parse_describe_extended(tables[0], None)
+        table = tables[0]
+
+        assert isinstance(table, SparkRelation)
+
+        columns = adapter.get_columns_in_relation(
+            SparkRelation.create(
+                type=rel_type,
+                schema="default_schema",
+                identifier="myview",
+                columns=table.columns,
+                properties=table.properties,
+            )
+        )
 
         self.assertEqual(len(columns), 5)
         self.assertEqual(
@@ -757,7 +760,19 @@ class TestSparkAdapter(unittest.TestCase):
         )
         self.assertEqual(len(tables), 1)
 
-        columns = adapter.parse_describe_extended(tables[0], None)
+        table = tables[0]
+
+        assert isinstance(table, SparkRelation)
+
+        columns = adapter.get_columns_in_relation(
+            SparkRelation.create(
+                type=rel_type,
+                schema="default_schema",
+                identifier="mytable",
+                columns=table.columns,
+                properties=table.properties,
+            )
+        )
 
         self.assertEqual(len(columns), 5)
         self.assertEqual(
@@ -809,49 +824,3 @@ class TestSparkAdapter(unittest.TestCase):
                 "stats:rows:value": 12345678,
             },
         )
-
-    def test_parse_columns_from_describe_extended(self):
-        self.maxDiff = None
-        rows = [
-            agate.MappedSequence(["idx", "int", ""]),
-            agate.MappedSequence(["name", "string", ""]),
-            agate.MappedSequence(["", "", ""]),
-            agate.MappedSequence(["# Partitioning", "", ""]),
-            agate.MappedSequence(["Not partitioned", "", ""]),
-            agate.MappedSequence(["", "", ""]),
-            agate.MappedSequence(["# Metadata Columns", "", ""]),
-            agate.MappedSequence(["_spec_id", "int", ""]),
-            agate.MappedSequence(["_partition", "struct<>", ""]),
-            agate.MappedSequence(["_file", "string", ""]),
-            agate.MappedSequence(["_pos", "bigint", ""]),
-            agate.MappedSequence(["_deleted", "boolean", ""]),
-            agate.MappedSequence(["", "", ""]),
-            agate.MappedSequence(["# Detailed Table Information", "", ""]),
-            agate.MappedSequence(["Name", "sandbox.dbt_tabular3.names", ""]),
-            agate.MappedSequence(
-                [
-                    "Location",
-                    "s3://tabular-wh-us-east-1/6efbcaf4-21ae-499d-b340-3bc1a7003f52/d2082e32-d2bd-4484-bb93-7bc445c1c6bb",
-                    "",
-                ]
-            ),
-            agate.MappedSequence(["Provider", "iceberg", ""]),
-        ]
-
-        config = self._get_target_http(self.project_cfg)
-        adapter = SparkAdapter(config)
-
-        columns, properties = adapter._parse_describe_table(rows)
-
-        assert columns == [("idx", "int"), ("name", "string")]
-        assert properties == {
-            "Location": "s3://tabular-wh-us-east-1/6efbcaf4-21ae-499d-b340-3bc1a7003f52/d2082e32-d2bd-4484-bb93-7bc445c1c6bb",
-            "Name": "sandbox.dbt_tabular3.names",
-            "Not partitioned": "",
-            "Provider": "iceberg",
-            "_deleted": "boolean",
-            "_file": "string",
-            "_partition": "struct<>",
-            "_pos": "bigint",
-            "_spec_id": "int",
-        }

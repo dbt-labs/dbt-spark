@@ -128,20 +128,6 @@ class SparkAdapter(SQLAdapter):
     def _get_relation_information(self, row: agate.Row) -> RelationInfo:
         """relation info was fetched with SHOW TABLES EXTENDED"""
         try:
-            # Example lines:
-            # Database: dbt_schema
-            # Table: names
-            # Owner: fokkodriesprong
-            # Created Time: Mon May 08 18:06:47 CEST 2023
-            # Last Access: UNKNOWN
-            # Created By: Spark 3.3.2
-            # Type: MANAGED
-            # Provider: hive
-            # Table Properties: [transient_lastDdlTime=1683562007]
-            # Statistics: 16 bytes
-            # Schema: root
-            # |-- idx: integer (nullable = false)
-            # |-- name: string (nullable = false)
             table_properties = {}
             columns = []
             _schema, name, _, information_blob = row
@@ -187,7 +173,7 @@ class SparkAdapter(SQLAdapter):
         for info_row in table_results_itr:
             info_type, info_value = info_row[:2]
             if info_type is not None and not info_type.startswith("#") and info_type != "":
-                table_properties[info_type] = info_value
+                table_properties[info_type] = str(info_value)
 
         return columns, table_properties
 
