@@ -87,7 +87,7 @@ class SparkAdapter(SQLAdapter):
         "stats:rows:description",
         "stats:rows:include",
     )
-    INFORMATION_COLUMN_REGEX = re.compile(r" \|-- (.*): (.*) \(nullable = (.*)\)")
+    INFORMATION_COLUMN_REGEX = re.compile(r"[ |   ]* \|-- (.*)\: (.*) \(nullable = (.*)\)")
     HUDI_METADATA_COLUMNS = [
         "_hoodie_commit_time",
         "_hoodie_commit_seqno",
@@ -163,17 +163,20 @@ class SparkAdapter(SQLAdapter):
             _schema, name, _, information_blob = row
             for line in information_blob.split("\n"):
                 if line:
-                    if line.startswith(" |--"):
+                    if " |--" in line:
                         # A column
                         match = self.INFORMATION_COLUMN_REGEX.match(line)
                         if match:
                             columns.append((match[1], match[2]))
                         else:
-                            logger.warning(f"Could not parse: {line}")
+                            logger.warning(f"Could not parse column: {line}")
                     else:
                         # A property
                         parts = line.split(": ", maxsplit=2)
-                        table_properties[parts[0]] = parts[1]
+                        if len(parts) == 2:
+                            table_properties[parts[0]] = parts[1]
+                        else:
+                            logger.warning(f"Found invalid property: {line}")
 
         except ValueError:
             raise dbt.exceptions.DbtRuntimeError(
@@ -181,6 +184,28 @@ class SparkAdapter(SQLAdapter):
             )
 
         return RelationInfo(_schema, name, columns, table_properties)
+
+    def _parse_describe_table(
+        self, table_results: agate.Table
+    ) -> Tuple[List[Tuple[str, str]], Dict[str, str]]:
+        # Wrap it in an iter, so we continue reading the properties from where we stopped reading columns
+        table_results_itr = iter(table_results)
+
+        # First the columns
+        columns = []
+        for info_row in table_results_itr:
+            if info_row[0] == "":
+                break
+            columns.append((info_row[0], info_row[1]))
+
+        # Next all the properties
+        table_properties = {}
+        for info_row in table_results_itr:
+            info_type, info_value, _ = info_row
+            if not info_type.startswith("#") and info_type != "":
+                table_properties[info_type] = info_value
+
+        return columns, table_properties
 
     def _get_relation_information_using_describe(self, row: agate.Row) -> RelationInfo:
         """Relation info fetched using SHOW TABLES and an auxiliary DESCRIBE statement"""
@@ -200,41 +225,7 @@ class SparkAdapter(SQLAdapter):
             logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
             table_results = AttrDict()
 
-        # idx	int
-        # name	string
-        #
-        # # Partitioning
-        # Not partitioned
-        #
-        # # Metadata Columns
-        # _spec_id	int
-        # _partition	struct<>
-        # _file	string
-        # _pos	bigint
-        # _deleted	boolean
-        #
-        # # Detailed Table Information
-        # Name	sandbox.dbt_tabular3.names
-        # Location	s3://tabular-wh-us-east-1/6efbcaf4-21ae-499d-b340-3bc1a7003f52/d2082e32-d2bd-4484-bb93-7bc445c1c6bb
-        # Provider	iceberg
-
-        # Wrap it in an iter, so we continue reading the properties from where we stopped reading columns
-        table_results_itr = iter(table_results)
-
-        # First the columns
-        columns = []
-        for info_row in table_results_itr:
-            if info_row[0] == "":
-                break
-            columns.append((info_row[0], info_row[1]))
-
-        # Next all the properties
-        table_properties = {}
-        for info_row in table_results_itr:
-            info_type, info_value, _ = info_row
-            if not info_type.startswith("#") and info_type != "":
-                table_properties[info_type] = info_value
-
+        columns, table_properties = self._parse_describe_table(table_results)
         return RelationInfo(_schema, name, columns, table_properties)
 
     def _build_spark_relation_list(
