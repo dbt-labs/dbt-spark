@@ -323,7 +323,7 @@ class TestSparkAdapter(unittest.TestCase):
 
         config = self._get_target_http(self.project_cfg)
         adapter = SparkAdapter(config)
-        columns, properties = adapter._parse_describe_table(input_cols)
+        columns, properties = adapter._parse_describe_table_extended(input_cols)
         relation_info = adapter._build_spark_relation_list(
             columns, lambda a: RelationInfo(relation.schema, relation.name, columns, properties)
         )
@@ -414,7 +414,7 @@ class TestSparkAdapter(unittest.TestCase):
         ]
 
         config = self._get_target_http(self.project_cfg)
-        _, properties = SparkAdapter(config)._parse_describe_table(plain_rows)
+        _, properties = SparkAdapter(config)._parse_describe_table_extended(plain_rows)
 
         self.assertEqual(properties.get(KEY_TABLE_OWNER), "1234")
 
@@ -448,7 +448,7 @@ class TestSparkAdapter(unittest.TestCase):
         ]
 
         config = self._get_target_http(self.project_cfg)
-        columns, properties = SparkAdapter(config)._parse_describe_table(plain_rows)
+        columns, properties = SparkAdapter(config)._parse_describe_table_extended(plain_rows)
         spark_relation = SparkRelation.create(
             schema=relation.schema,
             identifier=relation.name,
