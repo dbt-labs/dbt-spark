@@ -7,6 +7,7 @@ from dbt.exceptions import DbtRuntimeError
 from agate import Row
 from pyhive import hive
 from dbt.adapters.spark import SparkAdapter, SparkRelation
+from dbt.adapters.spark.impl import RelationInfo, KEY_TABLE_OWNER
 from .utils import config_from_parts_or_dicts
 
 
@@ -321,10 +322,15 @@ class TestSparkAdapter(unittest.TestCase):
         input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
-        self.assertEqual(len(rows), 4)
+        adapter = SparkAdapter(config)
+        columns, properties = adapter._parse_describe_table(input_cols)
+        relation_info = adapter._build_spark_relation_list(
+            columns, lambda a: RelationInfo(relation.schema, relation.name, columns, properties)
+        )
+        columns = adapter.get_columns_in_relation(relation_info[0])
+        self.assertEqual(len(columns), 4)
         self.assertEqual(
-            rows[0].to_column_dict(omit_none=False),
+            columns[0].to_column_dict(omit_none=False),
             {
                 "table_database": None,
                 "table_schema": relation.schema,
@@ -341,7 +347,7 @@ class TestSparkAdapter(unittest.TestCase):
         )
 
         self.assertEqual(
-            rows[1].to_column_dict(omit_none=False),
+            columns[1].to_column_dict(omit_none=False),
             {
                 "table_database": None,
                 "table_schema": relation.schema,
@@ -358,7 +364,7 @@ class TestSparkAdapter(unittest.TestCase):
         )
 
         self.assertEqual(
-            rows[2].to_column_dict(omit_none=False),
+            columns[2].to_column_dict(omit_none=False),
             {
                 "table_database": None,
                 "table_schema": relation.schema,
@@ -375,7 +381,7 @@ class TestSparkAdapter(unittest.TestCase):
         )
 
         self.assertEqual(
-            rows[3].to_column_dict(omit_none=False),
+            columns[3].to_column_dict(omit_none=False),
             {
                 "table_database": None,
                 "table_schema": relation.schema,
@@ -407,12 +413,10 @@ class TestSparkAdapter(unittest.TestCase):
             ("Owner", 1234),
         ]
 
-        input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
-
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
+        _, properties = SparkAdapter(config)._parse_describe_table(plain_rows)
 
-        self.assertEqual(rows[0].to_column_dict().get("table_owner"), "1234")
+        self.assertEqual(properties.get(KEY_TABLE_OWNER), "1234")
 
     def test_parse_relation_with_statistics(self):
         self.maxDiff = None
@@ -443,35 +447,62 @@ class TestSparkAdapter(unittest.TestCase):
             ("Partition Provider", "Catalog"),
         ]
 
-        input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
-
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config).parse_describe_extended(relation, input_cols)
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(
-            rows[0].to_column_dict(omit_none=False),
-            {
-                "table_database": None,
-                "table_schema": relation.schema,
-                "table_name": relation.name,
-                "table_type": rel_type,
-                "table_owner": "root",
-                "column": "col1",
-                "column_index": 0,
-                "dtype": "decimal(22,0)",
-                "numeric_scale": None,
-                "numeric_precision": None,
-                "char_size": None,
-                "stats:bytes:description": "",
-                "stats:bytes:include": True,
-                "stats:bytes:label": "bytes",
-                "stats:bytes:value": 1109049927,
-                "stats:rows:description": "",
-                "stats:rows:include": True,
-                "stats:rows:label": "rows",
-                "stats:rows:value": 14093476,
-            },
+        columns, properties = SparkAdapter(config)._parse_describe_table(plain_rows)
+        spark_relation = SparkRelation.create(
+            schema=relation.schema,
+            identifier=relation.name,
+            type=rel_type,
+            columns=columns,
+            properties=properties,
         )
+        rows = SparkAdapter(config).parse_columns_from_information(spark_relation)
+        self.assertEqual(len(rows), 1)
+        # self.assertEqual(
+        #     rows[0].to_column_dict(omit_none=False),
+        #     {
+        #         "table_database": None,
+        #         "table_schema": relation.schema,
+        #         "table_name": relation.name,
+        #         "table_type": rel_type,
+        #         "table_owner": "root",
+        #         "column": "col1",
+        #         "column_index": 0,
+        #         "dtype": "decimal(22,0)",
+        #         "numeric_scale": None,
+        #         "numeric_precision": None,
+        #         "char_size": None,
+        #         "stats:bytes:description": "",
+        #         "stats:bytes:include": True,
+        #         "stats:bytes:label": "bytes",
+        #         "stats:bytes:value": 1109049927,
+        #         "stats:rows:description": "",
+        #         "stats:rows:include": True,
+        #         "stats:rows:label": "rows",
+        #         "stats:rows:value": 14093476,
+        #     },
+        # )
+        assert rows[0].to_column_dict(omit_none=False) == {
+            "table_database": None,
+            "table_schema": relation.schema,
+            "table_name": relation.name,
+            "table_type": rel_type,
+            "table_owner": "root",
+            "column": "col1",
+            "column_index": 0,
+            "dtype": "decimal(22,0)",
+            "numeric_scale": None,
+            "numeric_precision": None,
+            "char_size": None,
+            "stats:bytes:description": "",
+            "stats:bytes:include": True,
+            "stats:bytes:label": "bytes",
+            "stats:bytes:value": 1109049927,
+            "stats:rows:description": "",
+            "stats:rows:include": True,
+            "stats:rows:label": "rows",
+            "stats:rows:value": 14093476,
+        }
 
     def test_relation_with_database(self):
         config = self._get_target_http(self.project_cfg)

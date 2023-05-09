@@ -24,18 +24,14 @@ from dbt.adapters.spark.python_submissions import (
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.events import AdapterLogger
-from dbt.flags import get_flags
 from dbt.utils import executor, AttrDict
 
 logger = AdapterLogger("Spark")
 
-GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
 LIST_RELATIONS_SHOW_TABLES_MACRO_NAME = "list_relations_show_tables_without_caching"
 DESCRIBE_TABLE_EXTENDED_MACRO_NAME = "describe_table_extended_without_caching"
-DROP_RELATION_MACRO_NAME = "drop_relation"
-FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 
 KEY_TABLE_OWNER = "Owner"
 KEY_TABLE_STATISTICS = "Statistics"
@@ -106,40 +102,28 @@ class SparkAdapter(SQLAdapter):
         return "current_timestamp()"
 
     @classmethod
-    def convert_text_type(cls, agate_table, col_idx):
+    def convert_text_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "string"
 
     @classmethod
-    def convert_number_type(cls, agate_table, col_idx):
+    def convert_number_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         decimals = agate_table.aggregate(agate.MaxPrecision(col_idx))
         return "double" if decimals else "bigint"
 
     @classmethod
-    def convert_date_type(cls, agate_table, col_idx):
+    def convert_date_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "date"
 
     @classmethod
-    def convert_time_type(cls, agate_table, col_idx):
+    def convert_time_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "time"
 
     @classmethod
-    def convert_datetime_type(cls, agate_table, col_idx):
+    def convert_datetime_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "timestamp"
 
     def quote(self, identifier):
         return "`{}`".format(identifier)
-
-    def add_schema_to_cache(self, schema) -> str:
-        """Cache a new schema in dbt. It will show up in `list relations`."""
-        if schema is None:
-            name = self.nice_connection_name()
-            raise dbt.exceptions.CompilationError(
-                "Attempted to cache a null schema for {}".format(name)
-            )
-        if get_flags().USE_CACHE:
-            self.cache.add_schema(None, schema)
-        # so jinja doesn't render things
-        return ""
 
     def _get_relation_information(self, row: agate.Row) -> RelationInfo:
         """relation info was fetched with SHOW TABLES EXTENDED"""
@@ -194,15 +178,15 @@ class SparkAdapter(SQLAdapter):
         # First the columns
         columns = []
         for info_row in table_results_itr:
-            if info_row[0] == "":
+            if info_row[0] is None or info_row[0] == "" or info_row[0].startswith("#"):
                 break
-            columns.append((info_row[0], info_row[1]))
+            columns.append((info_row[0], str(info_row[1])))
 
         # Next all the properties
         table_properties = {}
         for info_row in table_results_itr:
-            info_type, info_value, _ = info_row
-            if not info_type.startswith("#") and info_type != "":
+            info_type, info_value = info_row[:2]
+            if info_type is not None and not info_type.startswith("#") and info_type != "":
                 table_properties[info_type] = info_value
 
         return columns, table_properties
@@ -240,21 +224,18 @@ class SparkAdapter(SQLAdapter):
 
             rel_type: RelationType = (
                 RelationType.View
-                if relation.properties.get("type") == "VIEW"
+                if relation.properties.get("Type") == "VIEW"
                 else RelationType.Table
             )
-            is_delta: bool = relation.properties.get("provider") == "delta"
-            is_hudi: bool = relation.properties.get("provider") == "hudi"
-            is_iceberg: bool = relation.properties.get("provider") == "iceberg"
 
             relations.append(
                 self.Relation.create(
                     schema=relation.table_schema,
                     identifier=relation.table_name,
                     type=rel_type,
-                    is_delta=is_delta,
-                    is_iceberg=is_iceberg,
-                    is_hudi=is_hudi,
+                    is_delta=relation.properties.get("Provider") == "delta",
+                    is_iceberg=relation.properties.get("Provider") == "iceberg",
+                    is_hudi=relation.properties.get("Provider") == "hudi",
                     columns=relation.columns,
                     properties=relation.properties,
                 )
@@ -308,9 +289,8 @@ class SparkAdapter(SQLAdapter):
 
         return super().get_relation(database, schema, identifier)
 
-    def parse_describe_extended(
-        self, relation: SparkRelation, raw_rows: AttrDict
-    ) -> List[SparkColumn]:
+    def get_columns_in_relation(self, relation: BaseRelation) -> List[SparkColumn]:
+        assert isinstance(relation, SparkRelation), f"Expected SparkRelation, got: {relation}"
         # Convert the Row to a dict
         raw_table_stats = relation.properties.get(KEY_TABLE_STATISTICS)
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
@@ -327,28 +307,8 @@ class SparkAdapter(SQLAdapter):
                 dtype=column_type,
             )
             for idx, (column_name, column_type) in enumerate(relation.columns)
+            if column_name not in self.HUDI_METADATA_COLUMNS
         ]
-
-    def get_columns_in_relation(self, relation: BaseRelation) -> List[SparkColumn]:
-        columns = []
-        try:
-            rows: AttrDict = self.execute_macro(
-                GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
-            )
-            columns = self.parse_describe_extended(relation, rows)  # type: ignore
-        except dbt.exceptions.DbtRuntimeError as e:
-            # spark would throw error when table doesn't exist, where other
-            # CDW would just return and empty list, normalizing the behavior here
-            errmsg = getattr(e, "msg", "")
-            found_msgs = (msg in errmsg for msg in TABLE_OR_VIEW_NOT_FOUND_MESSAGES)
-            if any(found_msgs):
-                pass
-            else:
-                raise e
-
-        # strip hudi metadata columns.
-        columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
-        return columns
 
     def parse_columns_from_information(self, relation: SparkRelation) -> List[SparkColumn]:
         owner = relation.properties.get(KEY_TABLE_OWNER, "")
@@ -381,12 +341,6 @@ class SparkAdapter(SQLAdapter):
             as_dict["column_type"] = as_dict.pop("dtype")
             as_dict["table_database"] = None
             yield as_dict
-
-    def get_properties(self, relation: Relation) -> Dict[str, str]:
-        properties = self.execute_macro(
-            FETCH_TBL_PROPERTIES_MACRO_NAME, kwargs={"relation": relation}
-        )
-        return dict(properties)
 
     def get_catalog(self, manifest):
         schema_map = self._get_catalog_schemas(manifest)
