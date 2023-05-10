@@ -22,14 +22,14 @@ name: Adapter Integration Tests
 
 on:
   # pushes to release branches
-  push:
-    branches:
-      - "main"
-      - "*.latest"
-      - "releases/*"
-  # all PRs, important to note that `pull_request_target` workflows
-  # will run in the context of the target branch of a PR
-  pull_request_target:
+  # push:
+  #   branches:
+  #     - "main"
+  #     - "*.latest"
+  #     - "releases/*"
+  # # all PRs, important to note that `pull_request_target` workflows
+  # # will run in the context of the target branch of a PR
+  # pull_request_target:
   # manual trigger
   workflow_dispatch:
 
@@ -97,209 +97,209 @@ jobs:
           fi
 
   # TODO: currently untested, to be refined by https://github.com/dbt-labs/dbt-spark/issues/723
-  # test-spark-session:
-  #   name: integration-spark-session / python ${{ matrix.python-version }} / ${{ matrix.os }}
+  test-spark-session:
+    name: integration-spark-session / python ${{ matrix.python-version }} / ${{ matrix.os }}
 
-  #   # run if not a PR from a forked repository or has a label to mark as safe to test
-  #   # also checks that the matrix generated is not empty
-  #   if: ${{ needs.test-metadata.outputs.relevant_changes }}
-  #   runs-on: ${{ matrix.os }}
-  #   needs: test-metadata
-  #   container:
-  #     image: godatadriven/pyspark:3.1
+    # run if not a PR from a forked repository or has a label to mark as safe to test
+    # also checks that the matrix generated is not empty
+    if: ${{ needs.test-metadata.outputs.relevant_changes }}
+    runs-on: ${{ matrix.os }}
+    needs: test-metadata
+    container:
+      image: godatadriven/pyspark:3.1
 
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
-  #       os: [ubuntu-20.04]
-  #       include:
-  #         - python-version: 3.8
-  #           os: windows-latest
-  #         - python-version: 3.8
-  #           os: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        os: [ubuntu-20.04]
+        include:
+          - python-version: 3.8
+            os: windows-latest
+          - python-version: 3.8
+            os: macos-latest
 
-  #   env:
-  #     TOXENV: integration-spark-session
-  #     PYTEST_ADDOPTS: "-v --color=yes -n4 --csv integration_results.csv"
-  #     DBT_INVOCATION_ENV: github-actions
+    env:
+      TOXENV: integration-spark-session
+      PYTEST_ADDOPTS: "-v --color=yes -n4 --csv integration_results.csv"
+      DBT_INVOCATION_ENV: github-actions
 
-  #   steps:
-  #     - name: Check out the repository
-  #       if: github.event_name != 'pull_request_target'
-  #       uses: actions/checkout@v3
-  #       with:
-  #         persist-credentials: false
+    steps:
+      - name: Check out the repository
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
-  #     # explicity checkout the branch for the PR,
-  #     # this is necessary for the `pull_request_target` event
-  #     - name: Check out the repository (PR)
-  #       if: github.event_name == 'pull_request_target'
-  #       uses: actions/checkout@v3
-  #       with:
-  #         persist-credentials: false
-  #         ref: ${{ github.event.pull_request.head.sha }}
+      # explicity checkout the branch for the PR,
+      # this is necessary for the `pull_request_target` event
+      - name: Check out the repository (PR)
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
 
-  #     - name: Set up Python ${{ matrix.python-version }}
-  #       uses: actions/setup-python@v4.3.0
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
 
-  #     - name: "Install Spark Dependencies"
-  #       if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
+      - name: "Install Spark Dependencies"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
 
-  #     - name: Install python dependencies
-  #       run: |
-  #         python -m pip install  --user --upgrade pip
-  #         python -m pip install tox
-  #         python -m pip --version
-  #         tox --version
+      - name: Install python dependencies
+        run: |
+          python -m pip install  --user --upgrade pip
+          python -m pip install tox
+          python -m pip --version
+          tox --version
 
-  #     - name: Log Adapter
-  #       run: |
-  #         echo matrix.adapter: ${{ matrix.adapter }}
+      - name: Log Adapter
+        run: |
+          echo matrix.adapter: ${{ matrix.adapter }}
 
-  #     - name: Run tox (spark)
-  #       if: matrix.adapter == 'spark'
-  #       env:
-  #       # TODO: fill these with spark relevant vars
-  #         DBT_TEST_USER_1: dbt_test_role_1
-  #         DBT_TEST_USER_2: dbt_test_role_2
-  #         DBT_TEST_USER_3: dbt_test_role_3
-  #       run: tox
+      - name: Run tox (spark)
+        if: matrix.adapter == 'spark'
+        env:
+        # TODO: fill these with spark relevant vars
+          DBT_TEST_USER_1: dbt_test_role_1
+          DBT_TEST_USER_2: dbt_test_role_2
+          DBT_TEST_USER_3: dbt_test_role_3
+        run: tox
 
-  #     - uses: actions/upload-artifact@v3
-  #       if: always()
-  #       with:
-  #         name: logs
-  #         path: ./logs
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: logs
+          path: ./logs
 
-  #     - name: Get current date
-  #       if: always()
-  #       id: date
-  #       run: echo "date=$(date +'%Y-%m-%dT%H_%M_%S')" >> $GITHUB_OUTPUT #no colons allowed for artifacts
+      - name: Get current date
+        if: always()
+        id: date
+        run: echo "date=$(date +'%Y-%m-%dT%H_%M_%S')" >> $GITHUB_OUTPUT #no colons allowed for artifacts
 
-  #     - uses: actions/upload-artifact@v3
-  #       if: always()
-  #       with:
-  #         name: integration_results_${{ matrix.python-version }}_${{ matrix.os }}_integration-spark-sessions-${{ steps.date.outputs.date }}.csv
-  #         path: integration_results.csv
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration_results_${{ matrix.python-version }}_${{ matrix.os }}_integration-spark-sessions-${{ steps.date.outputs.date }}.csv
+          path: integration_results.csv
 
-  # # TODO: currently untested, to be refined by https://github.com/dbt-labs/dbt-spark/issues/731
-  # test-spark-thrift:
-  #   name: integration-spark-thrift / python ${{ matrix.python-version }} / ${{ matrix.os }}
+  # TODO: currently untested, to be refined by https://github.com/dbt-labs/dbt-spark/issues/731
+  test-spark-thrift:
+    name: integration-spark-thrift / python ${{ matrix.python-version }} / ${{ matrix.os }}
 
-  #   # run if not a PR from a forked repository or has a label to mark as safe to test
-  #   # also checks that the matrix generated is not empty
-  #   if: ${{ needs.test-metadata.outputs.relevant_changes }}
-  #   runs-on: ${{ matrix.os }}
-  #   needs: test-metadata
-  #   # NOTE: services don't work with act for local testings
-  #   services:
-  #     spark:
-  #       image: godatadriven/spark:3.1.1
-  #       env:
-  #         WAIT_FOR: localhost:5432
-  #       options: "   --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2 --name Thrift JDBC/ODBC Server\n"
-  #     postgres:
-  #       image: postgres:9.6.17-alpine
-  #       env:
-  #         POSTGRES_USER: dbt
-  #         POSTGRES_PASSWORD: dbt
-  #         POSTGRES_DB: metastore
+    # run if not a PR from a forked repository or has a label to mark as safe to test
+    # also checks that the matrix generated is not empty
+    if: ${{ needs.test-metadata.outputs.relevant_changes }}
+    runs-on: ${{ matrix.os }}
+    needs: test-metadata
+    # NOTE: services don't work with act for local testings
+    services:
+      spark:
+        image: godatadriven/spark:3.1.1
+        env:
+          WAIT_FOR: localhost:5432
+        options: "   --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2 --name Thrift JDBC/ODBC Server\n"
+      postgres:
+        image: postgres:9.6.17-alpine
+        env:
+          POSTGRES_USER: dbt
+          POSTGRES_PASSWORD: dbt
+          POSTGRES_DB: metastore
 
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
-  #       os: [ubuntu-20.04]
-  #       include:
-  #         - python-version: 3.8
-  #           os: windows-latest
-  #         - python-version: 3.8
-  #           os: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        os: [ubuntu-20.04]
+        include:
+          - python-version: 3.8
+            os: windows-latest
+          - python-version: 3.8
+            os: macos-latest
 
-  #   env:
-  #     TOXENV: integration-spark-thrift
-  #     PYTEST_ADDOPTS: "-v --color=yes -n4 --csv integration_results.csv"
-  #     DBT_INVOCATION_ENV: github-actions
+    env:
+      TOXENV: integration-spark-thrift
+      PYTEST_ADDOPTS: "-v --color=yes -n4 --csv integration_results.csv"
+      DBT_INVOCATION_ENV: github-actions
 
-  #   steps:
-  #     - name: Check out the repository
-  #       if: github.event_name != 'pull_request_target'
-  #       uses: actions/checkout@v3
-  #       with:
-  #         persist-credentials: false
+    steps:
+      - name: Check out the repository
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
-  #     # explicity checkout the branch for the PR,
-  #     # this is necessary for the `pull_request_target` event
-  #     - name: Check out the repository (PR)
-  #       if: github.event_name == 'pull_request_target'
-  #       uses: actions/checkout@v3
-  #       with:
-  #         persist-credentials: false
-  #         ref: ${{ github.event.pull_request.head.sha }}
+      # explicity checkout the branch for the PR,
+      # this is necessary for the `pull_request_target` event
+      - name: Check out the repository (PR)
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
 
-  #     - name: Set up Python ${{ matrix.python-version }}
-  #       uses: actions/setup-python@v4.3.0
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
 
-  #     - name: "Install Spark Dependencies"
-  #       if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
+      - name: "Install Spark Dependencies"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
 
-  #     - name: Install python dependencies
-  #       run: |
-  #         python -m pip install  --user --upgrade pip
-  #         python -m pip install tox
-  #         python -m pip --version
-  #         tox --version
+      - name: Install python dependencies
+        run: |
+          python -m pip install  --user --upgrade pip
+          python -m pip install tox
+          python -m pip --version
+          tox --version
 
-  #     - name: Run tox (spark)
-  #       if: matrix.adapter == 'spark'
-  #       env:
-  #       # TODO: fill these with spark relevant vars
-  #         DBT_TEST_USER_1: dbt_test_role_1
-  #         DBT_TEST_USER_2: dbt_test_role_2
-  #         DBT_TEST_USER_3: dbt_test_role_3
-  #       run: tox
+      - name: Run tox (spark)
+        if: matrix.adapter == 'spark'
+        env:
+        # TODO: fill these with spark relevant vars
+          DBT_TEST_USER_1: dbt_test_role_1
+          DBT_TEST_USER_2: dbt_test_role_2
+          DBT_TEST_USER_3: dbt_test_role_3
+        run: tox
 
-  #     - uses: actions/upload-artifact@v3
-  #       if: always()
-  #       with:
-  #         name: logs
-  #         path: ./logs
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: logs
+          path: ./logs
 
-  #     - name: Get current date
-  #       if: always()
-  #       id: date
-  #       run: echo "date=$(date +'%Y-%m-%dT%H_%M_%S')" >> $GITHUB_OUTPUT #no colons allowed for artifacts
+      - name: Get current date
+        if: always()
+        id: date
+        run: echo "date=$(date +'%Y-%m-%dT%H_%M_%S')" >> $GITHUB_OUTPUT #no colons allowed for artifacts
 
-  #     - uses: actions/upload-artifact@v3
-  #       if: always()
-  #       with:
-  #         name: integration_results_${{ matrix.python-version }}_${{ matrix.os }}_integration-spark-thrift-${{ steps.date.outputs.date }}.csv
-  #         path: integration_results.csv
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration_results_${{ matrix.python-version }}_${{ matrix.os }}_integration-spark-thrift-${{ steps.date.outputs.date }}.csv
+          path: integration_results.csv
 
-#   notify-skipped-tests:
-#     name: integration-spark-thrift / python ${{ matrix.python-version }} / ${{ matrix.os }}
+  notify-skipped-tests:
+    name: integration-spark-thrift / python ${{ matrix.python-version }} / ${{ matrix.os }}
 
-#     # run if not a PR from a forked repository or has a label to mark as safe to test
-#     # also checks that the matrix generated is not empty
-#     if: ${{ needs.test-metadata.outputs.relevant_changes }} == false
-#     runs-on: ubuntu-latest
-#     needs: test-metadata
+    # run if not a PR from a forked repository or has a label to mark as safe to test
+    # also checks that the matrix generated is not empty
+    if: ${{ needs.test-metadata.outputs.relevant_changes }} == false
+    runs-on: ubuntu-latest
+    needs: test-metadata
 
-#     steps:
-#       - name: Check out the repository
-#         run: |
-#           # Send notification
-#           message="No changes found in relevant files so all integration tests were skipped."
-#           title="Integration Tests Skipped"
-#           echo "::notice title=$title::$message"
+    steps:
+      - name: Check out the repository
+        run: |
+          # Send notification
+          message="No changes found in relevant files so all integration tests were skipped."
+          title="Integration Tests Skipped"
+          echo "::notice title=$title::$message"
