@@ -287,19 +287,19 @@ jobs:
   #         name: integration_results_${{ matrix.python-version }}_${{ matrix.os }}_integration-spark-thrift-${{ steps.date.outputs.date }}.csv
   #         path: integration_results.csv
 
-  notify-skipped-tests:
-    name: integration-spark-thrift / python ${{ matrix.python-version }} / ${{ matrix.os }}
+#   notify-skipped-tests:
+#     name: integration-spark-thrift / python ${{ matrix.python-version }} / ${{ matrix.os }}
 
-    # run if not a PR from a forked repository or has a label to mark as safe to test
-    # also checks that the matrix generated is not empty
-    if: ${{ needs.test-metadata.outputs.relevant_changes }} == false
-    runs-on: ubuntu-latest
-    needs: test-metadata
+#     # run if not a PR from a forked repository or has a label to mark as safe to test
+#     # also checks that the matrix generated is not empty
+#     if: ${{ needs.test-metadata.outputs.relevant_changes }} == false
+#     runs-on: ubuntu-latest
+#     needs: test-metadata
 
-    steps:
-      - name: Check out the repository
-        run: |
-          # Send notification
-          message="No changes found in relevant files so all integration tests were skipped."
-          title="Integration Tests Skipped"
-          echo "::notice title=$title::$message"
+#     steps:
+#       - name: Check out the repository
+#         run: |
+#           # Send notification
+#           message="No changes found in relevant files so all integration tests were skipped."
+#           title="Integration Tests Skipped"
+#           echo "::notice title=$title::$message"
