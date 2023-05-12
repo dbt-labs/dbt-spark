@@ -1,0 +1,6 @@
+kind: Fixes
+body: "Remove dead code \U0001F480"
+time: 2023-05-10T15:47:35.848176+02:00
+custom:
+  Author: Fokko
+  Issue: "758"
