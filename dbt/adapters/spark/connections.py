@@ -156,10 +156,10 @@ class PyhiveConnectionWrapper(object):
 
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html  # noqa
 
-    handle: pyodbc.Connection
-    _cursor: Optional[pyodbc.Cursor]
+    handle: "pyodbc.Connection"
+    _cursor: "Optional[pyodbc.Cursor]"
 
-    def __init__(self, handle: pyodbc.Connection) -> None:
+    def __init__(self, handle: "pyodbc.Connection") -> None:
         self.handle = handle
         self._cursor = None
 
@@ -189,7 +189,7 @@ class PyhiveConnectionWrapper(object):
     def rollback(self, *args: Any, **kwargs: Any) -> None:
         logger.debug("NotImplemented: rollback")
 
-    def fetchall(self) -> List[pyodbc.Row]:
+    def fetchall(self) -> List["pyodbc.Row"]:
         assert self._cursor, "Cursor not available"
         return self._cursor.fetchall()
 
@@ -521,7 +521,7 @@ def build_ssl_transport(
     auth: str,
     kerberos_service_name: str,
     password: Optional[str] = None,
-) -> thrift_sasl.TSaslClientTransport:
+) -> "thrift_sasl.TSaslClientTransport":
     transport = None
     if port is None:
         port = 10000
