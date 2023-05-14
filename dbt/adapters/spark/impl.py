@@ -24,7 +24,6 @@ from dbt.adapters.spark.python_submissions import (
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.events import AdapterLogger
-from dbt.flags import get_flags
 from dbt.utils import executor, AttrDict
 
 logger = AdapterLogger("Spark")
@@ -34,8 +33,6 @@ LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
 LIST_RELATIONS_SHOW_TABLES_MACRO_NAME = "list_relations_show_tables_without_caching"
 DESCRIBE_TABLE_EXTENDED_MACRO_NAME = "describe_table_extended_without_caching"
-DROP_RELATION_MACRO_NAME = "drop_relation"
-FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
 
 KEY_TABLE_OWNER = "Owner"
 KEY_TABLE_STATISTICS = "Statistics"
@@ -128,18 +125,6 @@ class SparkAdapter(SQLAdapter):
 
     def quote(self, identifier):
         return "`{}`".format(identifier)
-
-    def add_schema_to_cache(self, schema) -> str:
-        """Cache a new schema in dbt. It will show up in `list relations`."""
-        if schema is None:
-            name = self.nice_connection_name()
-            raise dbt.exceptions.CompilationError(
-                "Attempted to cache a null schema for {}".format(name)
-            )
-        if get_flags().USE_CACHE:
-            self.cache.add_schema(None, schema)
-        # so jinja doesn't render things
-        return ""
 
     def _get_relation_information(self, row: agate.Row) -> RelationInfo:
         """relation info was fetched with SHOW TABLES EXTENDED"""
@@ -363,12 +348,6 @@ class SparkAdapter(SQLAdapter):
             as_dict["column_type"] = as_dict.pop("dtype")
             as_dict["table_database"] = None
             yield as_dict
-
-    def get_properties(self, relation: Relation) -> Dict[str, str]:
-        properties = self.execute_macro(
-            FETCH_TBL_PROPERTIES_MACRO_NAME, kwargs={"relation": relation}
-        )
-        return dict(properties)
 
     def get_catalog(self, manifest):
         schema_map = self._get_catalog_schemas(manifest)
