@@ -1,6 +1,0 @@
-kind: Fixes
-body: 'Fix pyodbc type_code -> data_type conversion '
-time: 2023-03-03T20:05:42.400255-05:00
-custom:
-  Author: michelleark
-  Issue: "665"
