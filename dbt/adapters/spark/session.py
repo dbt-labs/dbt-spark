@@ -24,9 +24,10 @@ class Cursor:
     https://github.com/mkleehammer/pyodbc/wiki/Cursor
     """
 
-    def __init__(self) -> None:
+    def __init__(self, server_side_parameters) -> None:
         self._df: Optional[DataFrame] = None
         self._rows: Optional[List[Row]] = None
+        self.server_side_parameters = server_side_parameters
 
     def __enter__(self) -> Cursor:
         return self
@@ -84,7 +85,7 @@ class Cursor:
         self._df = None
         self._rows = None
 
-    def execute(self, sql: str, server_side_parameters, *parameters: Any) -> None:
+    def execute(self, sql: str, *parameters: Any) -> None:
         """
         Execute a sql statement.
 
@@ -108,7 +109,7 @@ class Cursor:
             sql = sql % parameters
         builder = SparkSession.builder.enableHiveSupport()
 
-        for k, v in server_side_parameters.items():
+        for k, v in self.server_side_parameters.items():
             builder = builder.config(k, v)
 
         spark_session = builder.getOrCreate()
@@ -164,6 +165,9 @@ class Connection:
     https://github.com/mkleehammer/pyodbc/wiki/Connection
     """
 
+    def __init__(self, server_side_parameters) -> None:
+        self.server_side_parameters = server_side_parameters
+
     def cursor(self) -> Cursor:
         """
         Get a cursor.
@@ -173,15 +177,14 @@ class Connection:
         out : Cursor
             The cursor.
         """
-        return Cursor()
+        return Cursor(self.server_side_parameters)
 
 
 class SessionConnectionWrapper(object):
     """Connection wrapper for the session connection method."""
 
-    def __init__(self, handle, server_side_parameters):
+    def __init__(self, handle):
         self.handle = handle
-        self.server_side_parameters = server_side_parameters
         self._cursor = None
 
     def cursor(self):
@@ -206,10 +209,10 @@ class SessionConnectionWrapper(object):
             sql = sql.strip()[:-1]
 
         if bindings is None:
-            self._cursor.execute(sql, self.server_side_parameters)
+            self._cursor.execute(sql)
         else:
             bindings = [self._fix_binding(binding) for binding in bindings]
-            self._cursor.execute(sql, self.server_side_parameters, *bindings)
+            self._cursor.execute(sql, *bindings)
 
     @property
     def description(self):
