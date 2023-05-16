@@ -460,7 +460,7 @@ class SparkConnectionManager(SQLConnectionManager):
                         SessionConnectionWrapper,
                     )
 
-                    handle = SessionConnectionWrapper(Connection())  # type: ignore
+                    handle = SessionConnectionWrapper(Connection(creds.server_side_parameters))
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
