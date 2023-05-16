@@ -57,17 +57,18 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with: 
           python-version: '3.8'
 
       - name: Install python dependencies
         run: |
           sudo apt-get install libsasl2-dev
-          pip install --user --upgrade pip
-          pip install tox
+          python -m pip install --user --upgrade pip
+          python -m pip install tox
           pip --version
           tox --version
+
       - name: Run tox
         run: tox
 
@@ -90,17 +91,18 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install python dependencies
         run: |
           sudo apt-get install libsasl2-dev
-          pip install --user --upgrade pip
-          pip install tox
+          python -m pip install --user --upgrade pip
+          python -m pip install tox
           pip --version
           tox --version
+
       - name: Run tox
         run: tox
 
@@ -125,15 +127,16 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: '3.8'
 
       - name: Install python dependencies
         run: |
-          pip install --user --upgrade pip
-          pip install --upgrade setuptools wheel twine check-wheel-contents
+          python -m pip install --user --upgrade pip
+          python -m pip install --upgrade setuptools wheel twine check-wheel-contents
           pip --version
+
       - name: Build distributions
         run: ./scripts/build-dist.sh
 
@@ -167,7 +170,7 @@ jobs:
 
     steps:
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
