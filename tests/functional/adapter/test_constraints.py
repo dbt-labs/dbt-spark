@@ -34,8 +34,10 @@ select
   color,
   date_day
 from
--- depends_on: <foreign_key_model_identifier>
-( select
+
+(
+    -- depends_on: <foreign_key_model_identifier>
+    select
     'blue' as color,
     1 as id,
     '2019-01-01' as date_day ) as model_subq
