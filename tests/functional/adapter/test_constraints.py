@@ -44,7 +44,9 @@ from
 # Different on Spark:
 # - does not support a data type named 'text' (TODO handle this in the base test classes using string_type
 constraints_yml = model_schema_yml.replace("text", "string").replace("primary key", "")
-model_fk_constraint_schema_yml = model_fk_constraint_schema_yml.replace("text", "string").replace("primary key", "")
+model_fk_constraint_schema_yml = model_fk_constraint_schema_yml.replace("text", "string").replace(
+    "primary key", ""
+)
 
 
 class PyodbcSetup:
