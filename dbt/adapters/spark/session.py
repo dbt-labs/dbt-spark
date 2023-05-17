@@ -8,7 +8,9 @@ from typing import Any, List, Optional, Tuple
 
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
+from dbt.exceptions import DbtRuntimeError
 from pyspark.sql import DataFrame, Row, SparkSession
+from pyspark.sql.utils import AnalysisException
 
 
 logger = AdapterLogger("Spark")
@@ -107,7 +109,11 @@ class Cursor:
         if len(parameters) > 0:
             sql = sql % parameters
         spark_session = SparkSession.builder.enableHiveSupport().getOrCreate()
-        self._df = spark_session.sql(sql)
+
+        try:
+            self._df = spark_session.sql(sql)
+        except AnalysisException as exc:
+            raise DbtRuntimeError(str(exc)) from exc
 
     def fetchall(self) -> Optional[List[Row]]:
         """
