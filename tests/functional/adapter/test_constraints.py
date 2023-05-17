@@ -18,6 +18,10 @@ from dbt.tests.adapter.constraints.fixtures import (
     my_model_incremental_wrong_order_sql,
     my_model_incremental_wrong_name_sql,
     my_incremental_model_sql,
+    model_fk_constraint_schema_yml,
+    my_model_wrong_order_depends_on_fk_sql,
+    foreign_key_model_sql,
+    my_model_incremental_wrong_order_depends_on_fk_sql,
 )
 
 # constraints are enforced via 'alter' statements that run after table creation
@@ -30,7 +34,7 @@ select
   color,
   date_day
 from
-
+-- depends_on: <foreign_key_model_identifier>
 ( select
     'blue' as color,
     1 as id,
@@ -40,6 +44,7 @@ from
 # Different on Spark:
 # - does not support a data type named 'text' (TODO handle this in the base test classes using string_type
 constraints_yml = model_schema_yml.replace("text", "string").replace("primary key", "")
+model_fk_constraint_schema_yml = model_fk_constraint_schema_yml.replace("text", "string").replace("primary key", "")
 
 
 class PyodbcSetup:
@@ -215,8 +220,9 @@ class TestSparkTableConstraintsDdlEnforcement(
     @pytest.fixture(scope="class")
     def models(self):
         return {
-            "my_model.sql": my_model_wrong_order_sql,
-            "constraints_schema.yml": constraints_yml,
+            "my_model.sql": my_model_wrong_order_depends_on_fk_sql,
+            "foreign_key_model.sql": foreign_key_model_sql,
+            "constraints_schema.yml": model_fk_constraint_schema_yml,
         }
 
 
@@ -227,8 +233,9 @@ class TestSparkIncrementalConstraintsDdlEnforcement(
     @pytest.fixture(scope="class")
     def models(self):
         return {
-            "my_model.sql": my_model_incremental_wrong_order_sql,
-            "constraints_schema.yml": constraints_yml,
+            "my_model.sql": my_model_incremental_wrong_order_depends_on_fk_sql,
+            "foreign_key_model.sql": foreign_key_model_sql,
+            "constraints_schema.yml": model_fk_constraint_schema_yml,
         }
 
 
