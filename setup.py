@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
-import sys
 import re
+import sys
 
 # require python 3.7 or newer
 if sys.version_info < (3, 7):
@@ -33,7 +33,7 @@ def _get_plugin_version_dict():
     _version_path = os.path.join(this_directory, "dbt", "adapters", "spark", "__version__.py")
     _semver = r"""(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"""
     _pre = r"""((?P<prekind>a|b|rc)(?P<pre>\d+))?"""
-    _version_pattern = fr"""version\s*=\s*["']{_semver}{_pre}["']"""
+    _version_pattern = rf"""version\s*=\s*["']{_semver}{_pre}["']"""
     with open(_version_path) as f:
         match = re.search(_version_pattern, f.read().strip())
         if match is None:
@@ -50,7 +50,7 @@ def _get_dbt_core_version():
 
 
 package_name = "dbt-spark-cccs"
-package_version = "1.4.5"
+package_version = "1.4.6"
 dbt_core_version = _get_dbt_core_version()
 description = """The Apache Spark adapter plugin for dbt"""
 
