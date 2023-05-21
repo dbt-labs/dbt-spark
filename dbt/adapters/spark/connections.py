@@ -140,6 +140,9 @@ class SparkCredentials(Credentials):
                     f"ImportError({e.msg})"
                 ) from e
 
+        if self.method != SparkConnectionMethod.SESSION:
+            self.host = self.host.rstrip("/")
+
     @property
     def type(self):
         return "spark"
