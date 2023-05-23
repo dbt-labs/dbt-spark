@@ -294,6 +294,7 @@ class TestSparkIncrementalConstraintsRollback(
 # TODO: Like the tests above, this does test that model-level constraints don't
 # result in errors, but it does not verify that they are actually present in
 # Spark and that the ALTER TABLE statement actually ran.
+@pytest.mark.skip_profile("spark_session", "apache_spark")
 class TestSparkModelConstraintsRuntimeEnforcement(BaseModelConstraintsRuntimeEnforcement):
     @pytest.fixture(scope="class")
     def models(self):
