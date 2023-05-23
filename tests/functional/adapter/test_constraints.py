@@ -63,17 +63,19 @@ class PyodbcSetup:
         return "INT"
 
     @pytest.fixture
+    def schema_string_type(self):
+        return "STRING"
+
+    @pytest.fixture
     def schema_int_type(self):
         return "INT"
 
     @pytest.fixture
-    def data_types(self, int_type, schema_int_type, string_type):
+    def data_types(self, int_type, schema_int_type, string_type, schema_string_type):
         # sql_column_value, schema_data_type, error_data_type
         return [
-            # TODO: the int type is tricky to test in test__constraints_wrong_column_data_type without a schema_string_type to override.
-            # uncomment the line below once https://github.com/dbt-labs/dbt-core/issues/7121 is resolved
-            # ['1', schema_int_type, int_type],
-            ['"1"', "string", string_type],
+            ["1", schema_int_type, int_type],
+            ['"1"', schema_string_type, string_type],
             ["true", "boolean", "BOOL"],
             ['array("1","2","3")', "string", string_type],
             ["array(1,2,3)", "string", string_type],
@@ -93,17 +95,19 @@ class DatabricksHTTPSetup:
         return "INT_TYPE"
 
     @pytest.fixture
+    def schema_string_type(self):
+        return "STRING"
+
+    @pytest.fixture
     def schema_int_type(self):
         return "INT"
 
     @pytest.fixture
-    def data_types(self, int_type, schema_int_type, string_type):
+    def data_types(self, int_type, schema_int_type, string_type, schema_string_type):
         # sql_column_value, schema_data_type, error_data_type
         return [
-            # TODO: the int type is tricky to test in test__constraints_wrong_column_data_type without a schema_string_type to override.
-            # uncomment the line below once https://github.com/dbt-labs/dbt-core/issues/7121 is resolved
-            # ['1', schema_int_type, int_type],
-            ['"1"', "string", string_type],
+            ["1", schema_int_type, int_type],
+            ['"1"', schema_string_type, string_type],
             ["true", "boolean", "BOOLEAN_TYPE"],
             ['array("1","2","3")', "array<string>", "ARRAY_TYPE"],
             ["array(1,2,3)", "array<int>", "ARRAY_TYPE"],
