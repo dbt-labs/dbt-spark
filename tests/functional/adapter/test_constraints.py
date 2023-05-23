@@ -1,5 +1,6 @@
 import pytest
 from dbt.tests.adapter.constraints.test_constraints import (
+    BaseModelConstraintsRuntimeEnforcement,
     BaseTableConstraintsColumnsEqual,
     BaseViewConstraintsColumnsEqual,
     BaseIncrementalConstraintsColumnsEqual,
@@ -9,6 +10,7 @@ from dbt.tests.adapter.constraints.test_constraints import (
     BaseIncrementalConstraintsRollback,
 )
 from dbt.tests.adapter.constraints.fixtures import (
+    constrained_model_schema_yml,
     my_model_sql,
     my_model_wrong_order_sql,
     my_model_wrong_name_sql,
@@ -40,6 +42,7 @@ from
 # Different on Spark:
 # - does not support a data type named 'text' (TODO handle this in the base test classes using string_type
 constraints_yml = model_schema_yml.replace("text", "string").replace("primary key", "")
+model_constraints_yml = constrained_model_schema_yml.replace("text", "string")
 
 
 class PyodbcSetup:
@@ -245,6 +248,7 @@ class BaseSparkConstraintsRollbackSetup:
             "violate the new NOT NULL constraint",
             "(id > 0) violated by row with values:",  # incremental mats
             "DELTA_VIOLATE_CONSTRAINT_WITH_VALUES",  # incremental mats
+            "NOT NULL constraint violated for column",
         ]
 
     def assert_expected_error_messages(self, error_message, expected_error_messages):
@@ -285,3 +289,19 @@ class TestSparkIncrementalConstraintsRollback(
             "my_model.sql": my_incremental_model_sql,
             "constraints_schema.yml": constraints_yml,
         }
+
+
+# TODO: Like the tests above, this does test that model-level constraints don't
+# result in errors, but it does not verify that they are actually present in
+# Spark and that the ALTER TABLE statement actually ran.
+class TestSparkModelConstraintsRuntimeEnforcement(BaseModelConstraintsRuntimeEnforcement):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_incremental_model_sql,
+            "constraints_schema.yml": model_constraints_yml,
+        }
+
+    @pytest.fixture(scope="class")
+    def expected_sql(self):
+        return _expected_sql_spark
