@@ -265,6 +265,7 @@ class BaseSparkConstraintsRollbackSetup:
         return [
             "violate the new CHECK constraint",
             "DELTA_NEW_CHECK_CONSTRAINT_VIOLATION",
+            "DELTA_NEW_NOT_NULL_VIOLATION",
             "violate the new NOT NULL constraint",
             "(id > 0) violated by row with values:",  # incremental mats
             "DELTA_VIOLATE_CONSTRAINT_WITH_VALUES",  # incremental mats
