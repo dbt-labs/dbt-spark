@@ -183,7 +183,7 @@
 {% macro spark__persist_constraints(relation, model) %}
   {%- set contract_config = config.get('contract') -%}
   {% if contract_config.enforced and config.get('file_format', 'delta') == 'delta' %}
-    {% do alter_table_add_constraints(relation, model.columns) %}
+    {% do alter_table_add_constraints(relation, model.constraints) %}
     {% do alter_column_set_constraints(relation, model.columns) %}
   {% endif %}
 {% endmacro %}
@@ -192,18 +192,14 @@
   {{ return(adapter.dispatch('alter_table_add_constraints', 'dbt')(relation, constraints)) }}
 {% endmacro %}
 
-{% macro spark__alter_table_add_constraints(relation, column_dict) %}
-
-  {% for column_name in column_dict %}
-    {% set constraints = column_dict[column_name]['constraints'] %}
-    {% for constraint in constraints %}
-      {% if constraint.type == 'check' and not is_incremental() %}
-        {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint.expression ~ ";" ~ loop.index) -%}
-        {% call statement() %}
-          alter table {{ relation }} add constraint {{ constraint_hash }} check ({{ constraint.expression }});
-        {% endcall %}
-      {% endif %}
-    {% endfor %}
+{% macro spark__alter_table_add_constraints(relation, constraints) %}
+  {% for constraint in constraints %}
+    {% if constraint.type == 'check' and not is_incremental() %}
+      {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint.expression ~ ";" ~ loop.index) -%}
+      {% call statement() %}
+        alter table {{ relation }} add constraint {{ constraint.name if constraint.name else constraint_hash }} check ({{ constraint.expression }});
+      {% endcall %}
+    {% endif %}
   {% endfor %}
 {% endmacro %}
 
