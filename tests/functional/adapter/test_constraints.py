@@ -39,6 +39,22 @@ from
     '2019-01-01' as date_day ) as model_subq
 """
 
+_expected_sql_spark_model_constraints = """
+create or replace table <model_identifier>
+    using delta
+    as
+select
+  id,
+  color,
+  date_day
+from
+
+( select
+    1 as id,
+    'blue' as color,
+    '2019-01-01' as date_day ) as model_subq
+"""
+
 # Different on Spark:
 # - does not support a data type named 'text' (TODO handle this in the base test classes using string_type
 constraints_yml = model_schema_yml.replace("text", "string").replace("primary key", "")
@@ -317,4 +333,4 @@ class TestSparkModelConstraintsRuntimeEnforcement(BaseModelConstraintsRuntimeEnf
 
     @pytest.fixture(scope="class")
     def expected_sql(self):
-        return _expected_sql_spark
+        return _expected_sql_spark_model_constraints
