@@ -301,6 +301,14 @@ class TestSparkIncrementalConstraintsRollback(
 @pytest.mark.skip_profile("spark_session", "apache_spark")
 class TestSparkModelConstraintsRuntimeEnforcement(BaseModelConstraintsRuntimeEnforcement):
     @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {
+            "models": {
+                "+file_format": "delta",
+            }
+        }
+
+    @pytest.fixture(scope="class")
     def models(self):
         return {
             "my_model.sql": my_incremental_model_sql,
