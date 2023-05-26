@@ -11,8 +11,6 @@
 
 - All constraint types are supported, but not enforced. ([#656](https://github.com/dbt-labs/dbt-spark/issues/656), [#657](https://github.com/dbt-labs/dbt-spark/issues/657))
 
-
-
 ## dbt-spark 1.6.0-b1 - May 12, 2023
 
 ### Features
@@ -46,6 +44,10 @@
 - [@flvndh](https://github.com/flvndh) ([#1013](https://github.com/dbt-labs/dbt-spark/issues/1013))
 
 ## dbt-spark 1.6.0-a1 - April 17, 2023
+
+## dbt-spark 1.3.2 - May 26, 2023
+
+
 
 ## Previous Releases
 For information on prior major and minor releases, see their changelogs:
