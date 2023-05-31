@@ -340,7 +340,8 @@ class TestSparkModelConstraintsRuntimeEnforcement(BaseModelConstraintsRuntimeEnf
     def models(self):
         return {
             "my_model.sql": my_incremental_model_sql,
-            "constraints_schema.yml": model_constraints_yml,
+            "foreign_key_model.sql": foreign_key_model_sql,
+            "constraints_schema.yml": model_fk_constraint_schema_yml,
         }
 
     @pytest.fixture(scope="class")
