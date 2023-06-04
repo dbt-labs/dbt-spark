@@ -479,7 +479,7 @@ class SparkAdapter(SQLAdapter):
 
     def debug_query(self):
         """Override for DebugTask method"""
-        self.execute("selecta 1 as id")
+        self.execute("select 1 as id")
 
 
 # spark does something interesting with joins when both tables have the same
