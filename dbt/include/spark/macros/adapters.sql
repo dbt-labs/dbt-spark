@@ -197,7 +197,7 @@
     {% if constraint.type == 'check' and not is_incremental() %}
       {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint.expression ~ ";" ~ loop.index) -%}
       {% call statement() %}
-        alter table {{ relation }} add constraint {{ constraint.name if constraint.name else constraint_hash }} check {{ constraint.expression }};
+        alter table {{ relation }} add constraint {{ constraint.name if constraint.name else constraint_hash }} check ({{ constraint.expression }});
       {% endcall %}
     {% endif %}
   {% endfor %}
