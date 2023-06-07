@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from typing import Tuple
 
 import dbt.exceptions
 from dbt.adapters.base import Credentials
@@ -147,7 +148,7 @@ class SparkCredentials(Credentials):
     def unique_field(self):
         return self.host
 
-    def _connection_keys(self):
+    def _connection_keys(self) -> Tuple[str, ...]:
         return ("host", "port", "cluster", "endpoint", "schema", "organization")
 
 
