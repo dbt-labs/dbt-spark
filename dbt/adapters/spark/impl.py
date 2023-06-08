@@ -480,6 +480,10 @@ class SparkAdapter(SQLAdapter):
                     grants_dict.update({privilege: [grantee]})
         return grants_dict
 
+    def debug_query(self):
+        """Override for DebugTask method"""
+        self.execute("select 1 as id")
+
 
 # spark does something interesting with joins when both tables have the same
 # static values for the join condition and complains that the join condition is
