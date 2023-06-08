@@ -8,7 +8,7 @@ from dbt.tests.adapter.constraints.test_constraints import (
     BaseConstraintsRollback,
     BaseIncrementalConstraintsRuntimeDdlEnforcement,
     BaseIncrementalConstraintsRollback,
-    BaseConstraintQuotedColumn
+    BaseConstraintQuotedColumn,
 )
 from dbt.tests.adapter.constraints.fixtures import (
     constrained_model_schema_yml,
