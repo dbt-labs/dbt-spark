@@ -267,8 +267,8 @@ class TestSparkIncrementalConstraintsDdlEnforcement(
         }
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
-class TestSparkConstraintQuotedColumn(BaseConstraintQuotedColumn):
+@pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
+class TestSparkConstraintQuotedColumn(PyodbcSetup, BaseConstraintQuotedColumn):
     @pytest.fixture(scope="class")
     def models(self):
         return {
