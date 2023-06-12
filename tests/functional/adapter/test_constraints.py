@@ -273,7 +273,9 @@ class TestSparkConstraintQuotedColumn(PyodbcSetup, BaseConstraintQuotedColumn):
     def models(self):
         return {
             "my_model.sql": my_model_with_quoted_column_name_sql,
-            "constraints_schema.yml": model_quoted_column_schema_yml.replace("text", "string").replace('"from"', '`from`'),
+            "constraints_schema.yml": model_quoted_column_schema_yml.replace(
+                "text", "string"
+            ).replace('"from"', "`from`"),
         }
 
     @pytest.fixture(scope="class")
