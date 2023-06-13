@@ -8,6 +8,7 @@ from dbt.tests.adapter.constraints.test_constraints import (
     BaseConstraintsRollback,
     BaseIncrementalConstraintsRuntimeDdlEnforcement,
     BaseIncrementalConstraintsRollback,
+    BaseConstraintQuotedColumn,
 )
 from dbt.tests.adapter.constraints.fixtures import (
     constrained_model_schema_yml,
@@ -24,6 +25,8 @@ from dbt.tests.adapter.constraints.fixtures import (
     my_model_wrong_order_depends_on_fk_sql,
     foreign_key_model_sql,
     my_model_incremental_wrong_order_depends_on_fk_sql,
+    my_model_with_quoted_column_name_sql,
+    model_quoted_column_schema_yml,
 )
 
 # constraints are enforced via 'alter' statements that run after table creation
@@ -262,6 +265,37 @@ class TestSparkIncrementalConstraintsDdlEnforcement(
             "foreign_key_model.sql": foreign_key_model_sql,
             "constraints_schema.yml": model_fk_constraint_schema_yml,
         }
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
+class TestSparkConstraintQuotedColumn(PyodbcSetup, BaseConstraintQuotedColumn):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_with_quoted_column_name_sql,
+            "constraints_schema.yml": model_quoted_column_schema_yml.replace(
+                "text", "string"
+            ).replace('"from"', "`from`"),
+        }
+
+    @pytest.fixture(scope="class")
+    def expected_sql(self):
+        return """
+create or replace table <model_identifier>
+    using delta
+    as
+select
+  id,
+  `from`,
+  date_day
+from
+
+(
+    select
+    'blue' as `from`,
+    1 as id,
+    '2019-01-01' as date_day ) as model_subq
+"""
 
 
 class BaseSparkConstraintsRollbackSetup:
