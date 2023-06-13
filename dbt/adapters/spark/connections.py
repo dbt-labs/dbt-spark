@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from typing import Tuple
 
 import dbt.exceptions
 from dbt.adapters.base import Credentials
