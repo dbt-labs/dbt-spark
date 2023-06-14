@@ -41,6 +41,8 @@ seeds__data_last_day_csv = """date_day,date_part,result
 2018-01-02,quarter,2018-03-31
 2018-01-02,year,2018-12-31
 """
+
+
 # skipped: ,month,
 
 
@@ -109,6 +111,7 @@ class TestIntersect(BaseIntersect):
     pass
 
 
+@pytest.mark.skip_profile("spark_session")  # spark session crashes in CI
 class TestLastDay(BaseLastDay):
     @pytest.fixture(scope="class")
     def seeds(self):
