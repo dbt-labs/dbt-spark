@@ -1,0 +1,6 @@
+kind: Under the Hood
+body: Replace `requirements.txt` with the setup.py `all` dependencies
+time: 2023-06-21T11:06:17.353438+02:00
+custom:
+  Author: JCZuurmond
+  Issue: "811"
