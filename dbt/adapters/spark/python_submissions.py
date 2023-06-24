@@ -1,7 +1,7 @@
 import base64
 import time
 import requests
-from typing import Any, Dict
+from typing import Any, Dict, Callable, Iterable
 import uuid
 
 import dbt.exceptions
@@ -149,18 +149,18 @@ class BaseDatabricksHelper(PythonJobHelper):
 
     def polling(
         self,
-        status_func,
-        status_func_kwargs,
-        get_state_func,
-        terminal_states,
-        expected_end_state,
-        get_state_msg_func,
+        status_func: Callable,
+        status_func_kwargs: Dict,
+        get_state_func: Callable,
+        terminal_states: Iterable[str],
+        expected_end_state: str,
+        get_state_msg_func: Callable,
     ) -> Dict:
         state = None
         start = time.time()
         exceeded_timeout = False
-        response = {}
-        while state not in terminal_states:
+        response: Dict = {}
+        while state is None or state not in terminal_states:
             if time.time() - start > self.timeout:
                 exceeded_timeout = True
                 break
