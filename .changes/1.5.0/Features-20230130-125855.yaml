@@ -1,8 +1,0 @@
-kind: Features
-body: 'Support for data types constraints in Spark following the dbt Core feature
-  #6271'
-time: 2023-01-30T12:58:55.972992+01:00
-custom:
-  Author: b-per
-  Issue: "558"
-  PR: "574"
