@@ -36,11 +36,11 @@ class SparkRelation(BaseRelation):
     columns: List[Tuple[str, str]] = field(default_factory=list)
     properties: Dict[str, str] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.database != self.schema and self.database:
             raise DbtRuntimeError("Cannot set database in spark!")
 
-    def render(self):
+    def render(self) -> str:
         if self.include_policy.database and self.include_policy.schema:
             raise DbtRuntimeError(
                 "Got a spark relation with schema and database set to "
