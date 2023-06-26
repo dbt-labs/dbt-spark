@@ -1,7 +1,10 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable
+from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable, Set
+
+from dbt.adapters.base.relation import InformationSchema
+from dbt.contracts.graph.manifest import Manifest
 
 from typing_extensions import TypeAlias
 
@@ -109,27 +112,27 @@ class SparkAdapter(SQLAdapter):
         return "current_timestamp()"
 
     @classmethod
-    def convert_text_type(cls, agate_table, col_idx):
+    def convert_text_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "string"
 
     @classmethod
-    def convert_number_type(cls, agate_table, col_idx):
+    def convert_number_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         decimals = agate_table.aggregate(agate.MaxPrecision(col_idx))
         return "double" if decimals else "bigint"
 
     @classmethod
-    def convert_date_type(cls, agate_table, col_idx):
+    def convert_date_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "date"
 
     @classmethod
-    def convert_time_type(cls, agate_table, col_idx):
+    def convert_time_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "time"
 
     @classmethod
-    def convert_datetime_type(cls, agate_table, col_idx):
+    def convert_datetime_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "timestamp"
 
-    def quote(self, identifier):
+    def quote(self, identifier: str) -> str:  # type: ignore
         return "`{}`".format(identifier)
 
     def _get_relation_information(self, row: agate.Row) -> RelationInfo:
@@ -344,7 +347,7 @@ class SparkAdapter(SQLAdapter):
             as_dict["table_database"] = None
             yield as_dict
 
-    def get_catalog(self, manifest):
+    def get_catalog(self, manifest: Manifest) -> Tuple[agate.Table, List[Exception]]:
         schema_map = self._get_catalog_schemas(manifest)
         if len(schema_map) > 1:
             raise dbt.exceptions.CompilationError(
@@ -370,9 +373,9 @@ class SparkAdapter(SQLAdapter):
 
     def _get_one_catalog(
         self,
-        information_schema,
-        schemas,
-        manifest,
+        information_schema: InformationSchema,
+        schemas: Set[str],
+        manifest: Manifest,
     ) -> agate.Table:
         if len(schemas) != 1:
             raise dbt.exceptions.CompilationError(
@@ -388,7 +391,7 @@ class SparkAdapter(SQLAdapter):
             columns.extend(self._get_columns_for_catalog(relation))
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
-    def check_schema_exists(self, database, schema):
+    def check_schema_exists(self, database: str, schema: str) -> bool:
         results = self.execute_macro(LIST_SCHEMAS_MACRO_NAME, kwargs={"database": database})
 
         exists = True if schema in [row[0] for row in results] else False
@@ -425,7 +428,7 @@ class SparkAdapter(SQLAdapter):
     # This is for use in the test suite
     # Spark doesn't have 'commit' and 'rollback', so this override
     # doesn't include those commands.
-    def run_sql_for_tests(self, sql, fetch, conn):
+    def run_sql_for_tests(self, sql, fetch, conn):  # type: ignore
         cursor = conn.handle.cursor()
         try:
             cursor.execute(sql)
@@ -477,7 +480,7 @@ class SparkAdapter(SQLAdapter):
                     grants_dict.update({privilege: [grantee]})
         return grants_dict
 
-    def debug_query(self):
+    def debug_query(self) -> None:
         """Override for DebugTask method"""
         self.execute("select 1 as id")
 

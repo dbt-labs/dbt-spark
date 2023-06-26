@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 from types import TracebackType
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
@@ -178,33 +178,38 @@ class Connection:
 
 
 class SessionConnectionWrapper(object):
-    """Connection wrapper for the sessoin connection method."""
+    """Connection wrapper for the session connection method."""
 
-    def __init__(self, handle):
+    handle: Connection
+    _cursor: Optional[Cursor]
+
+    def __init__(self, handle: Connection) -> None:
         self.handle = handle
         self._cursor = None
 
-    def cursor(self):
+    def cursor(self) -> "SessionConnectionWrapper":
         self._cursor = self.handle.cursor()
         return self
 
-    def cancel(self):
+    def cancel(self) -> None:
         logger.debug("NotImplemented: cancel")
 
-    def close(self):
+    def close(self) -> None:
         if self._cursor:
             self._cursor.close()
 
-    def rollback(self, *args, **kwargs):
+    def rollback(self, *args: Any, **kwargs: Any) -> None:
         logger.debug("NotImplemented: rollback")
 
-    def fetchall(self):
+    def fetchall(self) -> Optional[List[Row]]:
+        assert self._cursor, "Cursor not available"
         return self._cursor.fetchall()
 
-    def execute(self, sql, bindings=None):
+    def execute(self, sql: str, bindings: Optional[List[Any]] = None) -> None:
         if sql.strip().endswith(";"):
             sql = sql.strip()[:-1]
 
+        assert self._cursor, "Cursor not available"
         if bindings is None:
             self._cursor.execute(sql)
         else:
@@ -212,11 +217,12 @@ class SessionConnectionWrapper(object):
             self._cursor.execute(sql, *bindings)
 
     @property
-    def description(self):
+    def description(self) -> List[Tuple[str, str, None, None, None, None, bool]]:
+        assert self._cursor, "Cursor not available"
         return self._cursor.description
 
     @classmethod
-    def _fix_binding(cls, value):
+    def _fix_binding(cls, value: Any) -> Union[str, float]:
         """Convert complex datatypes to primitives that can be loaded by
         the Spark driver"""
         if isinstance(value, NUMBERS):
