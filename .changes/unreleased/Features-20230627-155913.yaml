@@ -1,0 +1,6 @@
+kind: Features
+body: add dbt-spark portion of dbt_clone functionality
+time: 2023-06-27T15:59:13.605278-05:00
+custom:
+  Author: McKnight-42 aranke
+  Issue: "815"
