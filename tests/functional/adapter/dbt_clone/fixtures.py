@@ -4,21 +4,21 @@ seed_csv = """id,name
 """
 
 table_model_sql = """
-{{ config(materialized='table', file_format='delta') }}
+{{ config(materialized='table') }}
 select * from {{ ref('ephemeral_model') }}
 -- establish a macro dependency to trigger state:modified.macros
 -- depends on: {{ my_macro() }}
 """
 
 view_model_sql = """
-{{ config(materialized='view', file_format='delta') }}
+{{ config(materialized='view') }}
 select * from {{ ref('seed') }}
 -- establish a macro dependency that trips infinite recursion if not handled
 -- depends on: {{ my_infinitely_recursive_macro() }}
 """
 
 ephemeral_model_sql = """
-{{ config(materialized='ephemeral', file_format='delta') }}
+{{ config(materialized='ephemeral') }}
 select * from {{ ref('view_model') }}
 """
 

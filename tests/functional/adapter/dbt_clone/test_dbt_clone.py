@@ -45,6 +45,23 @@ class TestSparkBigqueryClonePossible(BaseClonePossible):
             "snapshot.sql": snapshot_sql,
         }
 
+    @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {
+            "models": {
+                "+file_format": "delta",
+            },
+            "seeds": {
+                "test": {
+                    "quote_columns": False,
+                },
+                "+file_format": "delta",
+            },
+            "snapshots": {
+                "+file_format": "delta",
+            },
+        }
+
     @pytest.fixture(autouse=True)
     def clean_up(self, project):
         yield
