@@ -3,7 +3,7 @@
 {% endmacro %}
 
 {% macro spark__create_or_replace_clone(this_relation, defer_relation) %}
-    create or replace shallow table {{ this_relation }} clone {{ defer_relation }}
+    create or replace table {{ this_relation }} shallow clone {{ defer_relation }}
 {% endmacro %}
 
 {%- materialization clone, adapter='spark' -%}
