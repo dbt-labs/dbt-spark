@@ -31,3 +31,5 @@ wheel~=0.40
 # Adapter specific dependencies
 mock~=5.0
 thrift_sasl~=0.4.3
+sasl~=0.3.1;python_version<"3.11"
+puresasl;python_version>="3.11"

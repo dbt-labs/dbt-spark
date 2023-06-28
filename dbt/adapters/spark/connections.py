@@ -1,3 +1,4 @@
+import sys
 from contextlib import contextmanager
 
 import dbt.exceptions
@@ -31,8 +32,11 @@ try:
     from thrift.transport.TSSLSocket import TSSLSocket
     import thrift
     import ssl
-    import sasl
     import thrift_sasl
+    if sys.version_info < (3, 11):
+        import sasl
+    else:
+        import puresasl as sasl
 except ImportError:
     pass  # done deliberately: setting modules to None explicitly violates MyPy contracts by degrading type semantics
 
