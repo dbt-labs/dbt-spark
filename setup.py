@@ -11,9 +11,9 @@ if sys.version_info < (3, 8):
 
 # sasl does not support python 3.11 and higher
 if sys.version_info < (3, 11):
-    PYHIVE_SASL_EXTRAS = ["sasl"]
+    PYHIVE_SASL_EXTRA = "PyHive[sasl]>=0.6.0,<0.7.0"
 else:
-    PYHIVE_SASL_EXTRAS = ["hive_pure_sasl"]
+    PYHIVE_SASL_EXTRA = "PyHive[hive_pure_sasl]~=0.7.0"
 
 # require version of setuptools that supports find_namespace_packages
 from setuptools import setup
@@ -61,7 +61,7 @@ description = """The Apache Spark adapter plugin for dbt"""
 
 odbc_extras = ["pyodbc~=4.0.30"]
 pyhive_extras = [
-    f"PyHive[{PYHIVE_SASL_EXTRAS}]>=0.6.0,<0.7.0",
+    PYHIVE_SASL_EXTRA,
     "thrift>=0.11.0,<0.17.0",
 ]
 session_extras = ["pyspark>=3.0.0,<4.0.0"]
