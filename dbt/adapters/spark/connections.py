@@ -34,9 +34,9 @@ try:
     import ssl
     import thrift_sasl
     if sys.version_info < (3, 11):
-        import sasl
+        from sasl import Client as SASLClient
     else:
-        import puresasl as sasl
+        from puresasl.client import SASLClient
 except ImportError:
     pass  # done deliberately: setting modules to None explicitly violates MyPy contracts by degrading type semantics
 
@@ -552,8 +552,8 @@ def build_ssl_transport(
                 # to be nonempty.
                 password = "x"
 
-        def sasl_factory() -> sasl.Client:
-            sasl_client = sasl.Client()
+        def sasl_factory() -> SASLClient:
+            sasl_client = SASLClient()
             sasl_client.setAttr("host", host)
             if sasl_auth == "GSSAPI":
                 sasl_client.setAttr("service", kerberos_service_name)
