@@ -33,6 +33,7 @@ try:
     import thrift
     import ssl
     import thrift_sasl
+
     if sys.version_info < (3, 11):
         from sasl import Client as SASLClient
     else:
