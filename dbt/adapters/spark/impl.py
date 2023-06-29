@@ -371,7 +371,7 @@ class SparkAdapter(SQLAdapter):
             )
 
         with executor(self.config) as tpe:
-            futures: List[Future[agate.Table]] = []  # type: ignore
+            futures: List[Future[agate.Table]] = []
             for info, schemas in schema_map.items():
                 for schema in schemas:
                     futures.append(
