@@ -1,5 +1,5 @@
-git+https://github.com/dropbox/PyHive.git@4367cc550252f9e6f85782bee7f8694325a742a6#egg=PyHive;python_version>="3.11"
-PyHive[sasl]>=0.6.0,<0.7.0; python_version < "3.11"
+git+https://github.com/dropbox/PyHive.git@4367cc550252f9e6f85782bee7f8694325a742a6#egg=PyHive
+# PyHive[sasl]>=0.6.0,<0.7.0; python_version < "3.11"
 requests>=2.28.1
 
 pyodbc~=4.0.30 --no-binary pyodbc
