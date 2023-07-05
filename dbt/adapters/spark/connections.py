@@ -1,4 +1,3 @@
-import sys
 from contextlib import contextmanager
 
 import dbt.exceptions
@@ -553,8 +552,9 @@ def build_ssl_transport(
             if sasl_auth == "GSSAPI":
                 sasl_client = SASLClient(host, kerberos_service_name, mechanism=sasl_auth)
             elif sasl_auth == "PLAIN":
-                sasl_client = SASLClient(host, mechanism=sasl_auth,
-                                         username=username, password=password)
+                sasl_client = SASLClient(
+                    host, mechanism=sasl_auth, username=username, password=password
+                )
             else:
                 raise AssertionError
             return sasl_client
