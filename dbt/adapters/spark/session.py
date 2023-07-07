@@ -109,8 +109,8 @@ class Cursor:
             sql = sql % parameters
         builder = SparkSession.builder.enableHiveSupport()
 
-        for k, v in self.server_side_parameters.items():
-            builder = builder.config(k, v)
+        for parameter, value in self.server_side_parameters.items():
+            builder = builder.config(parameter, value)
 
         spark_session = builder.getOrCreate()
         self._df = spark_session.sql(sql)
