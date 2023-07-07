@@ -350,6 +350,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
         creds = connection.credentials
         exc = None
+        handle: Any
 
         for i in range(1 + creds.connect_retries):
             try:
