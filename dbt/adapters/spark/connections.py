@@ -73,7 +73,7 @@ class SparkCredentials(Credentials):
     connect_retries: int = 0
     connect_timeout: int = 10
     use_ssl: bool = False
-    server_side_parameters: Dict[str, Any] = field(default_factory=dict)
+    server_side_parameters: Dict[str, str] = field(default_factory=dict)
     retry_all: bool = False
 
     @classmethod
@@ -141,6 +141,10 @@ class SparkCredentials(Credentials):
 
         if self.method != SparkConnectionMethod.SESSION:
             self.host = self.host.rstrip("/")
+
+        self.server_side_parameters = {
+            str(key): str(value) for key, value in self.server_side_parameters
+        }
 
     @property
     def type(self) -> str:
