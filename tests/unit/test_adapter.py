@@ -39,9 +39,7 @@ class TestSparkAdapter(unittest.TestCase):
                         "token": "abc123",
                         "organization": "0123456789",
                         "cluster": "01234-23423-coffeetime",
-                        "server_side_parameters": {
-                            "spark.driver.memory": "4g"
-                        }
+                        "server_side_parameters": {"spark.driver.memory": "4g"},
                     }
                 },
                 "target": "test",
