@@ -24,7 +24,7 @@ class Cursor:
     https://github.com/mkleehammer/pyodbc/wiki/Cursor
     """
 
-    def __init__(self, server_side_parameters) -> None:
+    def __init__(self, server_side_parameters: Dict[str, Any]) -> None:
         self._df: Optional[DataFrame] = None
         self._rows: Optional[List[Row]] = None
         self.server_side_parameters = server_side_parameters
