@@ -186,7 +186,7 @@ class SessionConnectionWrapper(object):
     handle: Connection
     _cursor: Optional[Cursor]
 
-    def __init__(self, handle: Connection, server_side_parameters: Dict[str, Any]) -> None:
+    def __init__(self, handle: Connection) -> None:
         self.handle = handle
         self._cursor = None
 
