@@ -165,7 +165,7 @@ class Connection:
     https://github.com/mkleehammer/pyodbc/wiki/Connection
     """
 
-    def __init__(self, server_side_parameters) -> None:
+    def __init__(self, server_side_parameters: Dict[Any, str]) -> None:
         self.server_side_parameters = server_side_parameters
 
     def cursor(self) -> Cursor:
