@@ -143,7 +143,7 @@ class SparkCredentials(Credentials):
             self.host = self.host.rstrip("/")
 
         self.server_side_parameters = {
-            str(key): str(value) for key, value in self.server_side_parameters
+            str(key): str(value) for key, value in self.server_side_parameters.items()
         }
 
     @property
