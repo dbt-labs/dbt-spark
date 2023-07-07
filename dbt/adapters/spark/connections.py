@@ -27,6 +27,8 @@ from hologram.helpers import StrEnum
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable
 
+from abc import ABC, abstractmethod
+
 try:
     from thrift.transport.TSSLSocket import TSSLSocket
     import thrift
@@ -154,7 +156,38 @@ class SparkCredentials(Credentials):
         return "host", "port", "cluster", "endpoint", "schema", "organization"
 
 
-class PyhiveConnectionWrapper(object):
+class ConnectionWrapper(ABC):
+    @abstractmethod
+    def cursor(self) -> "ConnectionWrapper":
+        pass
+
+    @abstractmethod
+    def cancel(self) -> None:
+        pass
+
+    @abstractmethod
+    def close(self) -> None:
+        pass
+
+    @abstractmethod
+    def rollback(self) -> None:
+        pass
+
+    @abstractmethod
+    def fetchall(self) -> List:
+        pass
+
+    @abstractmethod
+    def execute(self, sql: str, bindings: Optional[List[Any]] = None) -> None:
+        pass
+
+    @property
+    @abstractmethod
+    def description(self) -> Tuple[Tuple[str, Any, int, int, int, int, bool]]:
+        pass
+
+
+class PyhiveConnectionWrapper(ConnectionWrapper):
     """Wrap a Spark connection in a way that no-ops transactions"""
 
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html  # noqa
@@ -350,6 +383,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
         creds = connection.credentials
         exc = None
+        handle: ConnectionWrapper
 
         for i in range(1 + creds.connect_retries):
             try:
@@ -460,7 +494,7 @@ class SparkConnectionManager(SQLConnectionManager):
                         SessionConnectionWrapper,
                     )
 
-                    handle = SessionConnectionWrapper(Connection())  # type: ignore
+                    handle = SessionConnectionWrapper(Connection())
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"

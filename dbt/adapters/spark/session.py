@@ -9,6 +9,7 @@ from typing import Any, List, Optional, Tuple, Union
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
 from pyspark.sql import DataFrame, Row, SparkSession
+from dbt.spark.adapters import ConnectionWrapper
 
 
 logger = AdapterLogger("Spark")
@@ -171,7 +172,7 @@ class Connection:
         return Cursor()
 
 
-class SessionConnectionWrapper(object):
+class SessionConnectionWrapper(ConnectionWrapper):
     """Connection wrapper for the session connection method."""
 
     handle: Connection
