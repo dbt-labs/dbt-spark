@@ -1,8 +1,0 @@
-kind: Fixes
-body: Support for iceberg v2 tables.  Added ability to use multiple join conditions
-  to allow for multiple columns to make a row distinct.
-time: 2022-08-19T14:13:50.3145273-04:00
-custom:
-  Author: dparent1
-  Issue: "294"
-  PR: "432"
