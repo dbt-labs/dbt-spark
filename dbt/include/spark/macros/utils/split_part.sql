@@ -31,7 +31,7 @@
                 length({{ string_text }})
                 - length(
                     replace({{ string_text }},  {{ delimiter_text }}, '')
-                ) + 1 {{ part_number }}
+                ) + 1 + {{ part_number }}
             )]
 
         {% endset %}
