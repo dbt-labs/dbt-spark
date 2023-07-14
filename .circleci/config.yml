@@ -23,7 +23,7 @@ jobs:
       - run: python3 -m pip install tox
       - run:
           name: Run integration tests
-          command: tox -e integration-spark-session
+          command: tox -e integration-spark-session -- --ddtrace
           no_output_timeout: 1h
       - store_artifacts:
           path: ./logs
@@ -54,7 +54,7 @@ jobs:
 
       - run:
           name: Run integration tests
-          command: tox -e integration-spark-thrift
+          command: tox -e integration-spark-thrift -- --ddtrace
           no_output_timeout: 1h
       - store_artifacts:
           path: ./logs
@@ -72,7 +72,7 @@ jobs:
       - checkout
       - run:
           name: Run integration tests
-          command: tox -e integration-spark-databricks-http
+          command: tox -e integration-spark-databricks-http -- --ddtrace
           no_output_timeout: 1h
       - store_artifacts:
           path: ./logs
@@ -94,7 +94,7 @@ jobs:
       - checkout
       - run:
           name: Run integration tests
-          command: tox -e integration-spark-databricks-odbc-cluster
+          command: tox -e integration-spark-databricks-odbc-cluster -- --ddtrace
           no_output_timeout: 1h
       - store_artifacts:
           path: ./logs
@@ -105,7 +105,7 @@ jobs:
       - checkout
       - run:
           name: Run integration tests
-          command: tox -e integration-spark-databricks-odbc-sql-endpoint
+          command: tox -e integration-spark-databricks-odbc-sql-endpoint -- --ddtrace
           no_output_timeout: 1h
       - store_artifacts:
           path: ./logs
