@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update pytz requirement from ~=2023.2 to ~=2023.3"
-time: 2023-04-23T21:57:45.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 702
