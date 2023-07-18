@@ -30,5 +30,5 @@ wheel~=0.40
 
 # Adapter specific dependencies
 mock~=5.0
-sasl~=0.3.1
+sasl==0.3.0
 thrift_sasl~=0.4.3
