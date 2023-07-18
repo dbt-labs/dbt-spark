@@ -1,6 +1,0 @@
-kind: Fixes
-body: allow negative args for spark split part
-time: 2023-03-19T15:56:18.630146-05:00
-custom:
-  Author: dave-connors-3
-  Issue: "688"
