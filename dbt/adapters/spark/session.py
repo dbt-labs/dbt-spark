@@ -24,10 +24,10 @@ class Cursor:
     https://github.com/mkleehammer/pyodbc/wiki/Cursor
     """
 
-    def __init__(self, server_side_parameters: Dict[str, Any]) -> None:
+    def __init__(self, *, server_side_parameters: Optional[Dict[str, Any]] = None) -> None:
         self._df: Optional[DataFrame] = None
         self._rows: Optional[List[Row]] = None
-        self.server_side_parameters = server_side_parameters
+        self.server_side_parameters = server_side_parameters or {}
 
     def __enter__(self) -> Cursor:
         return self
@@ -165,8 +165,8 @@ class Connection:
     https://github.com/mkleehammer/pyodbc/wiki/Connection
     """
 
-    def __init__(self, server_side_parameters: Dict[Any, str]) -> None:
-        self.server_side_parameters = server_side_parameters
+    def __init__(self, *, server_side_parameters: Optional[Dict[Any, str]] = None) -> None:
+        self.server_side_parameters = server_side_parameters or {}
 
     def cursor(self) -> Cursor:
         """
@@ -177,7 +177,7 @@ class Connection:
         out : Cursor
             The cursor.
         """
-        return Cursor(self.server_side_parameters)
+        return Cursor(server_side_parameters=self.server_side_parameters)
 
 
 class SessionConnectionWrapper(object):
