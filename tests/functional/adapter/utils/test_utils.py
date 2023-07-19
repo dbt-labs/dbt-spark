@@ -30,10 +30,10 @@ from dbt.tests.adapter.utils.test_listagg import BaseListagg
 from dbt.tests.adapter.utils.fixture_listagg import models__test_listagg_yml
 from tests.functional.adapter.utils.fixture_listagg import models__test_listagg_no_order_by_sql
 
-seeds__data_split_part_csv = """parts,split_on,result_1,result_2,result_3
-a|b|c,|,a,b,c
-1|2|3,|,1,2,3
-EMPTY|EMPTY|EMPTY,|,EMPTY,EMPTY,EMPTY
+seeds__data_split_part_csv = """parts,split_on,result_1,result_2,result_3,result_4
+a|b|c,|,a,b,c,c
+1|2|3,|,1,2,3,3
+EMPTY|EMPTY|EMPTY,|,EMPTY,EMPTY,EMPTY,EMPTY
 """
 
 seeds__data_last_day_csv = """date_day,date_part,result

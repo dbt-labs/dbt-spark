@@ -9,14 +9,34 @@
 
     {% endset %}
 
-    {% set split_part_expr %}
+    {% if part_number >= 0 %}
 
-    split(
-        {{ string_text }},
-        {{ delimiter_expr }}
-        )[({{ part_number - 1 }})]
+        {% set split_part_expr %}
 
-    {% endset %}
+        split(
+            {{ string_text }},
+            {{ delimiter_expr }}
+            )[({{ part_number - 1 if part_number > 0 else part_number }})]
+
+        {% endset %}
+
+    {% else %}
+
+        {% set split_part_expr %}
+
+        split(
+            {{ string_text }},
+            {{ delimiter_expr }}
+            )[(
+                length({{ string_text }})
+                - length(
+                    replace({{ string_text }},  {{ delimiter_text }}, '')
+                ) + 1 + {{ part_number }}
+            )]
+
+        {% endset %}
+
+    {% endif %}
 
     {{ return(split_part_expr) }}
 
