@@ -350,6 +350,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
         creds = connection.credentials
         exc = None
+        handle: Any
 
         for i in range(1 + creds.connect_retries):
             try:
@@ -463,7 +464,9 @@ class SparkConnectionManager(SQLConnectionManager):
                         SessionConnectionWrapper,
                     )
 
-                    handle = SessionConnectionWrapper(Connection())  # type: ignore
+                    handle = SessionConnectionWrapper(
+                        Connection(server_side_parameters=creds.server_side_parameters)
+                    )
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
