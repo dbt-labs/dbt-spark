@@ -1,6 +1,0 @@
-kind: Fixes
-body: Allow hostname to be provided with or without trailing slash
-time: 2023-06-23T11:21:00.901430172Z
-custom:
-  Author: tim-steinkuhler
-  Issue: "302"

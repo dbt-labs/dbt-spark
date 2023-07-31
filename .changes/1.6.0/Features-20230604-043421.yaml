@@ -1,6 +1,0 @@
-kind: Features
-body: Standardize the _connection_keys and debug_query for `dbt debug`.
-time: 2023-06-04T04:34:21.968669-07:00
-custom:
-  Author: versusfacit
-  Issue: PR754
