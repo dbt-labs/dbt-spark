@@ -82,6 +82,7 @@ setup(
     install_requires=[
         "dbt-core~={}".format(dbt_core_version),
         "sqlparams>=3.0.0",
+        "pure-sasl==0.7.1.dev0 --pre"
     ],
     extras_require={
         "ODBC": odbc_extras,
