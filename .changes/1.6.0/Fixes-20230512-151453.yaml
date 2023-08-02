@@ -1,6 +1,0 @@
-kind: Fixes
-body: wrap expression for check constraints in parentheses
-time: 2023-05-12T15:14:53.151149-04:00
-custom:
-  Author: michelleark
-  Issue: "7480"
