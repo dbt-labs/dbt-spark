@@ -1,5 +1,6 @@
 import pytest
 from dbt.tests.adapter.constraints.test_constraints import (
+    BaseModelConstraintsRuntimeEnforcement,
     BaseTableConstraintsColumnsEqual,
     BaseViewConstraintsColumnsEqual,
     BaseIncrementalConstraintsColumnsEqual,
@@ -7,8 +8,10 @@ from dbt.tests.adapter.constraints.test_constraints import (
     BaseConstraintsRollback,
     BaseIncrementalConstraintsRuntimeDdlEnforcement,
     BaseIncrementalConstraintsRollback,
+    BaseConstraintQuotedColumn,
 )
 from dbt.tests.adapter.constraints.fixtures import (
+    constrained_model_schema_yml,
     my_model_sql,
     my_model_wrong_order_sql,
     my_model_wrong_name_sql,
@@ -18,6 +21,12 @@ from dbt.tests.adapter.constraints.fixtures import (
     my_model_incremental_wrong_order_sql,
     my_model_incremental_wrong_name_sql,
     my_incremental_model_sql,
+    model_fk_constraint_schema_yml,
+    my_model_wrong_order_depends_on_fk_sql,
+    foreign_key_model_sql,
+    my_model_incremental_wrong_order_depends_on_fk_sql,
+    my_model_with_quoted_column_name_sql,
+    model_quoted_column_schema_yml,
 )
 
 # constraints are enforced via 'alter' statements that run after table creation
@@ -31,7 +40,27 @@ select
   date_day
 from
 
-( select
+(
+    -- depends_on: <foreign_key_model_identifier>
+    select
+    'blue' as color,
+    1 as id,
+    '2019-01-01' as date_day ) as model_subq
+"""
+
+_expected_sql_spark_model_constraints = """
+create or replace table <model_identifier>
+    using delta
+    as
+select
+  id,
+  color,
+  date_day
+from
+
+(
+    -- depends_on: <foreign_key_model_identifier>
+    select
     'blue' as color,
     1 as id,
     '2019-01-01' as date_day ) as model_subq
@@ -40,6 +69,10 @@ from
 # Different on Spark:
 # - does not support a data type named 'text' (TODO handle this in the base test classes using string_type
 constraints_yml = model_schema_yml.replace("text", "string").replace("primary key", "")
+model_fk_constraint_schema_yml = model_fk_constraint_schema_yml.replace("text", "string").replace(
+    "primary key", ""
+)
+model_constraints_yml = constrained_model_schema_yml.replace("text", "string")
 
 
 class PyodbcSetup:
@@ -60,17 +93,19 @@ class PyodbcSetup:
         return "INT"
 
     @pytest.fixture
+    def schema_string_type(self):
+        return "STRING"
+
+    @pytest.fixture
     def schema_int_type(self):
         return "INT"
 
     @pytest.fixture
-    def data_types(self, int_type, schema_int_type, string_type):
+    def data_types(self, int_type, schema_int_type, string_type, schema_string_type):
         # sql_column_value, schema_data_type, error_data_type
         return [
-            # TODO: the int type is tricky to test in test__constraints_wrong_column_data_type without a schema_string_type to override.
-            # uncomment the line below once https://github.com/dbt-labs/dbt-core/issues/7121 is resolved
-            # ['1', schema_int_type, int_type],
-            ['"1"', "string", string_type],
+            ["1", schema_int_type, int_type],
+            ['"1"', schema_string_type, string_type],
             ["true", "boolean", "BOOL"],
             ['array("1","2","3")', "string", string_type],
             ["array(1,2,3)", "string", string_type],
@@ -90,17 +125,19 @@ class DatabricksHTTPSetup:
         return "INT_TYPE"
 
     @pytest.fixture
+    def schema_string_type(self):
+        return "STRING"
+
+    @pytest.fixture
     def schema_int_type(self):
         return "INT"
 
     @pytest.fixture
-    def data_types(self, int_type, schema_int_type, string_type):
+    def data_types(self, int_type, schema_int_type, string_type, schema_string_type):
         # sql_column_value, schema_data_type, error_data_type
         return [
-            # TODO: the int type is tricky to test in test__constraints_wrong_column_data_type without a schema_string_type to override.
-            # uncomment the line below once https://github.com/dbt-labs/dbt-core/issues/7121 is resolved
-            # ['1', schema_int_type, int_type],
-            ['"1"', "string", string_type],
+            ["1", schema_int_type, int_type],
+            ['"1"', schema_string_type, string_type],
             ["true", "boolean", "BOOLEAN_TYPE"],
             ['array("1","2","3")', "array<string>", "ARRAY_TYPE"],
             ["array(1,2,3)", "array<int>", "ARRAY_TYPE"],
@@ -211,8 +248,9 @@ class TestSparkTableConstraintsDdlEnforcement(
     @pytest.fixture(scope="class")
     def models(self):
         return {
-            "my_model.sql": my_model_wrong_order_sql,
-            "constraints_schema.yml": constraints_yml,
+            "my_model.sql": my_model_wrong_order_depends_on_fk_sql,
+            "foreign_key_model.sql": foreign_key_model_sql,
+            "constraints_schema.yml": model_fk_constraint_schema_yml,
         }
 
 
@@ -223,9 +261,41 @@ class TestSparkIncrementalConstraintsDdlEnforcement(
     @pytest.fixture(scope="class")
     def models(self):
         return {
-            "my_model.sql": my_model_incremental_wrong_order_sql,
-            "constraints_schema.yml": constraints_yml,
+            "my_model.sql": my_model_incremental_wrong_order_depends_on_fk_sql,
+            "foreign_key_model.sql": foreign_key_model_sql,
+            "constraints_schema.yml": model_fk_constraint_schema_yml,
         }
+
+
+@pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
+class TestSparkConstraintQuotedColumn(PyodbcSetup, BaseConstraintQuotedColumn):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_with_quoted_column_name_sql,
+            "constraints_schema.yml": model_quoted_column_schema_yml.replace(
+                "text", "string"
+            ).replace('"from"', "`from`"),
+        }
+
+    @pytest.fixture(scope="class")
+    def expected_sql(self):
+        return """
+create or replace table <model_identifier>
+    using delta
+    as
+select
+  id,
+  `from`,
+  date_day
+from
+
+(
+    select
+    'blue' as `from`,
+    1 as id,
+    '2019-01-01' as date_day ) as model_subq
+"""
 
 
 class BaseSparkConstraintsRollbackSetup:
@@ -242,9 +312,11 @@ class BaseSparkConstraintsRollbackSetup:
         return [
             "violate the new CHECK constraint",
             "DELTA_NEW_CHECK_CONSTRAINT_VIOLATION",
+            "DELTA_NEW_NOT_NULL_VIOLATION",
             "violate the new NOT NULL constraint",
             "(id > 0) violated by row with values:",  # incremental mats
             "DELTA_VIOLATE_CONSTRAINT_WITH_VALUES",  # incremental mats
+            "NOT NULL constraint violated for column",
         ]
 
     def assert_expected_error_messages(self, error_message, expected_error_messages):
@@ -285,3 +357,29 @@ class TestSparkIncrementalConstraintsRollback(
             "my_model.sql": my_incremental_model_sql,
             "constraints_schema.yml": constraints_yml,
         }
+
+
+# TODO: Like the tests above, this does test that model-level constraints don't
+# result in errors, but it does not verify that they are actually present in
+# Spark and that the ALTER TABLE statement actually ran.
+@pytest.mark.skip_profile("spark_session", "apache_spark")
+class TestSparkModelConstraintsRuntimeEnforcement(BaseModelConstraintsRuntimeEnforcement):
+    @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {
+            "models": {
+                "+file_format": "delta",
+            }
+        }
+
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_model.sql": my_model_wrong_order_depends_on_fk_sql,
+            "foreign_key_model.sql": foreign_key_model_sql,
+            "constraints_schema.yml": model_fk_constraint_schema_yml,
+        }
+
+    @pytest.fixture(scope="class")
+    def expected_sql(self):
+        return _expected_sql_spark_model_constraints
