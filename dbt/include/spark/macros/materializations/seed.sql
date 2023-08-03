@@ -69,7 +69,7 @@
     {{ clustered_cols(label="clustered by") }}
     {{ location_clause() }}
     {{ comment_clause() }}
-    {{ tblproperties_clause() }}
+    {{ dbt_spark_tblproperties_clause() }}
   {% endset %}
 
   {% call statement('_') -%}
