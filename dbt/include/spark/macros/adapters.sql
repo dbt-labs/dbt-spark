@@ -1,4 +1,8 @@
-{% macro dbt_spark_tblproperties_clause() -%}
+{% macro tblproperties_clause() %}
+  {{ return(adapter.dispatch('tblproperties_clause', 'dbt')()) }}
+{%- endmacro -%}
+
+{% macro spark__tblproperties_clause() -%}
   {%- set tblproperties = config.get('tblproperties') -%}
   {%- if tblproperties is not none %}
     tblproperties (
