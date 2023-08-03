@@ -24,7 +24,7 @@ pytest-xdist~=3.2
 pytz~=2023.3
 tox~=4.4;python_version>="3.8"
 types-pytz~=2023.3
-types-requests~=2.28
+types-requests~=2.29
 twine~=4.0
 wheel~=0.40
 
