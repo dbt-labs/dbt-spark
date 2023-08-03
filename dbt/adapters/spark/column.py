@@ -26,7 +26,7 @@ class SparkColumn(dbtClassMixin, Column):  # type: ignore
         """returns True if both columns are strings"""
         return self.is_string() and other_column.is_string()
 
-    def literal(self, value):
+    def literal(self, value: Any) -> str:
         return "cast({} as {})".format(value, self.dtype)
 
     @property

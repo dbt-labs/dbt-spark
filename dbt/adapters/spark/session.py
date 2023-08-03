@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 from types import TracebackType
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
@@ -24,9 +24,10 @@ class Cursor:
     https://github.com/mkleehammer/pyodbc/wiki/Cursor
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, server_side_parameters: Optional[Dict[str, Any]] = None) -> None:
         self._df: Optional[DataFrame] = None
         self._rows: Optional[List[Row]] = None
+        self.server_side_parameters = server_side_parameters or {}
 
     def __enter__(self) -> Cursor:
         return self
@@ -106,7 +107,12 @@ class Cursor:
         """
         if len(parameters) > 0:
             sql = sql % parameters
-        spark_session = SparkSession.builder.enableHiveSupport().getOrCreate()
+        builder = SparkSession.builder.enableHiveSupport()
+
+        for parameter, value in self.server_side_parameters.items():
+            builder = builder.config(parameter, value)
+
+        spark_session = builder.getOrCreate()
         self._df = spark_session.sql(sql)
 
     def fetchall(self) -> Optional[List[Row]]:
@@ -140,7 +146,7 @@ class Cursor:
         https://github.com/mkleehammer/pyodbc/wiki/Cursor#fetchone
         """
         if self._rows is None and self._df is not None:
-            self._rows = self._df.collect()
+            self._rows = self._df.take(1)
 
         if self._rows is not None and len(self._rows) > 0:
             row = self._rows.pop(0)
@@ -159,6 +165,9 @@ class Connection:
     https://github.com/mkleehammer/pyodbc/wiki/Connection
     """
 
+    def __init__(self, *, server_side_parameters: Optional[Dict[Any, str]] = None) -> None:
+        self.server_side_parameters = server_side_parameters or {}
+
     def cursor(self) -> Cursor:
         """
         Get a cursor.
@@ -168,37 +177,42 @@ class Connection:
         out : Cursor
             The cursor.
         """
-        return Cursor()
+        return Cursor(server_side_parameters=self.server_side_parameters)
 
 
 class SessionConnectionWrapper(object):
-    """Connection wrapper for the sessoin connection method."""
+    """Connection wrapper for the session connection method."""
 
-    def __init__(self, handle):
+    handle: Connection
+    _cursor: Optional[Cursor]
+
+    def __init__(self, handle: Connection) -> None:
         self.handle = handle
         self._cursor = None
 
-    def cursor(self):
+    def cursor(self) -> "SessionConnectionWrapper":
         self._cursor = self.handle.cursor()
         return self
 
-    def cancel(self):
+    def cancel(self) -> None:
         logger.debug("NotImplemented: cancel")
 
-    def close(self):
+    def close(self) -> None:
         if self._cursor:
             self._cursor.close()
 
-    def rollback(self, *args, **kwargs):
+    def rollback(self, *args: Any, **kwargs: Any) -> None:
         logger.debug("NotImplemented: rollback")
 
-    def fetchall(self):
+    def fetchall(self) -> Optional[List[Row]]:
+        assert self._cursor, "Cursor not available"
         return self._cursor.fetchall()
 
-    def execute(self, sql, bindings=None):
+    def execute(self, sql: str, bindings: Optional[List[Any]] = None) -> None:
         if sql.strip().endswith(";"):
             sql = sql.strip()[:-1]
 
+        assert self._cursor, "Cursor not available"
         if bindings is None:
             self._cursor.execute(sql)
         else:
@@ -206,11 +220,12 @@ class SessionConnectionWrapper(object):
             self._cursor.execute(sql, *bindings)
 
     @property
-    def description(self):
+    def description(self) -> List[Tuple[str, str, None, None, None, None, bool]]:
+        assert self._cursor, "Cursor not available"
         return self._cursor.description
 
     @classmethod
-    def _fix_binding(cls, value):
+    def _fix_binding(cls, value: Any) -> Union[str, float]:
         """Convert complex datatypes to primitives that can be loaded by
         the Spark driver"""
         if isinstance(value, NUMBERS):

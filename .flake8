@@ -4,9 +4,11 @@ select =
     W
     F
 ignore =
-    W503 # makes Flake8 work like black
-    W504
-    E203 # makes Flake8 work like black
-    E741
-    E501
+    # makes Flake8 work like black
+    W503,
+    W504,
+    # makes Flake8 work like black
+    E203,
+    E741,
+    E501,
 exclude = test
