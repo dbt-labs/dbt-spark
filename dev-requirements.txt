@@ -24,7 +24,7 @@ pytest-xdist~=3.2
 pytz~=2023.3
 tox~=4.5
 types-pytz~=2023.3
-types-requests~=2.29
+types-requests~=2.31
 twine~=4.0
 wheel~=0.40
 
