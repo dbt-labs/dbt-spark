@@ -5,7 +5,7 @@ from dbt.adapters.spark.column import SparkColumn  # noqa
 from dbt.adapters.spark.impl import SparkAdapter
 
 from dbt.adapters.base import AdapterPlugin
-from dbt.include import spark  # type: ignore
+from dbt.include import spark
 
 Plugin = AdapterPlugin(
     adapter=SparkAdapter, credentials=SparkCredentials, include_path=spark.PACKAGE_PATH  # type: ignore
