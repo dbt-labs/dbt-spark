@@ -1,6 +1,0 @@
-kind: Fixes
-body: Disallow untyped `def`'s
-time: 2023-05-10T16:31:10.593358+02:00
-custom:
-  Author: Fokko
-  Issue: "760"

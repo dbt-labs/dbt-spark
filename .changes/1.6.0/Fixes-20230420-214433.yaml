@@ -1,6 +1,0 @@
-kind: Fixes
-body: Fixed issue where table materialization was not always properly refreshing for non-admin users on Databricks
-time: 2023-04-20T21:44:33.343598-04:00
-custom:
-  Author: mikealfare
-  Issue: "725"

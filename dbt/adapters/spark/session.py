@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 from types import TracebackType
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
@@ -26,9 +26,10 @@ class Cursor:
     https://github.com/mkleehammer/pyodbc/wiki/Cursor
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, server_side_parameters: Optional[Dict[str, Any]] = None) -> None:
         self._df: Optional[DataFrame] = None
         self._rows: Optional[List[Row]] = None
+        self.server_side_parameters = server_side_parameters or {}
 
     def __enter__(self) -> Cursor:
         return self
@@ -108,7 +109,13 @@ class Cursor:
         """
         if len(parameters) > 0:
             sql = sql % parameters
-        spark_session = SparkSession.builder.enableHiveSupport().getOrCreate()
+
+        builder = SparkSession.builder.enableHiveSupport()
+
+        for parameter, value in self.server_side_parameters.items():
+            builder = builder.config(parameter, value)
+
+        spark_session = builder.getOrCreate()
 
         try:
             self._df = spark_session.sql(sql)
@@ -165,6 +172,9 @@ class Connection:
     https://github.com/mkleehammer/pyodbc/wiki/Connection
     """
 
+    def __init__(self, *, server_side_parameters: Optional[Dict[Any, str]] = None) -> None:
+        self.server_side_parameters = server_side_parameters or {}
+
     def cursor(self) -> Cursor:
         """
         Get a cursor.
@@ -174,7 +184,7 @@ class Connection:
         out : Cursor
             The cursor.
         """
-        return Cursor()
+        return Cursor(server_side_parameters=self.server_side_parameters)
 
 
 class SessionConnectionWrapper(object):
