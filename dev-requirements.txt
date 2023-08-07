@@ -26,7 +26,7 @@ tox~=4.5
 types-pytz~=2023.3
 types-requests~=2.29
 twine~=4.0
-wheel~=0.40
+wheel~=0.41
 
 # Adapter specific dependencies
 mock~=5.0
