@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update pip-tools requirement from ~=6.12 to ~=6.13"
-time: 2023-04-21T23:00:51.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 737
