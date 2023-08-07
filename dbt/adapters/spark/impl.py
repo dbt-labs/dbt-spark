@@ -433,7 +433,7 @@ class SparkAdapter(SQLAdapter):
             names = sorted((self.quote(n) for n in column_names))
         columns_csv = ", ".join(names)
 
-        assert columns_csv, f"Could not determine columns for: {relation_a}"
+        assert columns_csv, f"Could not find columns for: {relation_a}"
 
         sql = COLUMNS_EQUAL_SQL.format(
             columns=columns_csv,
