@@ -1,4 +1,4 @@
-{% macro dbt_spark_tblproperties_clause() -%}
+{% macro spark__tblproperties_clause() -%}
   {%- set tblproperties = config.get('tblproperties') -%}
   {%- if tblproperties is not none %}
     tblproperties (
@@ -7,6 +7,10 @@
       {%- endfor %}
     )
   {%- endif %}
+{%- endmacro -%}
+
+{% macro tblproperties_clause() -%}
+  {{ return(adapter.dispatch('tblproperties_clause', 'dbt')()) }}
 {%- endmacro -%}
 
 {% macro file_format_clause() %}
@@ -156,6 +160,7 @@
       {% endif %}
       {{ file_format_clause() }}
       {{ options_clause() }}
+      {{ tblproperties_clause() }}
       {{ partition_cols(label="partitioned by") }}
       {{ clustered_cols(label="clustered by") }}
       {{ location_clause() }}
