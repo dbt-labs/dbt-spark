@@ -229,9 +229,38 @@
   {% endfor %}
 {% endmacro %}
 
+{% macro get_column_comment_sql(column_name, column_dict) -%}
+  {% if (column_name|upper in column_dict) -%}
+    {% set matched_column = column_name|upper -%}
+  {% elif (column_name|lower in column_dict) -%}
+    {% set matched_column = column_name|lower -%}
+  {% elif (column_name in column_dict) -%}
+    {% set matched_column = column_name -%}
+  {% else -%}
+    {% set matched_column = None -%}
+  {% endif -%}
+  {% if matched_column and column_dict[matched_column]["description"] -%}
+    {% set column_comment_clause = "comment '" ~ column_dict[matched_column]["description"] ~ "'" %}
+  {%- endif -%}
+  {{ adapter.quote(column_name) }} {{ column_comment_clause }}
+{% endmacro %}
+
+{% macro get_persist_docs_column_list(model_columns, query_columns) %}
+(
+  {% for column_name in query_columns %}
+    {{ get_column_comment_sql(column_name, model_columns) }}
+    {{- ", " if not loop.last else "" }}
+  {% endfor %}
+)
+{% endmacro %}
 
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
+  {% if config.persist_column_docs() -%}
+    {% set model_columns = model.columns %} 
+    {% set query_columns = get_columns_in_query(sql) %}
+    {{ get_persist_docs_column_list(model_columns, query_columns) }}
+  {% endif %}
   {{ comment_clause() }}
   {%- set contract_config = config.get('contract') -%}
   {%- if contract_config.enforced -%}
