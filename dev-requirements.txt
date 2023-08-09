@@ -13,7 +13,7 @@ flaky~=3.7
 freezegun~=1.2
 ipdb~=0.13.13
 mypy==1.3.0  # patch updates have historically introduced breaking changes
-pip-tools~=6.13
+pip-tools~=7.2
 pre-commit~=3.3
 pre-commit-hooks~=4.4
 pytest~=7.4
@@ -22,11 +22,11 @@ pytest-dotenv~=0.5.2
 pytest-logbook~=1.2
 pytest-xdist~=3.3
 pytz~=2023.3
-tox~=4.5
+tox~=4.6
 types-pytz~=2023.3
 types-requests~=2.29
 twine~=4.0
-wheel~=0.40
+wheel~=0.41
 
 # Adapter specific dependencies
 mock~=5.1
