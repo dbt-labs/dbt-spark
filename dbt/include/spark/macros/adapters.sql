@@ -160,10 +160,12 @@
       {% endif %}
       {{ file_format_clause() }}
       {{ options_clause() }}
+      {{ tblproperties_clause() }}
       {{ partition_cols(label="partitioned by") }}
       {{ clustered_cols(label="clustered by") }}
       {{ location_clause() }}
       {{ comment_clause() }}
+
       as
       {{ compiled_code }}
     {%- endif -%}
