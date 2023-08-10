@@ -25,7 +25,7 @@ import sqlparams
 from dbt.contracts.connection import Connection
 from hologram.helpers import StrEnum
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable
+from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable, Sequence
 
 from abc import ABC, abstractmethod
 
@@ -75,7 +75,7 @@ class SparkCredentials(Credentials):
     connect_retries: int = 0
     connect_timeout: int = 10
     use_ssl: bool = False
-    server_side_parameters: Dict[str, Any] = field(default_factory=dict)
+    server_side_parameters: Dict[str, str] = field(default_factory=dict)
     retry_all: bool = False
 
     @classmethod
@@ -144,6 +144,10 @@ class SparkCredentials(Credentials):
         if self.method != SparkConnectionMethod.SESSION:
             self.host = self.host.rstrip("/")
 
+        self.server_side_parameters = {
+            str(key): str(value) for key, value in self.server_side_parameters.items()
+        }
+
     @property
     def type(self) -> str:
         return "spark"
@@ -174,7 +178,7 @@ class SparkConnectionWrapper(ABC):
         pass
 
     @abstractmethod
-    def fetchall(self) -> List:
+    def fetchall(self) -> Optional[List]:
         pass
 
     @abstractmethod
@@ -183,7 +187,11 @@ class SparkConnectionWrapper(ABC):
 
     @property
     @abstractmethod
-    def description(self) -> Tuple[Tuple[str, Any, int, int, int, int, bool]]:
+    def description(
+        self,
+    ) -> Sequence[
+        Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], bool]
+    ]:
         pass
 
 
@@ -297,8 +305,17 @@ class PyhiveConnectionWrapper(SparkConnectionWrapper):
             return value
 
     @property
-    def description(self) -> Tuple[Tuple[str, Any, int, int, int, int, bool]]:
+    def description(
+        self,
+    ) -> Sequence[
+        Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], bool]
+    ]:
         assert self._cursor, "Cursor not available"
+        # ignoring type, since the annotation looks wrong.
+        # This docstring states:
+        # The metadata for the columns returned in the last SQL SELECT statement, in
+        # the form of a list of tuples.
+        # So we expect a List of Tuples, instead of a Tuple of Tuples.
         return self._cursor.description
 
 
@@ -410,7 +427,10 @@ class SparkConnectionManager(SQLConnectionManager):
                     token = base64.standard_b64encode(raw_token).decode()
                     transport.setCustomHeaders({"Authorization": "Basic {}".format(token)})
 
-                    conn = hive.connect(thrift_transport=transport)
+                    conn = hive.connect(
+                        thrift_transport=transport,
+                        configuration=creds.server_side_parameters,
+                    )
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.THRIFT:
                     cls.validate_creds(creds, ["host", "port", "user", "schema"])
@@ -494,7 +514,9 @@ class SparkConnectionManager(SQLConnectionManager):
                         SessionConnectionWrapper,
                     )
 
-                    handle = SessionConnectionWrapper(Connection())
+                    handle = SessionConnectionWrapper(
+                        Connection(server_side_parameters=creds.server_side_parameters)
+                    )
                 else:
                     raise dbt.exceptions.DbtProfileError(
                         f"invalid credential method: {creds.method}"
