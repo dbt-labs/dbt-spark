@@ -20,6 +20,7 @@ jobs:
        - checkout
        - run: apt-get update
        - run: conda create --name dbt_test_env python=3.10
+       - run: conda activate dbt_test_env
        - run: python3 -m pip install --upgrade pip
        - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev libxml2-dev libxslt-dev
        - run: python3 -m pip install tox
