@@ -11,23 +11,24 @@ jobs:
       - run: tox -e flake8,unit
 
 # Turning off for now due to flaky runs of tests will turn back on at later date.
-  # integration-spark-session:
-  #   environment:
-  #     DBT_INVOCATION_ENV: circle
-  #   docker:
-  #     - image: godatadriven/pyspark:3.1
-  #   steps:
-  #     - checkout
-  #     - run: apt-get update
-  #     - run: python3 -m pip install --upgrade pip
-  #     - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev
-  #     - run: python3 -m pip install tox
-  #     - run:
-  #         name: Run integration tests
-  #         command: tox -e integration-spark-session
-  #         no_output_timeout: 1h
-  #     - store_artifacts:
-  #         path: ./logs
+  integration-spark-session:
+     environment:
+       DBT_INVOCATION_ENV: circle
+     docker:
+       - image: godatadriven/pyspark:3.1
+     steps:
+       - checkout
+       - run: apt-get update
+       - run: conda install python=3.10
+       - run: python3 -m pip install --upgrade pip
+       - run: apt-get install -y git gcc g++ unixodbc-dev libsasl2-dev libxml2-dev libxslt-dev
+       - run: python3 -m pip install tox
+       - run:
+           name: Run integration tests
+           command: tox -e integration-spark-session
+           no_output_timeout: 1h
+       - store_artifacts:
+           path: ./logs
 
   integration-spark-thrift:
     environment:
@@ -116,9 +117,9 @@ workflows:
   test-everything:
     jobs:
       - unit
-      # - integration-spark-session:
-      #     requires:
-      #       - unit
+      - integration-spark-session:
+          requires:
+            - unit
       - integration-spark-thrift:
           requires:
             - unit
