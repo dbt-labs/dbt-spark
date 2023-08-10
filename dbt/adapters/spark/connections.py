@@ -311,11 +311,6 @@ class PyhiveConnectionWrapper(SparkConnectionWrapper):
         Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], bool]
     ]:
         assert self._cursor, "Cursor not available"
-        # ignoring type, since the annotation looks wrong.
-        # This docstring states:
-        # The metadata for the columns returned in the last SQL SELECT statement, in
-        # the form of a list of tuples.
-        # So we expect a List of Tuples, instead of a Tuple of Tuples.
         return self._cursor.description
 
 
