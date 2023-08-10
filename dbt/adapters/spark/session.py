@@ -6,10 +6,12 @@ import datetime as dt
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 
+from dbt.adapters.spark.connections import SparkConnectionWrapper
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
+from dbt.exceptions import DbtRuntimeError
 from pyspark.sql import DataFrame, Row, SparkSession
-from dbt.adapters.spark.connections import SparkConnectionWrapper
+from pyspark.sql.utils import AnalysisException
 
 
 logger = AdapterLogger("Spark")
@@ -110,13 +112,18 @@ class Cursor:
         """
         if len(parameters) > 0:
             sql = sql % parameters
+
         builder = SparkSession.builder.enableHiveSupport()
 
         for parameter, value in self.server_side_parameters.items():
             builder = builder.config(parameter, value)
 
         spark_session = builder.getOrCreate()
-        self._df = spark_session.sql(sql)
+
+        try:
+            self._df = spark_session.sql(sql)
+        except AnalysisException as exc:
+            raise DbtRuntimeError(str(exc)) from exc
 
     def fetchall(self) -> Optional[List[Row]]:
         """
