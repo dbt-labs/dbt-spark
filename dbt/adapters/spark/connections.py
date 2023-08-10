@@ -156,9 +156,9 @@ class SparkCredentials(Credentials):
         return "host", "port", "cluster", "endpoint", "schema", "organization"
 
 
-class ConnectionWrapper(ABC):
+class SparkConnectionWrapper(ABC):
     @abstractmethod
-    def cursor(self) -> "ConnectionWrapper":
+    def cursor(self) -> "SparkConnectionWrapper":
         pass
 
     @abstractmethod
@@ -187,7 +187,7 @@ class ConnectionWrapper(ABC):
         pass
 
 
-class PyhiveConnectionWrapper(ConnectionWrapper):
+class PyhiveConnectionWrapper(SparkConnectionWrapper):
     """Wrap a Spark connection in a way that no-ops transactions"""
 
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html  # noqa
@@ -383,7 +383,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
         creds = connection.credentials
         exc = None
-        handle: ConnectionWrapper
+        handle: SparkConnectionWrapper
 
         for i in range(1 + creds.connect_retries):
             try:
