@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import datetime as dt
 from types import TracebackType
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 
+from dbt.adapters.spark.connections import SparkConnectionWrapper
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
+from dbt.exceptions import DbtRuntimeError
 from pyspark.sql import DataFrame, Row, SparkSession
+from pyspark.sql.utils import AnalysisException
 
 
 logger = AdapterLogger("Spark")
@@ -44,13 +47,15 @@ class Cursor:
     @property
     def description(
         self,
-    ) -> List[Tuple[str, str, None, None, None, None, bool]]:
+    ) -> Sequence[
+        Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], bool]
+    ]:
         """
         Get the description.
 
         Returns
         -------
-        out : List[Tuple[str, str, None, None, None, None, bool]]
+        out : Sequence[Tuple[str, str, None, None, None, None, bool]]
             The description.
 
         Source
@@ -107,13 +112,18 @@ class Cursor:
         """
         if len(parameters) > 0:
             sql = sql % parameters
+
         builder = SparkSession.builder.enableHiveSupport()
 
         for parameter, value in self.server_side_parameters.items():
             builder = builder.config(parameter, value)
 
         spark_session = builder.getOrCreate()
-        self._df = spark_session.sql(sql)
+
+        try:
+            self._df = spark_session.sql(sql)
+        except AnalysisException as exc:
+            raise DbtRuntimeError(str(exc)) from exc
 
     def fetchall(self) -> Optional[List[Row]]:
         """
@@ -180,7 +190,7 @@ class Connection:
         return Cursor(server_side_parameters=self.server_side_parameters)
 
 
-class SessionConnectionWrapper(object):
+class SessionConnectionWrapper(SparkConnectionWrapper):
     """Connection wrapper for the session connection method."""
 
     handle: Connection
@@ -220,7 +230,11 @@ class SessionConnectionWrapper(object):
             self._cursor.execute(sql, *bindings)
 
     @property
-    def description(self) -> List[Tuple[str, str, None, None, None, None, bool]]:
+    def description(
+        self,
+    ) -> Sequence[
+        Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], bool]
+    ]:
         assert self._cursor, "Cursor not available"
         return self._cursor.description
 
