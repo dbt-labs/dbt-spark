@@ -25,7 +25,9 @@ import sqlparams
 from dbt.contracts.connection import Connection
 from hologram.helpers import StrEnum
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable
+from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable, Sequence
+
+from abc import ABC, abstractmethod
 
 try:
     from thrift.transport.TSSLSocket import TSSLSocket
@@ -158,7 +160,42 @@ class SparkCredentials(Credentials):
         return "host", "port", "cluster", "endpoint", "schema", "organization"
 
 
-class PyhiveConnectionWrapper(object):
+class SparkConnectionWrapper(ABC):
+    @abstractmethod
+    def cursor(self) -> "SparkConnectionWrapper":
+        pass
+
+    @abstractmethod
+    def cancel(self) -> None:
+        pass
+
+    @abstractmethod
+    def close(self) -> None:
+        pass
+
+    @abstractmethod
+    def rollback(self) -> None:
+        pass
+
+    @abstractmethod
+    def fetchall(self) -> Optional[List]:
+        pass
+
+    @abstractmethod
+    def execute(self, sql: str, bindings: Optional[List[Any]] = None) -> None:
+        pass
+
+    @property
+    @abstractmethod
+    def description(
+        self,
+    ) -> Sequence[
+        Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], bool]
+    ]:
+        pass
+
+
+class PyhiveConnectionWrapper(SparkConnectionWrapper):
     """Wrap a Spark connection in a way that no-ops transactions"""
 
     # https://forums.databricks.com/questions/2157/in-apache-spark-sql-can-we-roll-back-the-transacti.html  # noqa
@@ -268,7 +305,11 @@ class PyhiveConnectionWrapper(object):
             return value
 
     @property
-    def description(self) -> Tuple[Tuple[str, Any, int, int, int, int, bool]]:
+    def description(
+        self,
+    ) -> Sequence[
+        Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], bool]
+    ]:
         assert self._cursor, "Cursor not available"
         return self._cursor.description
 
@@ -354,7 +395,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
         creds = connection.credentials
         exc = None
-        handle: Any
+        handle: SparkConnectionWrapper
 
         for i in range(1 + creds.connect_retries):
             try:
