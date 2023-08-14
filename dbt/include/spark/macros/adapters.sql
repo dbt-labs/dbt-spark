@@ -257,7 +257,7 @@
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
   {% if config.persist_column_docs() -%}
-    {% set model_columns = model.columns %} 
+    {% set model_columns = model.columns %}
     {% set query_columns = get_columns_in_query(sql) %}
     {{ get_persist_docs_column_list(model_columns, query_columns) }}
   {% endif %}
