@@ -2,7 +2,9 @@ import pytest
 
 from dbt.tests.util import run_dbt
 
-from dbt.tests.adapter.incremental.test_incremental_on_schema_change import BaseIncrementalOnSchemaChangeSetup
+from dbt.tests.adapter.incremental.test_incremental_on_schema_change import (
+    BaseIncrementalOnSchemaChangeSetup,
+)
 
 
 class IncrementalOnSchemaChangeIgnoreFail(BaseIncrementalOnSchemaChangeSetup):
@@ -57,20 +59,16 @@ class TestDeltaOnSchemaChange(BaseIncrementalOnSchemaChangeSetup):
 
     def run_incremental_sync_all_columns(self, project):
         select = "model_a incremental_sync_all_columns incremental_sync_all_columns_target"
-        compare_source = "incremental_sync_all_columns"
-        compare_target = "incremental_sync_all_columns_target"
         run_dbt(["run", "--models", select, "--full-refresh"])
         # Delta Lake doesn"t support removing columns -- show a nice compilation error
-        results = run_dbt(["run", "--models", select], expect_pass = False)
+        results = run_dbt(["run", "--models", select], expect_pass=False)
         assert "Compilation Error" in results[1].message
-        
+
     def run_incremental_sync_remove_only(self, project):
         select = "model_a incremental_sync_remove_only incremental_sync_remove_only_target"
-        compare_source = "incremental_sync_remove_only"
-        compare_target = "incremental_sync_remove_only_target"
         run_dbt(["run", "--models", select, "--full-refresh"])
         # Delta Lake doesn"t support removing columns -- show a nice compilation error
-        results = run_dbt(["run", "--models", select], expect_pass = False)
+        results = run_dbt(["run", "--models", select], expect_pass=False)
         assert "Compilation Error" in results[1].message
 
     def test_run_incremental_append_new_columns(self, project):

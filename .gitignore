@@ -44,4 +44,3 @@ test.env
 .hive-metastore/
 .spark-warehouse/
 dbt-integration-tests
-test/integration/.user.yml

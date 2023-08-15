@@ -39,6 +39,7 @@
     {%- call statement('main', language=language) -%}
       {{ create_table_as(False, target_relation, compiled_code, language) }}
     {%- endcall -%}
+    {% do persist_constraints(target_relation, model) %}
   {%- elif existing_relation.is_view or should_full_refresh() -%}
     {#-- Relation must be dropped & recreated --#}
     {% set is_delta = (file_format == 'delta' and existing_relation.is_delta) %}
@@ -48,6 +49,7 @@
     {%- call statement('main', language=language) -%}
       {{ create_table_as(False, target_relation, compiled_code, language) }}
     {%- endcall -%}
+    {% do persist_constraints(target_relation, model) %}
   {%- else -%}
     {#-- Relation must be merged --#}
     {%- call statement('create_tmp_relation', language=language) -%}
@@ -55,7 +57,7 @@
     {%- endcall -%}
     {%- do process_schema_changes(on_schema_change, tmp_relation, existing_relation) -%}
     {%- call statement('main') -%}
-      {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, unique_key, incremental_predicates) }}
+      {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, existing_relation, unique_key, incremental_predicates) }}
     {%- endcall -%}
     {%- if language == 'python' -%}
       {#--
@@ -63,7 +65,7 @@
       See note in dbt-spark/dbt/include/spark/macros/adapters.sql
       re: python models and temporary views.
 
-      Also, why doesn't either drop_relation or adapter.drop_relation work here?!
+      Also, why do neither drop_relation or adapter.drop_relation work here?!
       --#}
       {% call statement('drop_relation') -%}
         drop table if exists {{ tmp_relation }}

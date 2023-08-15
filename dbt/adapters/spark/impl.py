@@ -1,18 +1,20 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Union, Type
+from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable, Set
+
+from dbt.adapters.base.relation import InformationSchema
+from dbt.contracts.graph.manifest import Manifest
+
 from typing_extensions import TypeAlias
 
 import agate
-from dbt.contracts.relation import RelationType
 
 import dbt
 import dbt.exceptions
 
 from dbt.adapters.base import AdapterConfig, PythonJobHelper
-from dbt.adapters.base.impl import catch_as_completed
-from dbt.contracts.connection import AdapterResponse
+from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
@@ -23,8 +25,10 @@ from dbt.adapters.spark.python_submissions import (
 )
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
+from dbt.contracts.connection import AdapterResponse
+from dbt.contracts.graph.nodes import ConstraintType
+from dbt.contracts.relation import RelationType
 from dbt.events import AdapterLogger
-from dbt.flags import get_flags
 from dbt.utils import executor, AttrDict
 
 logger = AdapterLogger("Spark")
@@ -32,8 +36,8 @@ logger = AdapterLogger("Spark")
 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
 LIST_RELATIONS_MACRO_NAME = "list_relations_without_caching"
-DROP_RELATION_MACRO_NAME = "drop_relation"
-FETCH_TBL_PROPERTIES_MACRO_NAME = "fetch_tbl_properties"
+LIST_RELATIONS_SHOW_TABLES_MACRO_NAME = "list_relations_show_tables_without_caching"
+DESCRIBE_TABLE_EXTENDED_MACRO_NAME = "describe_table_extended_without_caching"
 
 KEY_TABLE_OWNER = "Owner"
 KEY_TABLE_STATISTICS = "Statistics"
@@ -80,6 +84,7 @@ class SparkAdapter(SQLAdapter):
     INFORMATION_COLUMNS_REGEX = re.compile(r"^ \|-- (.*): (.*) \(nullable = (.*)\b", re.MULTILINE)
     INFORMATION_OWNER_REGEX = re.compile(r"^Owner: (.*)$", re.MULTILINE)
     INFORMATION_STATISTICS_REGEX = re.compile(r"^Statistics: (.*)$", re.MULTILINE)
+
     HUDI_METADATA_COLUMNS = [
         "_hoodie_commit_time",
         "_hoodie_commit_seqno",
@@ -88,7 +93,16 @@ class SparkAdapter(SQLAdapter):
         "_hoodie_file_name",
     ]
 
+    CONSTRAINT_SUPPORT = {
+        ConstraintType.check: ConstraintSupport.NOT_ENFORCED,
+        ConstraintType.not_null: ConstraintSupport.NOT_ENFORCED,
+        ConstraintType.unique: ConstraintSupport.NOT_ENFORCED,
+        ConstraintType.primary_key: ConstraintSupport.NOT_ENFORCED,
+        ConstraintType.foreign_key: ConstraintSupport.NOT_ENFORCED,
+    }
+
     Relation: TypeAlias = SparkRelation
+    RelationInfo = Tuple[str, str, str]
     Column: TypeAlias = SparkColumn
     ConnectionManager: TypeAlias = SparkConnectionManager
     AdapterSpecificConfigs: TypeAlias = SparkConfig
@@ -98,78 +112,135 @@ class SparkAdapter(SQLAdapter):
         return "current_timestamp()"
 
     @classmethod
-    def convert_text_type(cls, agate_table, col_idx):
+    def convert_text_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "string"
 
     @classmethod
-    def convert_number_type(cls, agate_table, col_idx):
+    def convert_number_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         decimals = agate_table.aggregate(agate.MaxPrecision(col_idx))
         return "double" if decimals else "bigint"
 
     @classmethod
-    def convert_date_type(cls, agate_table, col_idx):
+    def convert_date_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "date"
 
     @classmethod
-    def convert_time_type(cls, agate_table, col_idx):
+    def convert_time_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "time"
 
     @classmethod
-    def convert_datetime_type(cls, agate_table, col_idx):
+    def convert_datetime_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "timestamp"
 
-    def quote(self, identifier):
+    def quote(self, identifier: str) -> str:  # type: ignore
         return "`{}`".format(identifier)
 
-    def add_schema_to_cache(self, schema) -> str:
-        """Cache a new schema in dbt. It will show up in `list relations`."""
-        if schema is None:
-            name = self.nice_connection_name()
-            raise dbt.exceptions.CompilationError(
-                "Attempted to cache a null schema for {}".format(name)
-            )
-        if get_flags().USE_CACHE:  # type: ignore
-            self.cache.add_schema(None, schema)
-        # so jinja doesn't render things
-        return ""
-
-    def list_relations_without_caching(
-        self, schema_relation: SparkRelation
-    ) -> List[SparkRelation]:
-        kwargs = {"schema_relation": schema_relation}
+    def _get_relation_information(self, row: agate.Row) -> RelationInfo:
+        """relation info was fetched with SHOW TABLES EXTENDED"""
         try:
-            results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
-        except dbt.exceptions.DbtRuntimeError as e:
-            errmsg = getattr(e, "msg", "")
-            if f"Database '{schema_relation}' not found" in errmsg:
-                return []
-            else:
-                description = "Error while retrieving information about"
-                logger.debug(f"{description} {schema_relation}: {e.msg}")
-                return []
-
-        relations = []
-        for row in results:
-            if len(row) != 4:
-                raise dbt.exceptions.DbtRuntimeError(
-                    f'Invalid value from "show table extended ...", '
-                    f"got {len(row)} values, expected 4"
-                )
             _schema, name, _, information = row
-            rel_type = RelationType.View if "Type: VIEW" in information else RelationType.Table
-            is_delta = "Provider: delta" in information
-            is_hudi = "Provider: hudi" in information
+        except ValueError:
+            raise dbt.exceptions.DbtRuntimeError(
+                f'Invalid value from "show tables extended ...", got {len(row)} values, expected 4'
+            )
+
+        return _schema, name, information
+
+    def _get_relation_information_using_describe(self, row: agate.Row) -> RelationInfo:
+        """Relation info fetched using SHOW TABLES and an auxiliary DESCRIBE statement"""
+        try:
+            _schema, name, _ = row
+        except ValueError:
+            raise dbt.exceptions.DbtRuntimeError(
+                f'Invalid value from "show tables ...", got {len(row)} values, expected 3'
+            )
+
+        table_name = f"{_schema}.{name}"
+        try:
+            table_results = self.execute_macro(
+                DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name}
+            )
+        except dbt.exceptions.DbtRuntimeError as e:
+            logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
+            table_results = AttrDict()
+
+        information = ""
+        for info_row in table_results:
+            info_type, info_value, _ = info_row
+            if not info_type.startswith("#"):
+                information += f"{info_type}: {info_value}\n"
+
+        return _schema, name, information
+
+    def _build_spark_relation_list(
+        self,
+        row_list: agate.Table,
+        relation_info_func: Callable[[agate.Row], RelationInfo],
+    ) -> List[BaseRelation]:
+        """Aggregate relations with format metadata included."""
+        relations = []
+        for row in row_list:
+            _schema, name, information = relation_info_func(row)
+
+            rel_type: RelationType = (
+                RelationType.View if "Type: VIEW" in information else RelationType.Table
+            )
+            is_delta: bool = "Provider: delta" in information
+            is_hudi: bool = "Provider: hudi" in information
+            is_iceberg: bool = "Provider: iceberg" in information
+
             relation: BaseRelation = self.Relation.create(
                 schema=_schema,
                 identifier=name,
                 type=rel_type,
                 information=information,
                 is_delta=is_delta,
+                is_iceberg=is_iceberg,
                 is_hudi=is_hudi,
             )
             relations.append(relation)
 
         return relations
+
+    def list_relations_without_caching(self, schema_relation: BaseRelation) -> List[BaseRelation]:
+        """Distinct Spark compute engines may not support the same SQL featureset. Thus, we must
+        try different methods to fetch relation information."""
+
+        kwargs = {"schema_relation": schema_relation}
+
+        try:
+            # Default compute engine behavior: show tables extended
+            show_table_extended_rows = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
+            return self._build_spark_relation_list(
+                row_list=show_table_extended_rows,
+                relation_info_func=self._get_relation_information,
+            )
+        except dbt.exceptions.DbtRuntimeError as e:
+            errmsg = getattr(e, "msg", "")
+            if f"Database '{schema_relation}' not found" in errmsg:
+                return []
+            # Iceberg compute engine behavior: show table
+            elif "SHOW TABLE EXTENDED is not supported for v2 tables" in errmsg:
+                # this happens with spark-iceberg with v2 iceberg tables
+                # https://issues.apache.org/jira/browse/SPARK-33393
+                try:
+                    # Iceberg behavior: 3-row result of relations obtained
+                    show_table_rows = self.execute_macro(
+                        LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs=kwargs
+                    )
+                    return self._build_spark_relation_list(
+                        row_list=show_table_rows,
+                        relation_info_func=self._get_relation_information_using_describe,
+                    )
+                except dbt.exceptions.DbtRuntimeError as e:
+                    description = "Error while retrieving information about"
+                    logger.debug(f"{description} {schema_relation}: {e.msg}")
+                    return []
+            else:
+                logger.debug(
+                    f"Error while retrieving information about {schema_relation}: {errmsg}"
+                )
+                return []
 
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.get_default_include_policy().database:
@@ -177,7 +248,9 @@ class SparkAdapter(SQLAdapter):
 
         return super().get_relation(database, schema, identifier)
 
-    def parse_describe_extended(self, relation: Relation, raw_rows: AttrDict) -> List[SparkColumn]:
+    def parse_describe_extended(
+        self, relation: BaseRelation, raw_rows: AttrDict
+    ) -> List[SparkColumn]:
         # Convert the Row to a dict
         dict_rows = [dict(zip(row._keys, row._values)) for row in raw_rows]
         # Find the separator between the rows and the metadata provided
@@ -214,7 +287,7 @@ class SparkAdapter(SQLAdapter):
             pos += 1
         return pos
 
-    def get_columns_in_relation(self, relation: Relation) -> List[SparkColumn]:
+    def get_columns_in_relation(self, relation: BaseRelation) -> List[SparkColumn]:
         columns = []
         try:
             rows: AttrDict = self.execute_macro(
@@ -235,12 +308,16 @@ class SparkAdapter(SQLAdapter):
         columns = [x for x in columns if x.name not in self.HUDI_METADATA_COLUMNS]
         return columns
 
-    def parse_columns_from_information(self, relation: SparkRelation) -> List[SparkColumn]:
-        owner_match = re.findall(self.INFORMATION_OWNER_REGEX, relation.information)
+    def parse_columns_from_information(self, relation: BaseRelation) -> List[SparkColumn]:
+        if hasattr(relation, "information"):
+            information = relation.information or ""
+        else:
+            information = ""
+        owner_match = re.findall(self.INFORMATION_OWNER_REGEX, information)
         owner = owner_match[0] if owner_match else None
-        matches = re.finditer(self.INFORMATION_COLUMNS_REGEX, relation.information)
+        matches = re.finditer(self.INFORMATION_COLUMNS_REGEX, information)
         columns = []
-        stats_match = re.findall(self.INFORMATION_STATISTICS_REGEX, relation.information)
+        stats_match = re.findall(self.INFORMATION_STATISTICS_REGEX, information)
         raw_table_stats = stats_match[0] if stats_match else None
         table_stats = SparkColumn.convert_table_stats(raw_table_stats)
         for match_num, match in enumerate(matches):
@@ -259,7 +336,7 @@ class SparkAdapter(SQLAdapter):
             columns.append(column)
         return columns
 
-    def _get_columns_for_catalog(self, relation: SparkRelation) -> Iterable[Dict[str, Any]]:
+    def _get_columns_for_catalog(self, relation: BaseRelation) -> Iterable[Dict[str, Any]]:
         columns = self.parse_columns_from_information(relation)
 
         for column in columns:
@@ -270,13 +347,7 @@ class SparkAdapter(SQLAdapter):
             as_dict["table_database"] = None
             yield as_dict
 
-    def get_properties(self, relation: Relation) -> Dict[str, str]:
-        properties = self.execute_macro(
-            FETCH_TBL_PROPERTIES_MACRO_NAME, kwargs={"relation": relation}
-        )
-        return dict(properties)
-
-    def get_catalog(self, manifest):
+    def get_catalog(self, manifest: Manifest) -> Tuple[agate.Table, List[Exception]]:
         schema_map = self._get_catalog_schemas(manifest)
         if len(schema_map) > 1:
             raise dbt.exceptions.CompilationError(
@@ -302,9 +373,9 @@ class SparkAdapter(SQLAdapter):
 
     def _get_one_catalog(
         self,
-        information_schema,
-        schemas,
-        manifest,
+        information_schema: InformationSchema,
+        schemas: Set[str],
+        manifest: Manifest,
     ) -> agate.Table:
         if len(schemas) != 1:
             raise dbt.exceptions.CompilationError(
@@ -316,11 +387,11 @@ class SparkAdapter(SQLAdapter):
 
         columns: List[Dict[str, Any]] = []
         for relation in self.list_relations(database, schema):
-            logger.debug("Getting table schema for relation {}", relation)
+            logger.debug("Getting table schema for relation {}", str(relation))
             columns.extend(self._get_columns_for_catalog(relation))
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
-    def check_schema_exists(self, database, schema):
+    def check_schema_exists(self, database: str, schema: str) -> bool:
         results = self.execute_macro(LIST_SCHEMAS_MACRO_NAME, kwargs={"database": database})
 
         exists = True if schema in [row[0] for row in results] else False
@@ -333,7 +404,7 @@ class SparkAdapter(SQLAdapter):
         column_names: Optional[List[str]] = None,
         except_operator: str = "EXCEPT",
     ) -> str:
-        """Generate SQL for a query that returns a single row with a two
+        """Generate SQL for a query that returns a single row with two
         columns: the number of rows that are different between the two
         relations and the number of mismatched rows.
         """
@@ -357,7 +428,7 @@ class SparkAdapter(SQLAdapter):
     # This is for use in the test suite
     # Spark doesn't have 'commit' and 'rollback', so this override
     # doesn't include those commands.
-    def run_sql_for_tests(self, sql, fetch, conn):
+    def run_sql_for_tests(self, sql, fetch, conn):  # type: ignore
         cursor = conn.handle.cursor()
         try:
             cursor.execute(sql)
@@ -408,6 +479,10 @@ class SparkAdapter(SQLAdapter):
                 else:
                     grants_dict.update({privilege: [grantee]})
         return grants_dict
+
+    def debug_query(self) -> None:
+        """Override for DebugTask method"""
+        self.execute("select 1 as id")
 
 
 # spark does something interesting with joins when both tables have the same
