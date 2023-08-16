@@ -173,9 +173,10 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_thrift(self.project_cfg)
         adapter = SparkAdapter(config)
 
-
-        def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password, configuration):
-            self.assertEqual(host, 'myorg.sparkhost.com')
+        def hive_thrift_connect(
+            host, port, username, auth, kerberos_service_name, password, configuration
+        ):
+            self.assertEqual(host, "myorg.sparkhost.com")
             self.assertEqual(port, 10001)
             self.assertEqual(username, "dbt")
             self.assertIsNone(auth)
@@ -216,8 +217,10 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_thrift_kerberos(self.project_cfg)
         adapter = SparkAdapter(config)
 
-        def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password, configuration):
-            self.assertEqual(host, 'myorg.sparkhost.com')
+        def hive_thrift_connect(
+            host, port, username, auth, kerberos_service_name, password, configuration
+        ):
+            self.assertEqual(host, "myorg.sparkhost.com")
             self.assertEqual(port, 10001)
             self.assertEqual(username, "dbt")
             self.assertEqual(auth, "KERBEROS")
@@ -715,50 +718,52 @@ class TestSparkAdapter(unittest.TestCase):
         columns = SparkAdapter(config).parse_columns_from_information(relation)
         self.assertEqual(len(columns), 4)
 
-        self.assertEqual(columns[2].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'dt',
-            'column_index': 2,
-            'dtype': 'date',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None,
+        self.assertEqual(
+            columns[2].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "dt",
+                "column_index": 2,
+                "dtype": "date",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+                "stats:bytes:description": "",
+                "stats:bytes:include": True,
+                "stats:bytes:label": "bytes",
+                "stats:bytes:value": 1234567890,
+                "stats:rows:description": "",
+                "stats:rows:include": True,
+                "stats:rows:label": "rows",
+                "stats:rows:value": 12345678,
+            },
+        )
 
-            'stats:bytes:description': '',
-            'stats:bytes:include': True,
-            'stats:bytes:label': 'bytes',
-            'stats:bytes:value': 1234567890,
-
-            'stats:rows:description': '',
-            'stats:rows:include': True,
-            'stats:rows:label': 'rows',
-            'stats:rows:value': 12345678
-        })
-
-        self.assertEqual(columns[3].to_column_dict(omit_none=False), {
-            'table_database': None,
-            'table_schema': relation.schema,
-            'table_name': relation.name,
-            'table_type': rel_type,
-            'table_owner': 'root',
-            'column': 'struct_col',
-            'column_index': 3,
-            'dtype': 'struct',
-            'numeric_scale': None,
-            'numeric_precision': None,
-            'char_size': None,
-
-            'stats:bytes:description': '',
-            'stats:bytes:include': True,
-            'stats:bytes:label': 'bytes',
-            'stats:bytes:value': 1234567890,
-
-            'stats:rows:description': '',
-            'stats:rows:include': True,
-            'stats:rows:label': 'rows',
-            'stats:rows:value': 12345678
-        })
+        self.assertEqual(
+            columns[3].to_column_dict(omit_none=False),
+            {
+                "table_database": None,
+                "table_schema": relation.schema,
+                "table_name": relation.name,
+                "table_type": rel_type,
+                "table_owner": "root",
+                "column": "struct_col",
+                "column_index": 3,
+                "dtype": "struct",
+                "numeric_scale": None,
+                "numeric_precision": None,
+                "char_size": None,
+                "stats:bytes:description": "",
+                "stats:bytes:include": True,
+                "stats:bytes:label": "bytes",
+                "stats:bytes:value": 1234567890,
+                "stats:rows:description": "",
+                "stats:rows:include": True,
+                "stats:rows:label": "rows",
+                "stats:rows:value": 12345678,
+            },
+        )
