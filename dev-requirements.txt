@@ -5,7 +5,7 @@ git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-tests-adapter&subdirectory=
 
 # if version 1.x or greater -> pin to major version
 # if version 0.x -> pin to minor
-black~=23.3
+black~=23.7
 bumpversion~=0.6.0
 click~=8.1
 flake8~=6.1;python_version>="3.8"
@@ -24,11 +24,11 @@ pytest-xdist~=3.3
 pytz~=2023.3
 tox~=4.8
 types-pytz~=2023.3
-types-requests~=2.29
+types-requests~=2.31
 twine~=4.0
 wheel~=0.41
 
 # Adapter specific dependencies
-mock~=5.0
+mock~=5.1
 sasl~=0.3.1
 thrift_sasl~=0.4.3
