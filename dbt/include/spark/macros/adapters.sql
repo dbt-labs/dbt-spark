@@ -229,7 +229,7 @@
   {% endfor %}
 {% endmacro %}
 
-{% macro get_column_comment_sql(column_name, column_dict) -%}
+{% macro get_matched_column(column_name, column_dict) %}
   {% if (column_name|upper in column_dict) -%}
     {% set matched_column = column_name|upper -%}
   {% elif (column_name|lower in column_dict) -%}
@@ -239,6 +239,11 @@
   {% else -%}
     {% set matched_column = None -%}
   {% endif -%}
+  {{ return(matched_column)}}
+{% endmacro %}
+
+{% macro get_column_comment_sql(column_name, column_dict) -%}
+  {% set matched_column = get_matched_column(column_name, column_dict) -%}
   {% if matched_column and column_dict[matched_column]["description"] -%}
     {% set column_comment_clause = "comment '" ~ column_dict[matched_column]["description"] ~ "'" %}
   {%- endif -%}
