@@ -31,4 +31,3 @@ wheel~=0.40
 # Adapter specific dependencies
 mock~=5.0
 thrift_sasl~=0.4.3
-pure-sasl==0.7.1.dev0 --pre
