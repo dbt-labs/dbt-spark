@@ -31,8 +31,8 @@ try:
     from thrift.transport.TSSLSocket import TSSLSocket
     import thrift
     import ssl
-    import sasl
     import thrift_sasl
+    from puresasl.client import SASLClient
 except ImportError:
     pass  # done deliberately: setting modules to None explicitly violates MyPy contracts by degrading type semantics
 
@@ -530,17 +530,15 @@ def build_ssl_transport(host, port, username, auth, kerberos_service_name, passw
                 # to be nonempty.
                 password = "x"
 
-        def sasl_factory():
-            sasl_client = sasl.Client()
-            sasl_client.setAttr("host", host)
+        def sasl_factory() -> SASLClient:
             if sasl_auth == "GSSAPI":
-                sasl_client.setAttr("service", kerberos_service_name)
+                sasl_client = SASLClient(host, kerberos_service_name, mechanism=sasl_auth)
             elif sasl_auth == "PLAIN":
-                sasl_client.setAttr("username", username)
-                sasl_client.setAttr("password", password)
+                sasl_client = SASLClient(
+                    host, mechanism=sasl_auth, username=username, password=password
+                )
             else:
                 raise AssertionError
-            sasl_client.init()
             return sasl_client
 
         transport = thrift_sasl.TSaslClientTransport(sasl_factory, sasl_auth, socket)
