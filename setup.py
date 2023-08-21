@@ -9,13 +9,6 @@ if sys.version_info < (3, 8):
     print("Please upgrade to Python 3.8 or higher.")
     sys.exit(1)
 
-# # sasl does not support python 3.11 and higher
-# if sys.version_info < (3, 11):
-#     PYHIVE_SASL_EXTRA = "PyHive[sasl]>=0.6.0,<0.7.0"
-# else:
-#     print("Using pure_sasl for python 3.11 and higher`")
-#     PYHIVE_SASL_EXTRA = "PyHive[hive_pure_sasl]~=0.7.0"
-
 # require version of setuptools that supports find_namespace_packages
 from setuptools import setup
 
@@ -82,7 +75,6 @@ setup(
     install_requires=[
         "dbt-core~={}".format(dbt_core_version),
         "sqlparams>=3.0.0",
-        "pyhive[hive_pure_sasl]~=0.7.0"
     ],
     extras_require={
         "ODBC": odbc_extras,
