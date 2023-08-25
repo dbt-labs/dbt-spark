@@ -22,7 +22,7 @@ pytest-dotenv~=0.5.2
 pytest-logbook~=1.2
 pytest-xdist~=3.3
 pytz~=2023.3
-tox~=4.8
+tox~=4.9
 types-pytz~=2023.3
 types-requests~=2.31
 twine~=4.0
@@ -30,5 +30,4 @@ wheel~=0.41
 
 # Adapter specific dependencies
 mock~=5.1
-sasl~=0.3.1
 thrift_sasl~=0.4.3
