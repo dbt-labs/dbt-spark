@@ -23,7 +23,7 @@ except ImportError:
 from datetime import datetime
 import sqlparams
 from dbt.contracts.connection import Connection
-from hologram.helpers import StrEnum
+from dbt.dataclass_schema import StrEnum
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable, Sequence
 
@@ -59,9 +59,10 @@ class SparkConnectionMethod(StrEnum):
 
 @dataclass
 class SparkCredentials(Credentials):
-    host: str
-    method: SparkConnectionMethod
-    database: Optional[str]  # type: ignore
+    host: Optional[str] = None
+    schema: Optional[str] = None
+    method: SparkConnectionMethod = None
+    database: Optional[str] = None  # type: ignore
     driver: Optional[str] = None
     cluster: Optional[str] = None
     endpoint: Optional[str] = None
@@ -90,6 +91,13 @@ class SparkCredentials(Credentials):
         return self.cluster
 
     def __post_init__(self) -> None:
+        if self.method is None:
+            raise dbt.exceptions.DbtRuntimeError("Must specify `method` in profile")
+        if self.host is None:
+            raise dbt.exceptions.DbtRuntimeError("Must specify `host` in profile")
+        if self.schema is None:
+            raise dbt.exceptions.DbtRuntimeError("Must specify `schema` in profile")
+
         # spark classifies database and schema as the same thing
         if self.database is not None and self.database != self.schema:
             raise dbt.exceptions.DbtRuntimeError(
