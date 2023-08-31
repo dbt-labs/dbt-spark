@@ -8,7 +8,7 @@ Self = TypeVar("Self", bound="SparkColumn")
 
 
 @dataclass
-class SparkColumn(dbtClassMixin, Column):  # type: ignore
+class SparkColumn(dbtClassMixin, Column):
     table_database: Optional[str] = None
     table_schema: Optional[str] = None
     table_name: Optional[str] = None

@@ -60,8 +60,8 @@ class SparkConnectionMethod(StrEnum):
 @dataclass
 class SparkCredentials(Credentials):
     host: Optional[str] = None
-    schema: Optional[str] = None
-    method: SparkConnectionMethod = None
+    schema: Optional[str] = None  # type: ignore
+    method: SparkConnectionMethod = None  # type: ignore
     database: Optional[str] = None  # type: ignore
     driver: Optional[str] = None
     cluster: Optional[str] = None
@@ -162,7 +162,7 @@ class SparkCredentials(Credentials):
 
     @property
     def unique_field(self) -> str:
-        return self.host
+        return self.host  # type: ignore
 
     def _connection_keys(self) -> Tuple[str, ...]:
         return "host", "port", "cluster", "endpoint", "schema", "organization"
