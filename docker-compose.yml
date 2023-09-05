@@ -2,7 +2,7 @@ version: "3.7"
 services:
 
   dbt-spark3-thrift:
-    image: godatadriven/spark:3.1.1
+    build: docker/
     ports:
       - "10000:10000"
       - "4040:4040"
@@ -19,7 +19,7 @@ services:
       - WAIT_FOR=dbt-hive-metastore:5432
 
   dbt-hive-metastore:
-    image: postgres:9.6.17-alpine
+    image: postgres:9-alpine
     volumes:
       - ./.hive-metastore/:/var/lib/postgresql/data
     environment:
