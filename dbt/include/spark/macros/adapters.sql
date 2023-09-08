@@ -229,19 +229,9 @@
   {% endfor %}
 {% endmacro %}
 
-{% macro get_matched_column(column_name, column_dict) %}
-  {% if (column_name in column_dict) -%}
-    {% set matched_column = column_name -%}
-  {% else -%}
-    {% set matched_column = None -%}
-  {% endif -%}
-  {{ return(matched_column)}}
-{% endmacro %}
-
 {% macro get_column_comment_sql(column_name, column_dict) -%}
-  {% set matched_column = get_matched_column(column_name, column_dict) -%}
-  {% if matched_column and column_dict[matched_column]["description"] -%}
-    {% set column_comment_clause = "comment '" ~ column_dict[matched_column]["description"] ~ "'" %}
+  {% if column_name in column_dict and column_dict[column_name]["description"] -%}
+    {% set column_comment_clause = "comment '" ~ column_dict[column_name]["description"] ~ "'" %}
   {%- endif -%}
   {{ adapter.quote(column_name) }} {{ column_comment_clause }}
 {% endmacro %}
