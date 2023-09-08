@@ -30,6 +30,8 @@ def dbt_profile_target(request):
         target = databricks_http_cluster_target()
     elif profile_type == "spark_session":
         target = spark_session_target()
+    elif profile_type == "spark_connect":
+        target = spark_connect_target()
     else:
         raise ValueError(f"Invalid profile type '{profile_type}'")
     return target
@@ -95,11 +97,11 @@ def databricks_http_cluster_target():
 
 
 def spark_session_target():
-    return {
-        "type": "spark",
-        "host": "localhost",
-        "method": "session",
-    }
+    return {"type": "spark", "host": "localhost", "method": "session"}
+
+
+def spark_connect_target():
+    return {"type": "spark", "host": "localhost", "port": 15002, "method": "connect"}
 
 
 @pytest.fixture(autouse=True)

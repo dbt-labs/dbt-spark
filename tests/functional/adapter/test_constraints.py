@@ -147,7 +147,9 @@ class DatabricksHTTPSetup:
         ]
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
+@pytest.mark.skip_profile(
+    "spark_session", "apache_spark", "databricks_http_cluster", "spark_connect"
+)
 class TestSparkTableConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseTableConstraintsColumnsEqual):
     @pytest.fixture(scope="class")
     def models(self):
@@ -158,7 +160,9 @@ class TestSparkTableConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseTableConstrai
         }
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
+@pytest.mark.skip_profile(
+    "spark_session", "apache_spark", "databricks_http_cluster", "spark_connect"
+)
 class TestSparkViewConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseViewConstraintsColumnsEqual):
     @pytest.fixture(scope="class")
     def models(self):
@@ -169,7 +173,9 @@ class TestSparkViewConstraintsColumnsEqualPyodbc(PyodbcSetup, BaseViewConstraint
         }
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
+@pytest.mark.skip_profile(
+    "spark_session", "apache_spark", "databricks_http_cluster", "spark_connect"
+)
 class TestSparkIncrementalConstraintsColumnsEqualPyodbc(
     PyodbcSetup, BaseIncrementalConstraintsColumnsEqual
 ):
@@ -183,7 +189,11 @@ class TestSparkIncrementalConstraintsColumnsEqualPyodbc(
 
 
 @pytest.mark.skip_profile(
-    "spark_session", "apache_spark", "databricks_sql_endpoint", "databricks_cluster"
+    "spark_session",
+    "apache_spark",
+    "databricks_sql_endpoint",
+    "databricks_cluster",
+    "spark_connect",
 )
 class TestSparkTableConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseTableConstraintsColumnsEqual
@@ -198,7 +208,11 @@ class TestSparkTableConstraintsColumnsEqualDatabricksHTTP(
 
 
 @pytest.mark.skip_profile(
-    "spark_session", "apache_spark", "databricks_sql_endpoint", "databricks_cluster"
+    "spark_session",
+    "apache_spark",
+    "databricks_sql_endpoint",
+    "databricks_cluster",
+    "spark_connect",
 )
 class TestSparkViewConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseViewConstraintsColumnsEqual
@@ -213,7 +227,11 @@ class TestSparkViewConstraintsColumnsEqualDatabricksHTTP(
 
 
 @pytest.mark.skip_profile(
-    "spark_session", "apache_spark", "databricks_sql_endpoint", "databricks_cluster"
+    "spark_session",
+    "apache_spark",
+    "databricks_sql_endpoint",
+    "databricks_cluster",
+    "spark_connect",
 )
 class TestSparkIncrementalConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseIncrementalConstraintsColumnsEqual
@@ -241,7 +259,7 @@ class BaseSparkConstraintsDdlEnforcementSetup:
         return _expected_sql_spark
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
+@pytest.mark.skip_profile("spark_session", "apache_spark", "spark_connect")
 class TestSparkTableConstraintsDdlEnforcement(
     BaseSparkConstraintsDdlEnforcementSetup, BaseConstraintsRuntimeDdlEnforcement
 ):
@@ -254,7 +272,7 @@ class TestSparkTableConstraintsDdlEnforcement(
         }
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
+@pytest.mark.skip_profile("spark_session", "apache_spark", "spark_connect")
 class TestSparkIncrementalConstraintsDdlEnforcement(
     BaseSparkConstraintsDdlEnforcementSetup, BaseIncrementalConstraintsRuntimeDdlEnforcement
 ):
@@ -267,7 +285,9 @@ class TestSparkIncrementalConstraintsDdlEnforcement(
         }
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark", "databricks_http_cluster")
+@pytest.mark.skip_profile(
+    "spark_session", "apache_spark", "databricks_http_cluster", "spark_connect"
+)
 class TestSparkConstraintQuotedColumn(PyodbcSetup, BaseConstraintQuotedColumn):
     @pytest.fixture(scope="class")
     def models(self):
@@ -326,7 +346,7 @@ class BaseSparkConstraintsRollbackSetup:
         assert any(msg in error_message for msg in expected_error_messages)
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
+@pytest.mark.skip_profile("spark_session", "apache_spark", "spark_connect")
 class TestSparkTableConstraintsRollback(
     BaseSparkConstraintsRollbackSetup, BaseConstraintsRollback
 ):
@@ -345,7 +365,7 @@ class TestSparkTableConstraintsRollback(
         return "red"
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
+@pytest.mark.skip_profile("spark_session", "apache_spark", "spark_connect")
 class TestSparkIncrementalConstraintsRollback(
     BaseSparkConstraintsRollbackSetup, BaseIncrementalConstraintsRollback
 ):
@@ -362,7 +382,7 @@ class TestSparkIncrementalConstraintsRollback(
 # TODO: Like the tests above, this does test that model-level constraints don't
 # result in errors, but it does not verify that they are actually present in
 # Spark and that the ALTER TABLE statement actually ran.
-@pytest.mark.skip_profile("spark_session", "apache_spark")
+@pytest.mark.skip_profile("spark_session", "apache_spark", "spark_connect")
 class TestSparkModelConstraintsRuntimeEnforcement(BaseModelConstraintsRuntimeEnforcement):
     @pytest.fixture(scope="class")
     def project_config_update(self):

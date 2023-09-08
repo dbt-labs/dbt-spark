@@ -6,5 +6,8 @@ sqlparams>=3.0.0
 thrift>=0.13.0
 sqlparse>=0.4.2 # not directly required, pinned by Snyk to avoid a vulnerability
 
+#spark-connect
+pyspark[connect]>=3.5.0,<4
+
 types-PyYAML
 types-python-dateutil

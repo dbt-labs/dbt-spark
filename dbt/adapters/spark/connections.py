@@ -60,6 +60,7 @@ class SparkConnectionMethod(StrEnum):
     HTTP = "http"
     ODBC = "odbc"
     SESSION = "session"
+    CONNECT = "connect"
 
 
 @dataclass
@@ -151,6 +152,21 @@ class SparkCredentials(Credentials):
                     "additional dependencies. \n"
                     "Install the additional required dependencies with "
                     "`pip install dbt-spark[session]`\n\n"
+                    f"ImportError({e.msg})"
+                ) from e
+
+        if self.method == SparkConnectionMethod.CONNECT:
+            try:
+                import pyspark  # noqa: F401 F811
+                import grpc  # noqa: F401
+                import pyarrow  # noqa: F401
+                import pandas  # noqa: F401
+            except ImportError as e:
+                raise dbt.exceptions.DbtRuntimeError(
+                    f"{self.method} connection method requires "
+                    "additional dependencies. \n"
+                    "Install the additional required dependencies with "
+                    "`pip install dbt-spark[connect]`\n\n"
                     f"ImportError({e.msg})"
                 ) from e
 
@@ -524,8 +540,52 @@ class SparkConnectionManager(SQLConnectionManager):
                         SessionConnectionWrapper,
                     )
 
+                    # Pass session type (session or connect) into SessionConnectionWrapper
                     handle = SessionConnectionWrapper(
-                        Connection(server_side_parameters=creds.server_side_parameters)
+                        Connection(
+                            conn_method=creds.method,
+                            conn_url="localhost",
+                            server_side_parameters=creds.server_side_parameters,
+                        )
+                    )
+                elif SparkConnectionMethod.CONNECT:
+                    # Create the url
+
+                    host = creds.host
+                    port = creds.port
+                    token = creds.token
+                    use_ssl = creds.use_ssl
+                    user = creds.user
+
+                    # URL Format: sc://localhost:15002/;user_id=str;token=str;use_ssl=bool
+                    if not host.startswith("sc://"):
+                        base_url = f"sc://{host}"
+                    base_url += f":{str(port)}"
+
+                    url_extensions = []
+                    if user:
+                        url_extensions.append(f"user_id={user}")
+                    if use_ssl:
+                        url_extensions.append(f"use_ssl={use_ssl}")
+                    if token:
+                        url_extensions.append(f"token={token}")
+
+                    conn_url = base_url + ";".join(url_extensions)
+
+                    logger.debug("connection url: {}".format(conn_url))
+
+                    from .session import (  # noqa: F401
+                        Connection,
+                        SessionConnectionWrapper,
+                    )
+
+                    # Pass session type (session or connect) into SessionConnectionWrapper
+                    handle = SessionConnectionWrapper(
+                        Connection(
+                            conn_method=creds.method,
+                            conn_url=conn_url,
+                            server_side_parameters=creds.server_side_parameters,
+                        )
                     )
                 else:
                     raise DbtConfigError(f"invalid credential method: {creds.method}")
