@@ -23,7 +23,7 @@ except ImportError:
 from datetime import datetime
 import sqlparams
 from dbt.contracts.connection import Connection
-from hologram.helpers import StrEnum
+from dbt.dataclass_schema import StrEnum
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable, Sequence
 
@@ -33,8 +33,8 @@ try:
     from thrift.transport.TSSLSocket import TSSLSocket
     import thrift
     import ssl
-    import sasl
     import thrift_sasl
+    from puresasl.client import SASLClient
 except ImportError:
     pass  # done deliberately: setting modules to None explicitly violates MyPy contracts by degrading type semantics
 
@@ -59,9 +59,10 @@ class SparkConnectionMethod(StrEnum):
 
 @dataclass
 class SparkCredentials(Credentials):
-    host: str
-    method: SparkConnectionMethod
-    database: Optional[str]  # type: ignore
+    host: Optional[str] = None
+    schema: Optional[str] = None  # type: ignore
+    method: SparkConnectionMethod = None  # type: ignore
+    database: Optional[str] = None  # type: ignore
     driver: Optional[str] = None
     cluster: Optional[str] = None
     endpoint: Optional[str] = None
@@ -90,6 +91,13 @@ class SparkCredentials(Credentials):
         return self.cluster
 
     def __post_init__(self) -> None:
+        if self.method is None:
+            raise dbt.exceptions.DbtRuntimeError("Must specify `method` in profile")
+        if self.host is None:
+            raise dbt.exceptions.DbtRuntimeError("Must specify `host` in profile")
+        if self.schema is None:
+            raise dbt.exceptions.DbtRuntimeError("Must specify `schema` in profile")
+
         # spark classifies database and schema as the same thing
         if self.database is not None and self.database != self.schema:
             raise dbt.exceptions.DbtRuntimeError(
@@ -154,7 +162,7 @@ class SparkCredentials(Credentials):
 
     @property
     def unique_field(self) -> str:
-        return self.host
+        return self.host  # type: ignore
 
     def _connection_keys(self) -> Tuple[str, ...]:
         return "host", "port", "cluster", "endpoint", "schema", "organization"
@@ -603,17 +611,15 @@ def build_ssl_transport(
                 # to be nonempty.
                 password = "x"
 
-        def sasl_factory() -> sasl.Client:
-            sasl_client = sasl.Client()
-            sasl_client.setAttr("host", host)
+        def sasl_factory() -> SASLClient:
             if sasl_auth == "GSSAPI":
-                sasl_client.setAttr("service", kerberos_service_name)
+                sasl_client = SASLClient(host, kerberos_service_name, mechanism=sasl_auth)
             elif sasl_auth == "PLAIN":
-                sasl_client.setAttr("username", username)
-                sasl_client.setAttr("password", password)
+                sasl_client = SASLClient(
+                    host, mechanism=sasl_auth, username=username, password=password
+                )
             else:
                 raise AssertionError
-            sasl_client.init()
             return sasl_client
 
         transport = thrift_sasl.TSaslClientTransport(sasl_factory, sasl_auth, socket)
