@@ -230,11 +230,7 @@
 {% endmacro %}
 
 {% macro get_matched_column(column_name, column_dict) %}
-  {% if (column_name|upper in column_dict) -%}
-    {% set matched_column = column_name|upper -%}
-  {% elif (column_name|lower in column_dict) -%}
-    {% set matched_column = column_name|lower -%}
-  {% elif (column_name in column_dict) -%}
+  {% if (column_name in column_dict) -%}
     {% set matched_column = column_name -%}
   {% else -%}
     {% set matched_column = None -%}
