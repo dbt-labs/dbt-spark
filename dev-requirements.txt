@@ -5,7 +5,7 @@ git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-tests-adapter&subdirectory=
 
 # if version 1.x or greater -> pin to major version
 # if version 0.x -> pin to minor
-black~=23.7
+black~=23.9
 bumpversion~=0.6.0
 click~=8.1
 flake8~=6.1;python_version>="3.8"
@@ -14,7 +14,7 @@ freezegun~=1.2
 ipdb~=0.13.13
 mypy==1.5.0  # patch updates have historically introduced breaking changes
 pip-tools~=7.3
-pre-commit~=3.3
+pre-commit~=3.4
 pre-commit-hooks~=4.4
 pytest~=7.4
 pytest-csv~=3.0
