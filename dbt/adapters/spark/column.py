@@ -3,13 +3,12 @@ from typing import Any, ClassVar, Dict, Optional, TypeVar, Union
 
 from dbt.adapters.base.column import Column
 from dbt.dataclass_schema import dbtClassMixin
-from hologram import JsonDict
 
 Self = TypeVar("Self", bound="SparkColumn")
 
 
 @dataclass
-class SparkColumn(dbtClassMixin, Column):  # type: ignore
+class SparkColumn(dbtClassMixin, Column):
     table_database: Optional[str] = None
     table_schema: Optional[str] = None
     table_name: Optional[str] = None
@@ -30,7 +29,7 @@ class SparkColumn(dbtClassMixin, Column):  # type: ignore
         """returns True if both columns are strings"""
         return self.is_string() and other_column.is_string()
 
-    def literal(self, value):
+    def literal(self, value: Any) -> str:
         return "cast({} as {})".format(value, self.dtype)
 
     @property
@@ -67,7 +66,7 @@ class SparkColumn(dbtClassMixin, Column):  # type: ignore
                 table_stats[f"stats:{key}:include"] = True
         return table_stats
 
-    def to_column_dict(self, omit_none: bool = True, validate: bool = False) -> JsonDict:
+    def to_column_dict(self, omit_none: bool = True, validate: bool = False) -> Dict[str, Any]:
         original_dict = self.to_dict(omit_none=omit_none)
         # If there are stats, merge them into the root of the dict
         original_stats = original_dict.pop("table_stats", None)

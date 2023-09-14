@@ -3,12 +3,11 @@ import os
 import sys
 import re
 
-# require python 3.7 or newer
-if sys.version_info < (3, 7):
+# require python 3.8 or newer
+if sys.version_info < (3, 8):
     print("Error: dbt does not support this version of Python.")
-    print("Please upgrade to Python 3.7 or higher.")
+    print("Please upgrade to Python 3.8 or higher.")
     sys.exit(1)
-
 
 # require version of setuptools that supports find_namespace_packages
 from setuptools import setup
@@ -33,7 +32,7 @@ def _get_plugin_version_dict():
     _version_path = os.path.join(this_directory, "dbt", "adapters", "spark", "__version__.py")
     _semver = r"""(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"""
     _pre = r"""((?P<prekind>a|b|rc)(?P<pre>\d+))?"""
-    _version_pattern = fr"""version\s*=\s*["']{_semver}{_pre}["']"""
+    _version_pattern = rf"""version\s*=\s*["']{_semver}{_pre}["']"""
     with open(_version_path) as f:
         match = re.search(_version_pattern, f.read().strip())
         if match is None:
@@ -50,14 +49,14 @@ def _get_dbt_core_version():
 
 
 package_name = "dbt-spark"
-package_version = "1.3.0b2"
+package_version = "1.7.0b1"
 dbt_core_version = _get_dbt_core_version()
 description = """The Apache Spark adapter plugin for dbt"""
 
-odbc_extras = ["pyodbc>=4.0.30"]
+odbc_extras = ["pyodbc~=4.0.39"]
 pyhive_extras = [
-    "PyHive[hive]>=0.6.0,<0.7.0",
-    "thrift>=0.11.0,<0.16.0",
+    "PyHive[hive_pure_sasl]~=0.7.0",
+    "thrift>=0.11.0,<0.17.0",
 ]
 session_extras = ["pyspark>=3.0.0,<4.0.0"]
 all_extras = odbc_extras + pyhive_extras + session_extras
@@ -90,9 +89,10 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
 )

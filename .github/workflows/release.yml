@@ -1,118 +1,183 @@
-# Builds the spark plugin and releases it to GitHub and Pypi
-name: Build and Release
+# **what?**
+# Release workflow provides the following steps:
+# - checkout the given commit;
+# - validate version in sources and changelog file for given version;
+# - run unit tests against given commit;
+# - build and package that SHA;
+# - release it to GitHub and PyPI with that specific build;
+#
+# **why?**
+# Ensure an automated and tested release process
+#
+# **when?**
+# This will only run manually. Run this workflow only after the
+# version bump workflow is completed and related changes are reviewed and merged.
+#
+
+name: Release to GitHub and PyPI
 
 on:
   workflow_dispatch:
+    inputs:
+      sha:
+        description: "The last commit sha in the release"
+        type: string
+        required: true
+      target_branch:
+        description: "The branch to release from"
+        type: string
+        required: true
+      version_number:
+        description: "The release version number (i.e. 1.0.0b1)"
+        type: string
+        required: true
+      build_script_path:
+        description: "Build script path"
+        type: string
+        default: "scripts/build-dist.sh"
+        required: true
+      s3_bucket_name:
+        description: "AWS S3 bucket name"
+        type: string
+        default: "core-team-artifacts"
+        required: true
+      package_test_command:
+        description: "Package test command"
+        type: string
+        default: "dbt --version"
+        required: true
+      env_setup_script_path:
+        description: "Environment setup script path"
+        type: string
+        default: ""
+        required: false
+      test_run:
+        description: "Test run (Publish release as draft)"
+        type: boolean
+        default: true
+        required: false
 
-# Release version number that must be updated for each release
-env:
-  version_number: '0.20.0rc2'
+permissions:
+  contents: write # this is the permission that allows creating a new release
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  Test:
+  log-inputs:
+    name: Log Inputs
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2.2.2
-        with:
-          python-version: '3.8'
-
-      - uses: actions/checkout@v2
-
-      - name: Test release
+      - name: "[DEBUG] Print Variables"
         run: |
-          python3 -m venv env
-          source env/bin/activate
-          sudo apt-get install libsasl2-dev
-          pip install -r dev-requirements.txt
-          pip install twine wheel setuptools
-          python setup.py sdist bdist_wheel
-          pip install dist/dbt-spark-*.tar.gz
-          pip install dist/dbt_spark-*-py3-none-any.whl
-          twine check dist/dbt_spark-*-py3-none-any.whl dist/dbt-spark-*.tar.gz
+          echo The last commit sha in the release: ${{ inputs.sha }}
+          echo The branch to release from:         ${{ inputs.target_branch }}
+          echo The release version number:         ${{ inputs.version_number }}
+          echo Build script path:                  ${{ inputs.build_script_path }}
+          echo Environment setup script path:      ${{ inputs.env_setup_script_path }}
+          echo AWS S3 bucket name:                 ${{ inputs.s3_bucket_name }}
+          echo Package test command:               ${{ inputs.package_test_command }}
+          echo Test run:                           ${{ inputs.test_run }}
 
-  GitHubRelease:
-    name: GitHub release
+  # The Spark repository uses CircleCI to run integration tests.
+  # Because of this, the process of version bumps will be manual
+  # which means that this stage will be used to audit the version
+  # and changelog in sources.
+  # We are passing `env_setup_script_path` as an empty string
+  # so that the integration tests stage will be skipped.
+  audit-version-and-changelog:
+    name: Bump package version, Generate changelog
+
+    uses: dbt-labs/dbt-release/.github/workflows/release-prep.yml@main
+
+    with:
+      sha: ${{ inputs.sha }}
+      version_number: ${{ inputs.version_number }}
+      target_branch: ${{ inputs.target_branch }}
+      env_setup_script_path: ""
+      test_run: ${{ inputs.test_run }}
+
+    secrets: inherit
+
+  log-outputs-audit-version-and-changelog:
+    name: "[Log output] Bump package version, Generate changelog"
+    if: ${{ !failure() && !cancelled() }}
+
+    needs: [audit-version-and-changelog]
+
     runs-on: ubuntu-latest
-    needs: Test
+
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2.2.2
-        with:
-          python-version: '3.8'
-
-      - uses: actions/checkout@v2
-
-      - name: Bumping version
+      - name: Print variables
         run: |
-          python3 -m venv env
-          source env/bin/activate
-          sudo apt-get install libsasl2-dev
-          pip install -r dev-requirements.txt
-          bumpversion --config-file .bumpversion-dbt.cfg patch --new-version ${{env.version_number}}
-          bumpversion --config-file .bumpversion.cfg patch --new-version ${{env.version_number}} --allow-dirty
-          git status
+          echo Final SHA     : ${{ needs.audit-version-and-changelog.outputs.final_sha }}
+          echo Changelog path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
 
-      - name: Commit version bump and tag
-        uses: EndBug/add-and-commit@v7
-        with:
-          author_name: 'Leah Antkiewicz'
-          author_email: 'leah.antkiewicz@dbtlabs.com'
-          message: 'Bumping version to ${{env.version_number}}'
-          tag: v${{env.version_number}}
+  build-test-package:
+    name: Build, Test, Package
+    if: ${{ !failure() && !cancelled() }}
+    needs: [audit-version-and-changelog]
 
-      # Need to set an output variable because env variables can't be taken as input
-      # This is needed for the next step with releasing to GitHub
-      - name: Find release type
-        id: release_type
-        env:
-          IS_PRERELEASE: ${{ contains(env.version_number, 'rc') ||  contains(env.version_number, 'b') }}
-        run: |
-          echo ::set-output name=isPrerelease::$IS_PRERELEASE
+    uses: dbt-labs/dbt-release/.github/workflows/build.yml@main
 
-      - name: Create GitHub release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: v${{env.version_number}}
-          release_name: dbt-spark v${{env.version_number}}
-          prerelease: ${{ steps.release_type.outputs.isPrerelease }}
-          body: |
-            Tracking [dbt-core v${{env.version_number}}](https://github.com/dbt-labs/dbt/releases/tag/v${{env.version_number}}).
+    with:
+      sha: ${{ needs.audit-version-and-changelog.outputs.final_sha }}
+      version_number: ${{ inputs.version_number }}
+      changelog_path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
+      build_script_path: ${{ inputs.build_script_path }}
+      s3_bucket_name: ${{ inputs.s3_bucket_name }}
+      package_test_command: ${{ inputs.package_test_command }}
+      test_run: ${{ inputs.test_run }}
 
-            ```sh
-            $ pip install dbt-spark==${{env.version_number}}
-            # or
-            $ pip install "dbt-spark[ODBC]==${{env.version_number}}"
-            # or
-            $ pip install "dbt-spark[PyHive]==${{env.version_number}}"
-            ```
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-  PypiRelease:
-    name: Pypi release
-    runs-on: ubuntu-latest
-    needs: GitHubRelease
-    environment: PypiProd
-    steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2.2.2
-        with:
-          python-version: '3.8'
+  github-release:
+    name: GitHub Release
+    if: ${{ !failure() && !cancelled() }}
 
-      - uses: actions/checkout@v2
-        with:
-          ref: v${{env.version_number}}
+    needs: [audit-version-and-changelog, build-test-package]
 
-      - name: Release to pypi
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          python3 -m venv env
-          source env/bin/activate
-          sudo apt-get install libsasl2-dev
-          pip install -r dev-requirements.txt
-          pip install twine wheel setuptools
-          python setup.py sdist bdist_wheel
-          twine upload --non-interactive dist/dbt_spark-${{env.version_number}}-py3-none-any.whl dist/dbt-spark-${{env.version_number}}.tar.gz
+    uses: dbt-labs/dbt-release/.github/workflows/github-release.yml@main
+
+    with:
+      sha: ${{ needs.audit-version-and-changelog.outputs.final_sha }}
+      version_number: ${{ inputs.version_number }}
+      changelog_path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
+      test_run: ${{ inputs.test_run }}
+
+  pypi-release:
+    name: PyPI Release
+
+    needs: [github-release]
+
+    uses: dbt-labs/dbt-release/.github/workflows/pypi-release.yml@main
+
+    with:
+      version_number: ${{ inputs.version_number }}
+      test_run: ${{ inputs.test_run }}
+
+    secrets:
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+  slack-notification:
+    name: Slack Notification
+    if: ${{ failure() && (!inputs.test_run || inputs.nightly_release) }}
+
+    needs:
+      [
+        audit-version-and-changelog,
+        build-test-package,
+        github-release,
+        pypi-release,
+      ]
+
+    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    with:
+      status: "failure"
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
