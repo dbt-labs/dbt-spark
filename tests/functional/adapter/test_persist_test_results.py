@@ -1,8 +1,11 @@
+from collections import namedtuple
 from typing import Dict
 
 import pytest
 
+from dbt.contracts.results import TestStatus
 from dbt.tests.adapter.persist_test_results.basic import PersistTestResults
+from dbt.tests.util import run_dbt, check_relation_types
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark")
@@ -10,7 +13,6 @@ class TestPersistTestResultsDatabricks(PersistTestResults):
     pass
 
 
-@pytest.mark.skip("Spark handles delete differently and this is not yet accounted for.")
 @pytest.mark.skip_profile("spark_session", "databricks_cluster", "databricks_sql_endpoint")
 class TestPersistTestResultsSpark(PersistTestResults):
     def delete_record(self, project, record: Dict[str, str]):
@@ -22,3 +24,58 @@ class TestPersistTestResultsSpark(PersistTestResults):
                     DELETE is only supported with v2 tables.
         """
         pass
+
+    def test_tests_run_successfully_and_are_persisted_correctly(self, project):
+        """
+        This test case is overridden to back out the deletion check for whether the results are persisted as views.
+        `self.delete_record` should be updated to delete correctly, and then this should be removed to run the
+        default test case that's in `dbt-core`.
+        """
+        # set up the expected results
+        TestResult = namedtuple("TestResult", ["name", "status", "type", "row_count"])
+        expected_results = {
+            TestResult("pass_with_view_strategy", TestStatus.Pass, "view", 0),
+            TestResult("fail_with_view_strategy", TestStatus.Fail, "view", 1),
+            TestResult("pass_with_table_strategy", TestStatus.Pass, "table", 0),
+            TestResult("fail_with_table_strategy", TestStatus.Fail, "table", 1),
+        }
+
+        # run the tests once
+        results = run_dbt(["test"], expect_pass=False)
+
+        # show that the statuses are what we expect
+        actual = {(result.node.name, result.status) for result in results}
+        expected = {(result.name, result.status) for result in expected_results}
+        assert actual == expected
+
+        # show that the results are persisted in the correct database objects
+        check_relation_types(
+            project.adapter, {result.name: result.type for result in expected_results}
+        )
+
+        # show that only the failed records show up
+        actual = {
+            (result.name, self.row_count(project, result.name)) for result in expected_results
+        }
+        expected = {(result.name, result.row_count) for result in expected_results}
+        assert actual == expected
+
+        # insert a new record in the model that fails the "pass" tests
+        # show that the view updates, but not the table
+        self.insert_record(project, {"name": "dave", "shirt": "grape"})
+        expected_results.remove(TestResult("pass_with_view_strategy", TestStatus.Pass, "view", 0))
+        expected_results.add(TestResult("pass_with_view_strategy", TestStatus.Pass, "view", 1))
+
+        # delete the original record from the model that failed the "fail" tests
+        # show that the view updates, but not the table
+        self.delete_record(project, {"name": "theodore", "shirt": "green"})
+        # `delete_record` doesn't do anything right now, so the expected results should not be updated.
+        # expected_results.remove(TestResult("fail_with_view_strategy", TestStatus.Fail, "view", 1))
+        # expected_results.add(TestResult("fail_with_view_strategy", TestStatus.Fail, "view", 0))
+
+        # show that the views update without needing to run dbt, but the tables do not update
+        actual = {
+            (result.name, self.row_count(project, result.name)) for result in expected_results
+        }
+        expected = {(result.name, result.row_count) for result in expected_results}
+        assert actual == expected
