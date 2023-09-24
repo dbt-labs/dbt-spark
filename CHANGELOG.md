@@ -7,18 +7,18 @@
 
 ## dbt-spark 1.7.0-b1 - August 17, 2023
 
+### Features
+
+- Support server side parameters in thrift connection ([#387](https://github.com/dbt-labs/dbt-spark/issues/387))
+- Support server_side_parameters for Spark session connection method ([#690](https://github.com/dbt-labs/dbt-spark/issues/690))
+- Add server_side_parameters to HTTP connection method ([#824](https://github.com/dbt-labs/dbt-spark/issues/824))
+- Enforce server side parameters keys and values to be strings ([#826](https://github.com/dbt-labs/dbt-spark/issues/826))
+- Add SessionConnectionWrapper ([#829](https://github.com/dbt-labs/dbt-spark/issues/829))
+
 ### Fixes
 
 - Wrap AnalysisException into DbtRuntimeError ([#782](https://github.com/dbt-labs/dbt-spark/issues/782))
 - include tblproperties macro in adapters.sql create table ([#865](https://github.com/dbt-labs/dbt-spark/issues/865))
-
-### Fixes
-
-- Support for iceberg v2 tables.  Added ability to use multiple join conditions to allow for multiple columns to make a row distinct. ([#294](https://github.com/dbt-labs/dbt-spark/issues/294))
-- Use take() instead of collect on dataframe to improve the performance ([#526](https://github.com/dbt-labs/dbt-spark/issues/526))
-- add merge_exclude_columns tests ([#00](https://github.com/dbt-labs/dbt-spark/issues/00))
-- Fix pyodbc type_code -> data_type conversion  ([#665](https://github.com/dbt-labs/dbt-spark/issues/665))
-- Fixed issue where table materialization was not always properly refreshing for non-admin users on Databricks ([#725](https://github.com/dbt-labs/dbt-spark/issues/725))
 
 ### Under the Hood
 
