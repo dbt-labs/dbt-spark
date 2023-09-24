@@ -30,27 +30,6 @@
 
 ### Under the Hood
 
-<<<<<<< HEAD
-- remove tox call to integration tests ([#584](https://github.com/dbt-labs/dbt-spark/issues/584))
-- Treat contract config as a python object ([#645](https://github.com/dbt-labs/dbt-spark/issues/645), [#693](https://github.com/dbt-labs/dbt-spark/issues/693))
-
-### Dependencies
-
-- Allow thrift 0.16.0 ([#605](https://github.com/dbt-labs/dbt-spark/pull/605))
-- Update ipdb requirement from ~=0.13.11 to ~=0.13.13 ([#677](https://github.com/dbt-labs/dbt-spark/pull/677))
-- Update wheel requirement from ~=0.38 to ~=0.40 ([#680](https://github.com/dbt-labs/dbt-spark/pull/680))
-- Update pre-commit requirement from ~=2.21 to ~=3.2 ([#687](https://github.com/dbt-labs/dbt-spark/pull/687))
-- Update wheel requirement from ~=0.38 to ~=0.40 ([#680](https://github.com/dbt-labs/dbt-spark/pull/680))
-- Bump mypy from 1.0.1 to 1.1.1 ([#675](https://github.com/dbt-labs/dbt-spark/pull/675))
-- Update types-pytz requirement from ~=2022.7 to ~=2023.2 ([#697](https://github.com/dbt-labs/dbt-spark/pull/697))
-- Update pytz requirement from ~=2022.7 to ~=2023.2 ([#696](https://github.com/dbt-labs/dbt-spark/pull/696))
-
-### Contributors
-- [@akashrn5](https://github.com/akashrn5) ([#526](https://github.com/dbt-labs/dbt-spark/issues/526))
-- [@b-per](https://github.com/b-per) ([#558](https://github.com/dbt-labs/dbt-spark/issues/558))
-- [@dave-connors-3](https://github.com/dave-connors-3) ([#00](https://github.com/dbt-labs/dbt-spark/issues/00))
-- [@dparent1](https://github.com/dparent1) ([#294](https://github.com/dbt-labs/dbt-spark/issues/294))
-=======
 - Update stale workflow to use centralized version ([#842](https://github.com/dbt-labs/dbt-spark/issues/842))
 
 ### Dependencies
@@ -81,8 +60,6 @@
 - [@alarocca-apixio](https://github.com/alarocca-apixio) ([#690](https://github.com/dbt-labs/dbt-spark/issues/690))
 - [@etheleon](https://github.com/etheleon) ([#865](https://github.com/dbt-labs/dbt-spark/issues/865))
 - [@hanna-liashchuk](https://github.com/hanna-liashchuk) ([#387](https://github.com/dbt-labs/dbt-spark/issues/387))
-
->>>>>>> main
 
 ## Previous Releases
 For information on prior major and minor releases, see their changelogs:
