@@ -46,13 +46,13 @@
 - Update tox requirement from ~=4.7 to ~=4.8 ([#871](https://github.com/dbt-labs/dbt-spark/pull/871))
 - Bump mypy from 1.4.1 to 1.5.0 ([#872](https://github.com/dbt-labs/dbt-spark/pull/872))
 
-
 ### Contributors
 - [@Fokko](https://github.com/Fokko) ([#829](https://github.com/dbt-labs/dbt-spark/issues/829), [#782](https://github.com/dbt-labs/dbt-spark/issues/782))
 - [@Fokko,JCZuurmond](https://github.com/Fokko,JCZuurmond) ([#824](https://github.com/dbt-labs/dbt-spark/issues/824), [#826](https://github.com/dbt-labs/dbt-spark/issues/826))
 - [@alarocca-apixio](https://github.com/alarocca-apixio) ([#690](https://github.com/dbt-labs/dbt-spark/issues/690))
 - [@etheleon](https://github.com/etheleon) ([#865](https://github.com/dbt-labs/dbt-spark/issues/865))
 - [@hanna-liashchuk](https://github.com/hanna-liashchuk) ([#387](https://github.com/dbt-labs/dbt-spark/issues/387))
+
 
 ## Previous Releases
 For information on prior major and minor releases, see their changelogs:
