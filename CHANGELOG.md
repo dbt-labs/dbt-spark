@@ -7,14 +7,6 @@
 
 ## dbt-spark 1.7.0-b1 - August 17, 2023
 
-### Features
-
-- Support server side parameters in thrift connection ([#387](https://github.com/dbt-labs/dbt-spark/issues/387))
-- Support server_side_parameters for Spark session connection method ([#690](https://github.com/dbt-labs/dbt-spark/issues/690))
-- Add server_side_parameters to HTTP connection method ([#824](https://github.com/dbt-labs/dbt-spark/issues/824))
-- Enforce server side parameters keys and values to be strings ([#826](https://github.com/dbt-labs/dbt-spark/issues/826))
-- Add SessionConnectionWrapper ([#829](https://github.com/dbt-labs/dbt-spark/issues/829))
-
 ### Fixes
 
 - Wrap AnalysisException into DbtRuntimeError ([#782](https://github.com/dbt-labs/dbt-spark/issues/782))
@@ -53,6 +45,7 @@
 - Update tox requirement from ~=4.6 to ~=4.7 ([#867](https://github.com/dbt-labs/dbt-spark/pull/867))
 - Update tox requirement from ~=4.7 to ~=4.8 ([#871](https://github.com/dbt-labs/dbt-spark/pull/871))
 - Bump mypy from 1.4.1 to 1.5.0 ([#872](https://github.com/dbt-labs/dbt-spark/pull/872))
+
 
 ### Contributors
 - [@Fokko](https://github.com/Fokko) ([#829](https://github.com/dbt-labs/dbt-spark/issues/829), [#782](https://github.com/dbt-labs/dbt-spark/issues/782))
