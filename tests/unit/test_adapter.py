@@ -39,6 +39,7 @@ class TestSparkAdapter(unittest.TestCase):
                         "token": "abc123",
                         "organization": "0123456789",
                         "cluster": "01234-23423-coffeetime",
+                        "server_side_parameters": {"spark.driver.memory": "4g"},
                     }
                 },
                 "target": "test",
@@ -147,13 +148,14 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_http(self.project_cfg)
         adapter = SparkAdapter(config)
 
-        def hive_http_connect(thrift_transport):
+        def hive_http_connect(thrift_transport, configuration):
             self.assertEqual(thrift_transport.scheme, "https")
             self.assertEqual(thrift_transport.port, 443)
             self.assertEqual(thrift_transport.host, "myorg.sparkhost.com")
             self.assertEqual(
                 thrift_transport.path, "/sql/protocolv1/o/0123456789/01234-23423-coffeetime"
             )
+            self.assertEqual(configuration["spark.driver.memory"], "4g")
 
         # with mock.patch.object(hive, 'connect', new=hive_http_connect):
         with mock.patch("dbt.adapters.spark.connections.hive.connect", new=hive_http_connect):
@@ -171,13 +173,16 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_thrift(self.project_cfg)
         adapter = SparkAdapter(config)
 
-        def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password):
+        def hive_thrift_connect(
+            host, port, username, auth, kerberos_service_name, password, configuration
+        ):
             self.assertEqual(host, "myorg.sparkhost.com")
             self.assertEqual(port, 10001)
             self.assertEqual(username, "dbt")
             self.assertIsNone(auth)
             self.assertIsNone(kerberos_service_name)
             self.assertIsNone(password)
+            self.assertDictEqual(configuration, {})
 
         with mock.patch.object(hive, "connect", new=hive_thrift_connect):
             connection = adapter.acquire_connection("dummy")
@@ -192,11 +197,12 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_use_ssl_thrift(self.project_cfg)
         adapter = SparkAdapter(config)
 
-        def hive_thrift_connect(thrift_transport):
+        def hive_thrift_connect(thrift_transport, configuration):
             self.assertIsNotNone(thrift_transport)
             transport = thrift_transport._trans
             self.assertEqual(transport.host, "myorg.sparkhost.com")
             self.assertEqual(transport.port, 10001)
+            self.assertDictEqual(configuration, {})
 
         with mock.patch.object(hive, "connect", new=hive_thrift_connect):
             connection = adapter.acquire_connection("dummy")
@@ -211,13 +217,16 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_thrift_kerberos(self.project_cfg)
         adapter = SparkAdapter(config)
 
-        def hive_thrift_connect(host, port, username, auth, kerberos_service_name, password):
+        def hive_thrift_connect(
+            host, port, username, auth, kerberos_service_name, password, configuration
+        ):
             self.assertEqual(host, "myorg.sparkhost.com")
             self.assertEqual(port, 10001)
             self.assertEqual(username, "dbt")
             self.assertEqual(auth, "KERBEROS")
             self.assertEqual(kerberos_service_name, "hive")
             self.assertIsNone(password)
+            self.assertDictEqual(configuration, {})
 
         with mock.patch.object(hive, "connect", new=hive_thrift_connect):
             connection = adapter.acquire_connection("dummy")
@@ -708,6 +717,7 @@ class TestSparkAdapter(unittest.TestCase):
         config = self._get_target_http(self.project_cfg)
         columns = SparkAdapter(config).parse_columns_from_information(relation)
         self.assertEqual(len(columns), 4)
+
         self.assertEqual(
             columns[2].to_column_dict(omit_none=False),
             {
