@@ -10,15 +10,15 @@ import agate
 import dbt
 import dbt.exceptions
 
-from dbt.adapters.base import AdapterConfig, PythonJobHelper
+from dbt.adapters.base import AdapterConfig, PythonJobHelper, ScalaJobHelper
 from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
-from dbt.adapters.spark.python_submissions import (
-    JobClusterPythonJobHelper,
-    AllPurposeClusterPythonJobHelper,
+from dbt.adapters.spark.spark_submissions import (
+    JobClusterSparkJobHelper,
+    AllPurposeClusterSparkJobHelper,
 )
 from dbt.adapters.base import BaseRelation
 from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
@@ -477,8 +477,22 @@ class SparkAdapter(SQLAdapter):
     @property
     def python_submission_helpers(self) -> Dict[str, Type[PythonJobHelper]]:
         return {
-            "job_cluster": JobClusterPythonJobHelper,
-            "all_purpose_cluster": AllPurposeClusterPythonJobHelper,
+            "job_cluster": JobClusterSparkJobHelper,
+            "all_purpose_cluster": AllPurposeClusterSparkJobHelper,
+        }
+
+    def generate_scala_submission_response(self, submission_result: Any) -> AdapterResponse:
+        return self.connections.get_response(None)
+
+    @property
+    def default_scala_submission_method(self) -> str:
+        return "all_purpose_cluster"
+
+    @property
+    def scala_submission_helpers(self) -> Dict[str, Type[ScalaJobHelper]]:
+        return {
+            "job_cluster": JobClusterSparkJobHelper,
+            "all_purpose_cluster": AllPurposeClusterSparkJobHelper,
         }
 
     def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
