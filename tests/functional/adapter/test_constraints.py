@@ -289,6 +289,7 @@ select
   `from`,
   date_day
 from
+
 (
     select
     'blue' as `from`,
