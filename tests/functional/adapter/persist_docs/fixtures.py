@@ -36,7 +36,7 @@ version: 2
 models:
   - name: view_delta_model
     description: |
-      Incremental model description "with double quotes"
+      View model description "with double quotes"
       and with 'single  quotes' as welll as other;
       '''abc123'''
       reserved -- characters

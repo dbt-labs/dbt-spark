@@ -117,7 +117,7 @@ class TestPersistDocsDeltaView:
             if result[0] == "id":
                 assert result[2].startswith("id Column description")
             if result[0] == "count":
-                self.assertEqual(result[2], "")
+                assert result[2] is None
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session")
