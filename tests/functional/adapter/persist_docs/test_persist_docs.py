@@ -9,7 +9,7 @@ from fixtures import (
     _MODELS__TABLE_DELTA_MODEL_MISSING_COLUMN,
     _PROPERTIES__MODELS,
     _PROPERTIES__SEEDS,
-    _SEEDS__BASIC,
+    _SEEDS__BASIC, _MODELS__VIEW_DELTA_MODEL,
 )
 
 
@@ -74,6 +74,47 @@ class TestPersistDocsDeltaTable:
                     assert result[2].startswith("id Column description")
                 if result[0] == "name":
                     assert result[2].startswith("Some stuff here and then a call to")
+
+
+@pytest.mark.skip_profile("apache_spark", "spark_session")
+class TestPersistDocsDeltaView:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "view_delta_model.sql": _MODELS__VIEW_DELTA_MODEL,
+            "schema.yml": _PROPERTIES__MODELS,
+        }
+
+    @pytest.fixture(scope="class")
+    def project_config_update(self):
+        return {
+            "models": {
+                "test": {
+                    "+persist_docs": {
+                        "relation": True,
+                        "columns": True,
+                    },
+                }
+            },
+        }
+
+    def test_delta_comments(self, project):
+        run_dbt(["run"])
+
+        results = project.run_sql(
+            "describe extended {schema}.{table}".format(
+                schema=project.test_schema, table="view_delta_model"
+            ),
+            fetch="all",
+        )
+
+        for result in results:
+            if result[0] == "Comment":
+                assert result[1].startswith(f"View model description")
+            if result[0] == "id":
+                assert result[2].startswith("id Column description")
+            if result[0] == "count":
+                self.assertEqual(result[2], "")
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session")
