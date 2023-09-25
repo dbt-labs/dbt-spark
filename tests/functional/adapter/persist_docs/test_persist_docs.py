@@ -9,7 +9,8 @@ from fixtures import (
     _MODELS__TABLE_DELTA_MODEL_MISSING_COLUMN,
     _PROPERTIES__MODELS,
     _PROPERTIES__SEEDS,
-    _SEEDS__BASIC, _MODELS__VIEW_DELTA_MODEL,
+    _SEEDS__BASIC,
+    _MODELS__VIEW_DELTA_MODEL,
 )
 
 
@@ -110,7 +111,7 @@ class TestPersistDocsDeltaView:
 
         for result in results:
             if result[0] == "Comment":
-                assert result[1].startswith(f"View model description")
+                assert result[1].startswith("View model description")
             if result[0] == "id":
                 assert result[2].startswith("id Column description")
             if result[0] == "count":
