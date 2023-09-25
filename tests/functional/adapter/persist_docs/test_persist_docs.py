@@ -10,7 +10,7 @@ from fixtures import (
     _PROPERTIES__MODELS,
     _PROPERTIES__SEEDS,
     _SEEDS__BASIC,
-    _MODELS__VIEW_DELTA_MODEL,
+    _MODELS__VIEW_DELTA_MODEL, _VIEW_PROPERTIES_MODELS,
 )
 
 
@@ -84,7 +84,7 @@ class TestPersistDocsDeltaView:
         return {
             "table_delta_model.sql": _MODELS__TABLE_DELTA_MODEL,
             "view_delta_model.sql": _MODELS__VIEW_DELTA_MODEL,
-            "schema.yml": _PROPERTIES__MODELS,
+            "schema.yml": _VIEW_PROPERTIES_MODELS,
         }
 
     @pytest.fixture(scope="class")
