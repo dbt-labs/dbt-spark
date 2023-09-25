@@ -23,7 +23,7 @@ select 1 as id, 'Joe' as name
 
 _MODELS__VIEW_DELTA_MODEL = """
 {{ config(materialized='view') }}
-select id, count(*) as count from {{ ref('table_delta_model') }}
+select id, count(*) as count from {{ ref('table_delta_model') }} group by id
 """
 
 _MODELS__TABLE_DELTA_MODEL_MISSING_COLUMN = """
