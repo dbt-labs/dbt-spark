@@ -82,6 +82,7 @@ class TestPersistDocsDeltaView:
     @pytest.fixture(scope="class")
     def models(self):
         return {
+            "table_delta_model.sql": _MODELS__TABLE_DELTA_MODEL,
             "view_delta_model.sql": _MODELS__VIEW_DELTA_MODEL,
             "schema.yml": _PROPERTIES__MODELS,
         }
