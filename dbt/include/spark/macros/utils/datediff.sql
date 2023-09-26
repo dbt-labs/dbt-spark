@@ -73,12 +73,12 @@
         {%- endset -%}
 
         case when {{first_date}} < {{second_date}}
-            then ceil((
+            then floor((
                 {# make sure the timestamps are real, otherwise raise an error asap #}
                 {{ assert_not_null('to_unix_timestamp', assert_not_null('to_timestamp', second_date)) }}
                 - {{ assert_not_null('to_unix_timestamp', assert_not_null('to_timestamp', first_date)) }}
             ) / {{divisor}})
-            else floor((
+            else ceil((
                 {{ assert_not_null('to_unix_timestamp', assert_not_null('to_timestamp', second_date)) }}
                 - {{ assert_not_null('to_unix_timestamp', assert_not_null('to_timestamp', first_date)) }}
             ) / {{divisor}})
