@@ -1,4 +1,8 @@
-{% macro dbt_spark_tblproperties_clause() -%}
+{% macro tblproperties_clause() %}
+  {{ return(adapter.dispatch('tblproperties_clause', 'dbt')()) }}
+{%- endmacro -%}
+
+{% macro spark__tblproperties_clause() -%}
   {%- set tblproperties = config.get('tblproperties') -%}
   {%- if tblproperties is not none %}
     tblproperties (
@@ -149,16 +153,19 @@
       {% else %}
         create table {{ relation }}
       {% endif %}
-      {% if config.get('contract', False) %}
+      {%- set contract_config = config.get('contract') -%}
+      {%- if contract_config.enforced -%}
         {{ get_assert_columns_equivalent(compiled_code) }}
         {%- set compiled_code = get_select_subquery(compiled_code) %}
       {% endif %}
       {{ file_format_clause() }}
       {{ options_clause() }}
+      {{ tblproperties_clause() }}
       {{ partition_cols(label="partitioned by") }}
       {{ clustered_cols(label="clustered by") }}
       {{ location_clause() }}
       {{ comment_clause() }}
+
       as
       {{ compiled_code }}
     {%- endif -%}
@@ -180,8 +187,9 @@
 {% endmacro %}
 
 {% macro spark__persist_constraints(relation, model) %}
-  {% if config.get('contract', False) and config.get('file_format', 'delta') == 'delta' %}
-    {% do alter_table_add_constraints(relation, model.columns) %}
+  {%- set contract_config = config.get('contract') -%}
+  {% if contract_config.enforced and config.get('file_format', 'delta') == 'delta' %}
+    {% do alter_table_add_constraints(relation, model.constraints) %}
     {% do alter_column_set_constraints(relation, model.columns) %}
   {% endif %}
 {% endmacro %}
@@ -190,18 +198,14 @@
   {{ return(adapter.dispatch('alter_table_add_constraints', 'dbt')(relation, constraints)) }}
 {% endmacro %}
 
-{% macro spark__alter_table_add_constraints(relation, column_dict) %}
-
-  {% for column_name in column_dict %}
-    {% set constraints = column_dict[column_name]['constraints'] %}
-    {% for constraint in constraints %}
-      {% if constraint.type == 'check' and not is_incremental() %}
-        {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint.expression ~ ";" ~ loop.index) -%}
-        {% call statement() %}
-          alter table {{ relation }} add constraint {{ constraint_hash }} check {{ constraint.expression }};
-        {% endcall %}
-      {% endif %}
-    {% endfor %}
+{% macro spark__alter_table_add_constraints(relation, constraints) %}
+  {% for constraint in constraints %}
+    {% if constraint.type == 'check' and not is_incremental() %}
+      {%- set constraint_hash = local_md5(column_name ~ ";" ~ constraint.expression ~ ";" ~ loop.index) -%}
+      {% call statement() %}
+        alter table {{ relation }} add constraint {{ constraint.name if constraint.name else constraint_hash }} check ({{ constraint.expression }});
+      {% endcall %}
+    {% endif %}
   {% endfor %}
 {% endmacro %}
 
@@ -225,11 +229,33 @@
   {% endfor %}
 {% endmacro %}
 
+{% macro get_column_comment_sql(column_name, column_dict) -%}
+  {% if column_name in column_dict and column_dict[column_name]["description"] -%}
+    {% set escaped_description = column_dict[column_name]["description"] | replace("'", "\\'") %}
+    {% set column_comment_clause = "comment '" ~ escaped_description ~ "'" %}
+  {%- endif -%}
+  {{ adapter.quote(column_name) }} {{ column_comment_clause }}
+{% endmacro %}
+
+{% macro get_persist_docs_column_list(model_columns, query_columns) %}
+  {% for column_name in query_columns %}
+    {{ get_column_comment_sql(column_name, model_columns) }}
+    {{- ", " if not loop.last else "" }}
+  {% endfor %}
+{% endmacro %}
 
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
+  {% if config.persist_column_docs() -%}
+    {% set model_columns = model.columns %}
+    {% set query_columns = get_columns_in_query(sql) %}
+    (
+    {{ get_persist_docs_column_list(model_columns, query_columns) }}
+    )
+  {% endif %}
   {{ comment_clause() }}
-  {% if config.get('contract', False) -%}
+  {%- set contract_config = config.get('contract') -%}
+  {%- if contract_config.enforced -%}
     {{ get_assert_columns_equivalent(sql) }}
   {%- endif %}
   as
