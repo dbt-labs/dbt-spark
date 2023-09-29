@@ -2,8 +2,8 @@ ARG OPENJDK_VERSION=8
 FROM eclipse-temurin:${OPENJDK_VERSION}-jre
 
 ARG BUILD_DATE
-ARG SPARK_VERSION=3.4.1
-ARG HADOOP_VERSION=3
+ARG SPARK_VERSION=3.1.3
+ARG HADOOP_VERSION=3.2
 
 LABEL org.label-schema.name="Apache Spark ${SPARK_VERSION}" \
       org.label-schema.build-date=$BUILD_DATE \
