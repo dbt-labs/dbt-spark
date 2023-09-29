@@ -73,14 +73,3 @@ jobs:
 
       - name: Run tox for Spark thrift
         run: tox -e integration-spark-thrift
-
-      - name: Get current date
-        if: always()
-        id: date
-        run: echo "date=$(date +'%Y-%m-%dT%H_%M_%S')" >> $GITHUB_OUTPUT  # Colons are not allowed in artifacts name
-
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: tests_results_${{ matrix.python-version }}-${{ steps.date.outputs.date }}.csv
-          path: tests_results.csv
