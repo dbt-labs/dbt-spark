@@ -1,0 +1,86 @@
+# **what?**
+# Runs integration tests.
+
+# **why?**
+# Ensure code for dbt meets a certain quality standard.
+
+# **when?**
+# This will run for all PRs, when code is pushed to a release
+# branch, and when manually triggered.
+
+name: Integration tests
+
+on:
+  push:
+    branches:
+      - "main"
+      - "*.latest"
+      - "releases/*"
+  pull_request:
+  workflow_dispatch:
+
+# explicitly turn off permissions for `GITHUB_TOKEN`
+permissions: read-all
+
+# will cancel previous workflows triggered by the same event and for the same ref for PRs or same SHA otherwise
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ contains(github.event_name, 'pull_request') && github.event.pull_request.head.ref || github.sha }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  tests:
+    name: test with python ${{ matrix.python-version }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+
+    env:
+      TOXENV: "unit"
+      PYTEST_ADDOPTS: "-v --color=yes --csv test_results.csv"
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: isbang/compose-action@v1.5.1
+        with:
+          compose-file: "./docker/docker-compose.yml"
+
+      - name: Install tox
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox
+
+      - name: Run tox
+        run: |
+          tox -e integration-spark-session
+          tox -e integration-spark-thrift
+
+      - name: Get current date
+        if: always()
+        id: date
+        run: echo "date=$(date +'%Y-%m-%dT%H_%M_%S')" >> $GITHUB_OUTPUT  # Colons are not allowed in artifacts name
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: tests_results_${{ matrix.python-version }}-${{ steps.date.outputs.date }}.csv
+          path: tests_results.csv
