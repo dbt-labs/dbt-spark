@@ -4,25 +4,41 @@ from typing import Dict
 import pytest
 
 from dbt.contracts.results import TestStatus
-from dbt.tests.adapter.persist_test_results.basic import PersistTestResults
+from dbt.tests.adapter.store_test_failures_tests.basic import StoreTestFailures
 from dbt.tests.util import run_dbt, check_relation_types
 
 
 @pytest.mark.skip_profile("spark_session", "apache_spark")
-class TestPersistTestResultsDatabricks(PersistTestResults):
+class TestStoreTestFailuresDatabricks(StoreTestFailures):
+    """
+    Databricks works as expected. This tests all Databricks profiles as they are not skipped above.
+    """
+
     pass
 
 
 @pytest.mark.skip_profile("spark_session", "databricks_cluster", "databricks_sql_endpoint")
-class TestPersistTestResultsSpark(PersistTestResults):
+class TestStoreTestFailuresSpark(StoreTestFailures):
+    """
+    This is the same set of test cases as the test class above; it's the same subclass.
+
+    Using "DELETE FROM" with Spark throws the following error:
+    dbt.exceptions.DbtDatabaseError: Database Error
+        org.apache.hive.service.cli.HiveSQLException:
+            Error running query: org.apache.spark.sql.AnalysisException:
+                DELETE is only supported with v2 tables.
+
+    As a result, this class overrides `self.delete_record` to do nothing and then overrides the test
+    only to skip updating the expected changes to reflect the absence of a delete.
+
+    This should be updated in the future:
+    - `self.delete_record` should be updated to properly delete the record by replacing the data frame
+    with a filtered dataframe
+    - the test case should be removed from here; it should not need to be altered once `self.delete_record`
+    is updated correctly
+    """
+
     def delete_record(self, project, record: Dict[str, str]):
-        """
-        Using "DELETE FROM" with Spark throws the following error:
-        dbt.exceptions.DbtDatabaseError: Database Error
-            org.apache.hive.service.cli.HiveSQLException:
-                Error running query: org.apache.spark.sql.AnalysisException:
-                    DELETE is only supported with v2 tables.
-        """
         pass
 
     def test_tests_run_successfully_and_are_persisted_correctly(self, project):
