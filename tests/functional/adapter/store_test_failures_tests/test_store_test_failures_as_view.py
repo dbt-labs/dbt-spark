@@ -50,10 +50,10 @@ class TestStoreTestFailuresSpark(StoreTestFailures):
         # set up the expected results
         TestResult = namedtuple("TestResult", ["name", "status", "type", "row_count"])
         expected_results = {
-            TestResult("pass_with_view_strategy", TestStatus.Pass, "view", 0),
-            TestResult("fail_with_view_strategy", TestStatus.Fail, "view", 1),
-            TestResult("pass_with_table_strategy", TestStatus.Pass, "table", 0),
-            TestResult("fail_with_table_strategy", TestStatus.Fail, "table", 1),
+            TestResult("pass_as_view", TestStatus.Pass, "view", 0),
+            TestResult("fail_as_view", TestStatus.Fail, "view", 1),
+            TestResult("pass_as_table", TestStatus.Pass, "table", 0),
+            TestResult("fail_as_table", TestStatus.Fail, "table", 1),
         }
 
         # run the tests once
@@ -79,8 +79,8 @@ class TestStoreTestFailuresSpark(StoreTestFailures):
         # insert a new record in the model that fails the "pass" tests
         # show that the view updates, but not the table
         self.insert_record(project, {"name": "dave", "shirt": "grape"})
-        expected_results.remove(TestResult("pass_with_view_strategy", TestStatus.Pass, "view", 0))
-        expected_results.add(TestResult("pass_with_view_strategy", TestStatus.Pass, "view", 1))
+        expected_results.remove(TestResult("pass_as_view", TestStatus.Pass, "view", 0))
+        expected_results.add(TestResult("pass_as_view", TestStatus.Pass, "view", 1))
 
         # delete the original record from the model that failed the "fail" tests
         # show that the view updates, but not the table
