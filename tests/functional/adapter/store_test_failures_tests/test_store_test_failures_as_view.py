@@ -74,7 +74,7 @@ class TestStoreTestFailuresSpark(StoreTestFailures):
         }
 
         # run the tests once
-        results = run_dbt(["test"], expect_pass=False)
+        results = run_dbt(["test", "--store-failures"], expect_pass=False)
 
         # show that the statuses are what we expect
         actual = {(result.node.name, result.status) for result in results}
