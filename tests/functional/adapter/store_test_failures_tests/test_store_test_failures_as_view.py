@@ -41,7 +41,7 @@ class TestStoreTestFailuresSpark(StoreTestFailures):
     def delete_record(self, project, record: Dict[str, str]):
         pass
 
-    def test_tests_run_successfully_and_are_persisted_correctly(self, project):
+    def test_tests_run_successfully_and_are_stored_as_expected(self, project):
         """
         This test case is overridden to back out the deletion check for whether the results are persisted as views.
         `self.delete_record` should be updated to delete correctly, and then this should be removed to run the
