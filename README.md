@@ -26,7 +26,7 @@ more information, consult [the docs](https://docs.getdbt.com/docs/profile-spark)
 
 ## Running locally
 A `docker-compose` environment starts a Spark Thrift server and a Postgres database as a Hive Metastore backend.
-Note: dbt-spark now supports Spark 3.4.1.
+Note: dbt-spark now supports Spark 3.3.2.
 
 The following command starts two docker containers:
 
