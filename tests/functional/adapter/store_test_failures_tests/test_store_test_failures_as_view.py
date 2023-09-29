@@ -11,7 +11,7 @@ from dbt.tests.util import run_dbt, check_relation_types
 @pytest.mark.skip_profile("spark_session", "apache_spark")
 class TestStoreTestFailuresDatabricks(StoreTestFailures):
     """
-    Databricks works as expected. This tests all Databricks profiles as they are not skipped above.
+    This tests all Databricks profiles as they are not skipped above.
     """
 
     pass
@@ -21,6 +21,7 @@ class TestStoreTestFailuresDatabricks(StoreTestFailures):
 class TestStoreTestFailuresSpark(StoreTestFailures):
     """
     This is the same set of test cases as the test class above; it's the same subclass.
+    This tests Spark instead of Databricks, and requires some configuration specific to Spark.
 
     Using "DELETE FROM" with Spark throws the following error:
     dbt.exceptions.DbtDatabaseError: Database Error
@@ -40,6 +41,22 @@ class TestStoreTestFailuresSpark(StoreTestFailures):
 
     def delete_record(self, project, record: Dict[str, str]):
         pass
+
+    def row_count(self, project, relation_name: str) -> int:
+        """
+        Return the row count for the relation.
+
+        This is overridden because spark requires a field name on `count(*)`.
+
+        Args:
+            project: the project fixture
+            relation_name: the name of the relation
+
+        Returns:
+            the row count as an integer
+        """
+        sql = f"select count(*) as failure_count from {self.audit_schema}.{relation_name}"
+        return project.run_sql(sql, fetch="one")[0]
 
     def test_tests_run_successfully_and_are_stored_as_expected(self, project):
         """
