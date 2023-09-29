@@ -2,7 +2,7 @@
 # Runs integration tests.
 
 # **why?**
-# Ensure code for dbt meets a certain quality standard.
+# Ensure code runs as expected.
 
 # **when?**
 # This will run for all PRs, when code is pushed to a release
