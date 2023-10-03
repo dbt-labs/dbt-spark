@@ -50,17 +50,21 @@ class TestSparkStoreTestFailuresWithDelta(StoreTestFailuresBase):
         self.run_tests_store_failures_and_assert(project)
 
 
+@pytest.mark.skip_profile("spark_session")
 class TestSparkStoreTestFailuresAsInteractions(StoreTestFailuresAsInteractions):
     pass
 
 
+@pytest.mark.skip_profile("spark_session")
 class TestSparkStoreTestFailuresAsProjectLevelOff(StoreTestFailuresAsProjectLevelOff):
     pass
 
 
+@pytest.mark.skip_profile("spark_session")
 class TestSparkStoreTestFailuresAsProjectLevelView(StoreTestFailuresAsProjectLevelView):
     pass
 
 
+@pytest.mark.skip_profile("spark_session")
 class TestSparkStoreTestFailuresAsGeneric(StoreTestFailuresAsGeneric):
     pass
