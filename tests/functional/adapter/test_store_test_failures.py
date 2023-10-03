@@ -1,5 +1,11 @@
 import pytest
 
+from dbt.tests.adapter.store_test_failures_tests.basic import (
+    StoreTestFailuresAsGeneric,
+    StoreTestFailuresAsInteractions,
+    StoreTestFailuresAsProjectLevelOff,
+    StoreTestFailuresAsProjectLevelView,
+)
 from dbt.tests.adapter.store_test_failures_tests.test_store_test_failures import (
     StoreTestFailuresBase,
     TEST_AUDIT_SCHEMA_SUFFIX,
@@ -42,3 +48,19 @@ class TestSparkStoreTestFailuresWithDelta(StoreTestFailuresBase):
     def test_store_and_assert_failure_with_delta(self, project):
         self.run_tests_store_one_failure(project)
         self.run_tests_store_failures_and_assert(project)
+
+
+class TestSparkStoreTestFailuresAsInteractions(StoreTestFailuresAsInteractions):
+    pass
+
+
+class TestSparkStoreTestFailuresAsProjectLevelOff(StoreTestFailuresAsProjectLevelOff):
+    pass
+
+
+class TestSparkStoreTestFailuresAsProjectLevelView(StoreTestFailuresAsProjectLevelView):
+    pass
+
+
+class TestSparkStoreTestFailuresAsGeneric(StoreTestFailuresAsGeneric):
+    pass
