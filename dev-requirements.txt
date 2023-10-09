@@ -15,7 +15,7 @@ ipdb~=0.13.13
 mypy==1.5.1  # patch updates have historically introduced breaking changes
 pip-tools~=7.3
 pre-commit~=3.4
-pre-commit-hooks~=4.4
+pre-commit-hooks~=4.5
 pytest~=7.4
 pytest-csv~=3.0
 pytest-dotenv~=0.5.2
