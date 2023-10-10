@@ -1,11 +1,6 @@
 import pytest
 
-from dbt.tests.adapter.store_test_failures_tests.basic import (
-    StoreTestFailuresAsGeneric,
-    StoreTestFailuresAsInteractions,
-    StoreTestFailuresAsProjectLevelOff,
-    StoreTestFailuresAsProjectLevelView,
-)
+from dbt.tests.adapter.store_test_failures_tests import basic
 from dbt.tests.adapter.store_test_failures_tests.test_store_test_failures import (
     StoreTestFailuresBase,
     TEST_AUDIT_SCHEMA_SUFFIX,
@@ -51,20 +46,30 @@ class TestSparkStoreTestFailuresWithDelta(StoreTestFailuresBase):
 
 
 @pytest.mark.skip_profile("spark_session")
-class TestSparkStoreTestFailuresAsInteractions(StoreTestFailuresAsInteractions):
+class TestStoreTestFailuresAsInteractions(basic.StoreTestFailuresAsInteractions):
     pass
 
 
 @pytest.mark.skip_profile("spark_session")
-class TestSparkStoreTestFailuresAsProjectLevelOff(StoreTestFailuresAsProjectLevelOff):
+class TestStoreTestFailuresAsProjectLevelOff(basic.StoreTestFailuresAsProjectLevelOff):
     pass
 
 
 @pytest.mark.skip_profile("spark_session")
-class TestSparkStoreTestFailuresAsProjectLevelView(StoreTestFailuresAsProjectLevelView):
+class TestStoreTestFailuresAsProjectLevelView(basic.StoreTestFailuresAsProjectLevelView):
     pass
 
 
 @pytest.mark.skip_profile("spark_session")
-class TestSparkStoreTestFailuresAsGeneric(StoreTestFailuresAsGeneric):
+class TestStoreTestFailuresAsGeneric(basic.StoreTestFailuresAsGeneric):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session")
+class TestStoreTestFailuresAsProjectLevelEphemeral(basic.StoreTestFailuresAsProjectLevelEphemeral):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session")
+class TestStoreTestFailuresAsExceptions(basic.StoreTestFailuresAsExceptions):
     pass
