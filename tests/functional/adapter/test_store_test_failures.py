@@ -1,5 +1,6 @@
 import pytest
 
+from dbt.tests.adapter.store_test_failures_tests import basic
 from dbt.tests.adapter.store_test_failures_tests.test_store_test_failures import (
     StoreTestFailuresBase,
     TEST_AUDIT_SCHEMA_SUFFIX,
@@ -42,3 +43,33 @@ class TestSparkStoreTestFailuresWithDelta(StoreTestFailuresBase):
     def test_store_and_assert_failure_with_delta(self, project):
         self.run_tests_store_one_failure(project)
         self.run_tests_store_failures_and_assert(project)
+
+
+@pytest.mark.skip_profile("spark_session")
+class TestStoreTestFailuresAsInteractions(basic.StoreTestFailuresAsInteractions):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session")
+class TestStoreTestFailuresAsProjectLevelOff(basic.StoreTestFailuresAsProjectLevelOff):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session")
+class TestStoreTestFailuresAsProjectLevelView(basic.StoreTestFailuresAsProjectLevelView):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session")
+class TestStoreTestFailuresAsGeneric(basic.StoreTestFailuresAsGeneric):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session")
+class TestStoreTestFailuresAsProjectLevelEphemeral(basic.StoreTestFailuresAsProjectLevelEphemeral):
+    pass
+
+
+@pytest.mark.skip_profile("spark_session")
+class TestStoreTestFailuresAsExceptions(basic.StoreTestFailuresAsExceptions):
+    pass

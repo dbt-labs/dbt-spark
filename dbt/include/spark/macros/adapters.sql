@@ -138,7 +138,7 @@
 
 {#-- We can't use temporary tables with `create ... as ()` syntax --#}
 {% macro spark__create_temporary_view(relation, compiled_code) -%}
-    create temporary view {{ relation }} as
+    create or replace temporary view {{ relation }} as
       {{ compiled_code }}
 {%- endmacro -%}
 
@@ -229,9 +229,30 @@
   {% endfor %}
 {% endmacro %}
 
+{% macro get_column_comment_sql(column_name, column_dict) -%}
+  {% if column_name in column_dict and column_dict[column_name]["description"] -%}
+    {% set escaped_description = column_dict[column_name]["description"] | replace("'", "\\'") %}
+    {% set column_comment_clause = "comment '" ~ escaped_description ~ "'" %}
+  {%- endif -%}
+  {{ adapter.quote(column_name) }} {{ column_comment_clause }}
+{% endmacro %}
+
+{% macro get_persist_docs_column_list(model_columns, query_columns) %}
+  {% for column_name in query_columns %}
+    {{ get_column_comment_sql(column_name, model_columns) }}
+    {{- ", " if not loop.last else "" }}
+  {% endfor %}
+{% endmacro %}
 
 {% macro spark__create_view_as(relation, sql) -%}
   create or replace view {{ relation }}
+  {% if config.persist_column_docs() -%}
+    {% set model_columns = model.columns %}
+    {% set query_columns = get_columns_in_query(sql) %}
+    (
+    {{ get_persist_docs_column_list(model_columns, query_columns) }}
+    )
+  {% endif %}
   {{ comment_clause() }}
   {%- set contract_config = config.get('contract') -%}
   {%- if contract_config.enforced -%}
