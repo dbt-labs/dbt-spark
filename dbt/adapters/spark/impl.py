@@ -347,7 +347,9 @@ class SparkAdapter(SQLAdapter):
             as_dict["table_database"] = None
             yield as_dict
 
-    def get_catalog(self, manifest: Manifest) -> Tuple[agate.Table, List[Exception]]:
+    def get_catalog(
+        self, manifest: Manifest, selected_nodes: Optional[Set] = None
+    ) -> Tuple[agate.Table, List[Exception]]:
         schema_map = self._get_catalog_schemas(manifest)
         if len(schema_map) > 1:
             raise dbt.exceptions.CompilationError(

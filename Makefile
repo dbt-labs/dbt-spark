@@ -9,6 +9,7 @@ dev: ## Installs adapter in develop mode along with development dependencies
 dev-uninstall: ## Uninstalls all packages while maintaining the virtual environment
                ## Useful when updating versions, or if you accidentally installed into the system interpreter
 	pip freeze | grep -v "^-e" | cut -d "@" -f1 | xargs pip uninstall -y
+	pip uninstall -y dbt-spark
 
 .PHONY: mypy
 mypy: ## Runs mypy against staged changes for static type checking.
