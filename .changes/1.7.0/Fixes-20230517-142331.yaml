@@ -1,6 +1,0 @@
-kind: Fixes
-body: Wrap AnalysisException into DbtRuntimeError
-time: 2023-05-17T14:23:31.263799+02:00
-custom:
-  Author: Fokko
-  Issue: "782"
