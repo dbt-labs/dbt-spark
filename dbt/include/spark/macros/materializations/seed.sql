@@ -27,7 +27,7 @@
       {% endfor %}
 
       {% set sql %}
-          insert into {{ this.render() }} values
+          insert {% if loop.index0 == 0 -%} overwrite {% else -%} into {% endif -%} {{ this.render() }} values
           {% for row in chunk -%}
               ({%- for col_name in agate_table.column_names -%}
                   {%- set inferred_type = adapter.convert_type(agate_table, loop.index0) -%}
