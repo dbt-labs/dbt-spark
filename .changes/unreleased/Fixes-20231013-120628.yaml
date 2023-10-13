@@ -1,0 +1,7 @@
+kind: Fixes
+body: overwrite existing rows from existin seed tables. the current seed command in
+  dbt-spark appends to existing seeded tables instead overwriting.
+time: 2023-10-13T12:06:28.078483-06:00
+custom:
+  Author: mv1742
+  Issue: "112"
