@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+=======
+{% macro spark__get_binding_char() %}
+  {{ return('?' if target.method == 'odbc' else '%s') }}
+{% endmacro %}
+
+
+>>>>>>> ab7c116 (Update seed.sql)
 {% macro spark__reset_csv_table(model, full_refresh, old_relation, agate_table) %}
     {% if old_relation %}
         {{ adapter.truncate_relation(old_relation) }}
@@ -7,7 +15,7 @@
     {% set sql = create_csv_table(model, agate_table) %}
     {{ return(sql) }}
 {% endmacro %}
-
+    
 
 {% macro spark__load_csv_rows(model, agate_table) %}
 
@@ -74,3 +82,4 @@
 
   {{ return(sql) }}
 {% endmacro %}
+
