@@ -1,7 +1,0 @@
-kind: Fixes
-body: '- dbt seed now removes all rows from the existing seed tables and replace values.
-  As explained in [issue 112](https://github.com/fishtown-analytics/dbt-spar'
-time: 2023-10-13T12:00:32.866957-06:00
-custom:
-  Author: mv1742
-  Issue: "112"
