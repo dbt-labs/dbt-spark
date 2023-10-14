@@ -5,7 +5,10 @@
 
 {% macro spark__reset_csv_table(model, full_refresh, old_relation, agate_table) %}
     {% if old_relation %}
+        {{ adapter.truncate_relation(old_relation) }}
         {{ adapter.drop_relation(old_relation) }}
+
+        {{ return(sql) }}
     {% endif %}
     {% set sql = create_csv_table(model, agate_table) %}
     {{ return(sql) }}
@@ -27,7 +30,7 @@
       {% endfor %}
 
       {% set sql %}
-          insert into {{ this.render() }} values
+          insert {% if loop.index0 == 0 -%} overwrite {% else -%} into {% endif -%} {{ this.render() }} values
           {% for row in chunk -%}
               ({%- for col_name in agate_table.column_names -%}
                   {%- set inferred_type = adapter.convert_type(agate_table, loop.index0) -%}

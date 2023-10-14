@@ -66,6 +66,10 @@
       re: python models and temporary views.
 
       Also, why do neither drop_relation or adapter.drop_relation work here?!
+      'unmanaged' tables in spark need to manually delete the database
+      otherwise drop statement does not delete the underlying data.
+      TODO:add warning that this feature does not work for Unmanaged tables.
+      Managed tables are fine.
       --#}
       {% call statement('drop_relation') -%}
         drop table if exists {{ tmp_relation }}
