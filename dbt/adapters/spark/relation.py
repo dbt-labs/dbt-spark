@@ -33,6 +33,8 @@ class SparkRelation(BaseRelation):
     is_delta: Optional[bool] = None
     is_hudi: Optional[bool] = None
     is_iceberg: Optional[bool] = None
+    is_paimon: Optional[bool] = None
+
     # TODO: make this a dict everywhere
     information: Optional[str] = None
 

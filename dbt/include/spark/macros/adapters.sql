@@ -4,9 +4,46 @@
 
 {% macro spark__tblproperties_clause() -%}
   {%- set tblproperties = config.get('tblproperties') -%}
+
+  {%- if config.get('file_format') == 'paimon' -%}
+    {%- set unique_key = config.get('unique_key', validator=validation.any[list, basestring]) -%}
+    {%- set partition_by = config.get('partition_by', validator=validation.any[list, basestring]) -%}
+
+    {%- if unique_key is not none and unique_key is string -%}
+      {%- set unique_key = [unique_key] -%}
+    {%- endif -%}
+
+    {%- if partition_by is not none %}
+      {%- if partition_by is string -%}
+        {%- set partition_by = [partition_by] -%}
+      {%- endif -%}
+      {%- if unique_key is none -%}
+        {%- set unique_key = partition_by -%}
+      {%- else -%}
+        {%- set unique_key = partition_by + unique_key -%}
+      {%- endif %}
+    {%- endif %}
+
+    {%- if unique_key is not none %}
+      {%- set unique_key -%}
+        {%- for item in unique_key -%}
+          {{ item }}
+          {%- if not loop.last -%},{%- endif -%}
+        {%- endfor -%}
+      {%- endset -%}
+    {%- endif %}
+    {%- if unique_key is not none and tblproperties is none -%}
+      {%- set tblproperties = {'primary-key': unique_key} -%}
+    {%- elif unique_key is not none and tblproperties is not none and 'primary-key' not in tblproperties -%}
+      {%- set _ = tblproperties.update({'primary-key': unique_key}) -%}
+    {%- elif tblproperties is not none and 'primary-key' in tblproperties and tblproperties['primary-key'] != unique_key -%}
+      {{ exceptions.raise_compiler_error("for paimon format, unique_key and tblproperties('primary-key') should be the same column(s).") }}
+    {%- endif %}
+  {%- endif %}
+
   {%- if tblproperties is not none %}
     tblproperties (
-      {%- for prop in tblproperties -%}
+      {%- for prop in tblproperties %}
       '{{ prop }}' = '{{ tblproperties[prop] }}' {% if not loop.last %}, {% endif %}
       {%- endfor %}
     )
