@@ -17,9 +17,7 @@
       {%- if partition_by is string -%}
         {%- set partition_by = [partition_by] -%}
       {%- endif -%}
-      {%- if unique_key is none -%}
-        {%- set unique_key = partition_by -%}
-      {%- else -%}
+      {%- if unique_key is not none -%}
         {%- set unique_key = partition_by + unique_key -%}
       {%- endif %}
     {%- endif %}
