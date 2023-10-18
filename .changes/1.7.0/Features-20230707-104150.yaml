@@ -1,6 +1,0 @@
-kind: Features
-body: Support server_side_parameters for Spark session connection method
-time: 2023-07-07T10:41:50.01541+02:00
-custom:
-  Author: alarocca-apixio
-  Issue: "690"
