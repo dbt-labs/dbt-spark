@@ -77,4 +77,9 @@ class TestSparkBigqueryClonePossible(BaseClonePossible):
             )
             project.adapter.drop_schema(relation)
 
+            relation = project.adapter.Relation.create(
+                database=project.database, schema=f"{project.test_schema}_other"
+            )
+            project.adapter.drop_schema(relation)
+
     pass
