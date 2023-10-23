@@ -240,7 +240,7 @@ jobs:
 
           unzip SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip -d /tmp/ \
           && dpkg -i /tmp/SimbaSparkODBC-*/*.deb \
-          && echo "[Simba]\nDriver = $HOME/opt/simba/spark/lib/64/libsparkodbc_sb64.so" >> /etc/odbcinst.ini \
+          && echo "[Simba]\nDriver = /opt/simba/spark/lib/64/libsparkodbc_sb64.so" >> /etc/odbcinst.ini \
           && rm -rf /tmp \
           && dpkg -l | grep Simba # confirm that the driver is installed
           
