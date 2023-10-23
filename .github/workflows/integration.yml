@@ -63,6 +63,7 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha }}
+
       - name: Check if relevant files changed
         if: github.event_name == 'pull_request'
         # https://github.com/marketplace/actions/paths-changes-filter
@@ -80,6 +81,7 @@ jobs:
               - 'dbt/**'
               - 'tests/**'
               - 'dev-requirements.txt'
+
   local-tests:
     name: test spark local against python ${{ matrix.python-version }}
 
