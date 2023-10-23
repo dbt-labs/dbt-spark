@@ -177,8 +177,8 @@ jobs:
         python-version:
           - "3.8"
         test:
-          - "databricks-odbc-sql-endpoint"
-          - "databricks-odbc-cluster"
+          - "spark-databricks-odbc-sql-endpoint"
+          - "spark-databricks-odbc-cluster"
           - "spark-databricks-http"
 
     env:
@@ -190,7 +190,7 @@ jobs:
       DD_ENV: ci
       DD_SERVICE: ${{ github.event.repository.name }}
       DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
-      DBT_DATABRICKS_HOSTNAME: ${{ secrets.DBT_DATABRICKS_HOST }}
+      DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST }}
       DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
       DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
       DBT_DATABRICS_USER: ${{ secrets.DBT_DATABRICKS_USER }}
