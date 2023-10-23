@@ -232,7 +232,7 @@ jobs:
           unixodbc-dev \
           unzip
           
-          apt-get install curl
+          apt-get install  -y curl
 
           curl --create-dirs -OL \
             --output-dir "/tmp/simba_odbc.zip" \
