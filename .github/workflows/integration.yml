@@ -157,7 +157,7 @@ jobs:
         run: tox -e integration-${{ matrix.test }}
 
   databricks-tests:
-    name: test spark databricks against python ${{ matrix.python-version }}
+    name: run ${{ matrix.test }} against python ${{ matrix.python-version }}
     # run if not a PR from a forked repository or has a label to mark as safe to test
     # also checks that the matrix generated is not empty
     if: >-
@@ -193,7 +193,6 @@ jobs:
       DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST }}
       DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
       DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
-      DBT_DATABRICS_USER: ${{ secrets.DBT_DATABRICKS_USER }}
       ODBC_DRIVER: "Simba"
     steps:
       - name: Check out the repository
@@ -243,6 +242,8 @@ jobs:
           && echo "[Simba]\nDriver = /opt/simba/spark/lib/64/libsparkodbc_sb64.so" >> /etc/odbcinst.ini \
           && rm -rf /tmp \
           && dpkg -l | grep Simba # confirm that the driver is installed
+          
+          ldd /opt/simba/spark/lib/64/libsparkodbc_sb64.so
           
 
       - name: Run tox for Spark ${{ matrix.test }}
