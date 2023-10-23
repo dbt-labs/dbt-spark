@@ -233,9 +233,9 @@ jobs:
           curl \
           unzip
 
-          curl -OL \
-            https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip \
-            /tmp/simba_odbc.zip
+          curl --create-dirs -OL \
+            --output-dir "/tmp/simba_odbc.zip" \
+            "https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip"
 
           unzip /tmp/simba_odbc.zip -d /tmp/ \
           && dpkg -i /tmp/SimbaSparkODBC-*/*.deb \
