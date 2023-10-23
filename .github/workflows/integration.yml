@@ -233,7 +233,7 @@ jobs:
           ./.github/scripts/update_dbt_core_branch.sh ${{ inputs.dbt-core-branch }}
 
       - name: Configure ODBC
-        if: ${{ matrix.test != "spark-databricks-http" }}
+        if: ${{ matrix.test != 'spark-databricks-http' }}
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
           g++ \
