@@ -170,6 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: "fishtownanalytics/test-container:10"
+      options: --user root
     strategy:
       fail-fast: false
       matrix:
