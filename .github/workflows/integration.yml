@@ -230,7 +230,12 @@ jobs:
           apt-get update && apt-get install -y --no-install-recommends \
           g++ \
           unixodbc-dev \
+          curl \
           unzip
+
+          curl -OL \
+            https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip \
+            /tmp/simba_odbc.zip
 
           unzip /tmp/simba_odbc.zip -d /tmp/ \
           && dpkg -i /tmp/SimbaSparkODBC-*/*.deb \
