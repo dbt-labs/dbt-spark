@@ -234,16 +234,14 @@ jobs:
           unzip
           
           apt-get install  -y curl
+          rm -rf /tmp && mkdir /tmp
+          
+          curl -OL "https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip" \
 
-          curl --create-dirs \
-            --output "/tmp/simba_odbc.zip" \
-            "https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip"
-
-          unzip /tmp/simba_odbc.zip -d /tmp/ \
+          unzip SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip -d /tmp/ \
           && dpkg -i /tmp/SimbaSparkODBC-*/*.deb \
           && echo "[Simba]\nDriver = /opt/simba/spark/lib/64/libsparkodbc_sb64.so" >> /etc/odbcinst.ini \
-          && rm /tmp/simba_odbc.zip \
-          && rm -rf /tmp/SimbaSparkODBC*
+          && rm -rf /tmp
 
       - name: Run tox for Spark ${{ matrix.test }}
         run: tox -e integration-${{ matrix.test }}
