@@ -230,8 +230,9 @@ jobs:
           apt-get update && apt-get install -y --no-install-recommends \
           g++ \
           unixodbc-dev \
-          curl \
           unzip
+          
+          apt-get install curl
 
           curl --create-dirs -OL \
             --output-dir "/tmp/simba_odbc.zip" \
