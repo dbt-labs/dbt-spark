@@ -235,7 +235,7 @@ jobs:
           
           apt-get install  -y curl
 
-          curl --create-dirs -OL \
+          curl --create-dirs \
             --output "/tmp/simba_odbc.zip" \
             "https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip"
 
