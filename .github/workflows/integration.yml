@@ -226,6 +226,7 @@ jobs:
 
       - name: Configure ODBC
         if: ${{ matrix.test != 'spark-databricks-http' }}
+        shell: bash
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
           g++ \
@@ -235,7 +236,7 @@ jobs:
           apt-get install  -y curl
 
           curl --create-dirs -OL \
-            --output-dir "/tmp/simba_odbc.zip" \
+            --output "/tmp/simba_odbc.zip" \
             "https://databricks.com/wp-content/uploads/drivers-2020/SimbaSparkODBC-2.6.16.1019-Debian-64bit.zip"
 
           unzip /tmp/simba_odbc.zip -d /tmp/ \
