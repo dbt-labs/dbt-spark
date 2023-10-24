@@ -203,7 +203,7 @@ jobs:
           persist-credentials: false
 
       # explicity checkout the branch for the PR,
-      # this is necessary for the `pull_request` event
+      # this is necessary for the `pull_request_target` event
       - name: Check out the repository (PR)
         if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v3
