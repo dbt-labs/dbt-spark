@@ -168,9 +168,6 @@ jobs:
       )
 
     runs-on: ubuntu-latest
-    container:
-      image: "fishtownanalytics/test-container:10"
-      options: --user root
     strategy:
       fail-fast: false
       matrix:
@@ -213,6 +210,11 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install python dependencies
         run: |
