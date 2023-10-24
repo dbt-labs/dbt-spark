@@ -250,7 +250,8 @@ jobs:
           && dpkg -l | grep Simba # confirm that the driver is installed
           
           ldd /opt/simba/spark/lib/64/libsparkodbc_sb64.so
-          
+          echo "--------------------------------------------"
+          odbcinst -j
 
       - name: Run tox for Spark ${{ matrix.test }}
         run: tox -e integration-${{ matrix.test }}
