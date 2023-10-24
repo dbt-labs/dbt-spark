@@ -17,6 +17,10 @@ on:
       - "*.latest"
       - "releases/*"
   pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - labeled
   workflow_dispatch:
     inputs:
       dbt-core-branch:
@@ -231,7 +235,6 @@ jobs:
 
       - name: Configure ODBC
         if: ${{ matrix.test != 'spark-databricks-http' }}
-        shell: bash
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
           g++ \
