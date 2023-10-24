@@ -236,6 +236,7 @@ jobs:
       - name: Configure ODBC
         if: ${{ matrix.test != 'spark-databricks-http' }}
         run: |
+          set -e
           sudo apt-get update && sudo apt-get install -y --no-install-recommends \
           g++ \
           unixodbc-dev \
