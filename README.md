@@ -26,18 +26,20 @@ more information, consult [the docs](https://docs.getdbt.com/docs/profile-spark)
 
 ## Running locally
 A `docker-compose` environment starts a Spark Thrift server and a Postgres database as a Hive Metastore backend.
-Note: dbt-spark now supports Spark 3.1.1 (formerly on Spark 2.x).
+Note: dbt-spark now supports Spark 3.3.2.
 
-The following command would start two docker containers
-```
+The following command starts two docker containers:
+
+```sh
 docker-compose up -d
 ```
+
 It will take a bit of time for the instance to start, you can check the logs of the two containers.
 If the instance doesn't start correctly, try the complete reset command listed below and then try start again.
 
 Create a profile like this one:
 
-```
+```yaml
 spark_testing:
   target: local
   outputs:
@@ -60,7 +62,7 @@ Connecting to the local spark instance:
 
 Note that the Hive metastore data is persisted under `./.hive-metastore/`, and the Spark-produced data under `./.spark-warehouse/`. To completely reset you environment run the following:
 
-```
+```sh
 docker-compose down
 rm -rf ./.hive-metastore/
 rm -rf ./.spark-warehouse/

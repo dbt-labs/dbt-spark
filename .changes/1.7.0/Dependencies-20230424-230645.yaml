@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update pyodbc requirement from ~=4.0.30 to ~=4.0.39"
-time: 2023-04-24T23:06:45.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 742
