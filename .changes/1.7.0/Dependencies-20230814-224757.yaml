@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Bump mypy from 1.4.1 to 1.5.0"
-time: 2023-08-14T22:47:57.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 872

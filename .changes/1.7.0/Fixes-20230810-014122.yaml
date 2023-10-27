@@ -1,6 +1,0 @@
-kind: Fixes
-body: include tblproperties macro in adapters.sql create table
-time: 2023-08-10T01:41:22.782982+08:00
-custom:
-  Author: etheleon
-  Issue: "865"

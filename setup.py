@@ -49,7 +49,7 @@ def _get_dbt_core_version():
 
 
 package_name = "dbt-spark"
-package_version = "1.7.0b2"
+package_version = "1.8.0a1"
 dbt_core_version = _get_dbt_core_version()
 description = """The Apache Spark adapter plugin for dbt"""
 
