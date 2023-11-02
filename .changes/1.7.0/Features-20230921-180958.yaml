@@ -1,6 +1,0 @@
-kind: Features
-body: Support storing test failures as views
-time: 2023-09-21T18:09:58.174136-04:00
-custom:
-  Author: mikealfare
-  Issue: "6914"
