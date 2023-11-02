@@ -1,6 +1,0 @@
-kind: Features
-body: Enforce server side parameters keys and values to be strings
-time: 2023-07-07T11:46:50.390918+02:00
-custom:
-  Author: Fokko,JCZuurmond
-  Issue: "826"

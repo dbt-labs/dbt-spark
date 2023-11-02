@@ -1,6 +1,0 @@
-kind: Dependencies
-body: Replace sasl with pure-sasl for PyHive
-time: 2023-06-28T12:13:41.141588-07:00
-custom:
-  Author: colin-rogers-dbt
-  PR: "818"

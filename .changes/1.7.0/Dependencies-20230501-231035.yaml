@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update types-requests requirement from ~=2.28 to ~=2.29"
-time: 2023-05-01T23:10:35.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 749
