@@ -84,7 +84,7 @@ jobs:
               - 'tests/**'
               - 'dev-requirements.txt'
 
-  local-tests:
+  test:
     name: ${{ matrix.test }} / python ${{ matrix.python-version }} / ubuntu-latest
 
     # run if not a PR from a forked repository or has a label to mark as safe to test
@@ -105,6 +105,9 @@ jobs:
         test:
           - "spark-thrift"
           - "spark-session"
+          - "spark-databricks-odbc-sql-endpoint"
+          - "spark-databricks-odbc-cluster"
+          - "spark-databricks-http"
 
     env:
       TOXENV: integration-${{ matrix.test }}
@@ -115,6 +118,15 @@ jobs:
       DD_SITE: datadoghq.com
       DD_ENV: ci
       DD_SERVICE: ${{ github.event.repository.name }}
+      DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
+      DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
+      DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
+      DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
+      DBT_DATABRICKS_USER: ${{ secrets.DBT_DATABRICKS_USERNAME }}
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
+      ODBC_DRIVER: "Simba"
 
     steps:
       - name: Check out the repository
@@ -155,86 +167,8 @@ jobs:
         with:
           compose-file: "./docker-compose.yml"
 
-      - name: Run tox for ${{ matrix.test }}
-        run: tox -- --ddtrace
-
-  databricks-tests:
-    name: ${{ matrix.test }} / python ${{ matrix.python-version }} / ubuntu-latest
-
-    # run if not a PR from a forked repository or has a label to mark as safe to test
-    # also checks that the matrix generated is not empty
-    if: >-
-      (
-        github.event_name != 'pull_request_target' ||
-        github.event.pull_request.head.repo.full_name == github.repository ||
-        contains(github.event.pull_request.labels.*.name, 'ok to test')
-      )
-
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version:
-          - "3.8"
-        test:
-          - "spark-databricks-odbc-sql-endpoint"
-          - "spark-databricks-odbc-cluster"
-          - "spark-databricks-http"
-
-    env:
-      TOXENV: integration-${{ matrix.test }}
-      PYTEST_ADDOPTS: "-v --color=yes --csv test_results.csv"
-      DBT_INVOCATION_ENV: github-actions
-      DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-      DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-      DD_SITE: datadoghq.com
-      DD_ENV: ci
-      DD_SERVICE: ${{ github.event.repository.name }}
-      DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
-      DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
-      DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
-      DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
-      DBT_DATABRICKS_USER: ${{ secrets.DBT_DATABRICKS_USERNAME }}
-      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
-      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
-      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
-      ODBC_DRIVER: "Simba"
-    steps:
-      - name: Check out the repository
-        if: github.event_name != 'pull_request_target'
-        uses: actions/checkout@v3
-        with:
-          persist-credentials: false
-
-      # explicitly checkout the branch for the PR,
-      # this is necessary for the `pull_request_target` event
-      - name: Check out the repository (PR)
-        if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v3
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install python dependencies
-        run: |
-          python -m pip install --user --upgrade pip
-          python -m pip install tox
-          python -m pip --version
-          tox --version
-
-      - name: Update dev_requirements.txt
-        if: inputs.dbt-core-branch != ''
-        run: |
-          pip install bumpversion
-          ./.github/scripts/update_dbt_core_branch.sh ${{ inputs.dbt-core-branch }}
-
       - name: Configure ODBC
-        if: ${{ matrix.test != 'spark-databricks-http' }}
+        if: ${{ matrix.test == 'spark-databricks-odbc-sql-endpoint' || matrix.test == 'spark-databricks-odbc-cluster' }}
         run: |
           ./.github/scripts/configure_odbc.sh
 
