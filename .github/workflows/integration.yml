@@ -8,7 +8,7 @@
 # This will run for all PRs, when code is pushed to a release
 # branch, and when manually triggered.
 
-name: Integration tests
+name: Adapter Integration Tests
 
 on:
   push:
@@ -49,7 +49,6 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository ||
       contains(github.event.pull_request.labels.*.name, 'ok to test')
     runs-on: ubuntu-latest
-
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.result }}
 
@@ -86,7 +85,7 @@ jobs:
               - 'dev-requirements.txt'
 
   local-tests:
-    name: test spark local against python ${{ matrix.python-version }}
+    name: ${{ matrix.test }} / python ${{ matrix.python-version }} / ubuntu-latest
 
     # run if not a PR from a forked repository or has a label to mark as safe to test
     # also checks that the matrix generated is not empty
@@ -96,7 +95,6 @@ jobs:
         github.event.pull_request.head.repo.full_name == github.repository ||
         contains(github.event.pull_request.labels.*.name, 'ok to test')
       )
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -109,7 +107,8 @@ jobs:
           - "spark-session"
 
     env:
-      PYTEST_ADDOPTS: "-v --color=yes --csv test_results.csv"
+      TOXENV: integration-${{ matrix.test }}
+      PYTEST_ADDOPTS: "-v --color=yes --csv integration_results.csv"
       DBT_INVOCATION_ENV: github-actions
       DD_CIVISIBILITY_AGENTLESS_ENABLED: true
       DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
@@ -124,7 +123,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # explicity checkout the branch for the PR,
+      # explicitly checkout the branch for the PR,
       # this is necessary for the `pull_request` event
       - name: Check out the repository (PR)
         if: github.event_name == 'pull_request_target'
@@ -156,11 +155,12 @@ jobs:
         with:
           compose-file: "./docker-compose.yml"
 
-      - name: Run tox for Spark ${{ matrix.test }}
-        run: tox -e integration-${{ matrix.test }}
+      - name: Run tox for ${{ matrix.test }}
+        run: tox -- --ddtrace
 
   databricks-tests:
-    name: run ${{ matrix.test }} against python ${{ matrix.python-version }}
+    name: ${{ matrix.test }} / python ${{ matrix.python-version }} / ubuntu-latest
+
     # run if not a PR from a forked repository or has a label to mark as safe to test
     # also checks that the matrix generated is not empty
     if: >-
@@ -182,6 +182,7 @@ jobs:
           - "spark-databricks-http"
 
     env:
+      TOXENV: integration-${{ matrix.test }}
       PYTEST_ADDOPTS: "-v --color=yes --csv test_results.csv"
       DBT_INVOCATION_ENV: github-actions
       DD_CIVISIBILITY_AGENTLESS_ENABLED: true
@@ -205,7 +206,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # explicity checkout the branch for the PR,
+      # explicitly checkout the branch for the PR,
       # this is necessary for the `pull_request_target` event
       - name: Check out the repository (PR)
         if: github.event_name == 'pull_request_target'
@@ -237,5 +238,5 @@ jobs:
         run: |
           ./.github/scripts/configure_odbc.sh
 
-      - name: Run tox for Spark ${{ matrix.test }}
-        run: tox -e integration-${{ matrix.test }}
+      - name: Run tox for ${{ matrix.test }}
+        run: tox -- --ddtrace
