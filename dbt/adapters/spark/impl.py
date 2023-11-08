@@ -121,6 +121,10 @@ class SparkAdapter(SQLAdapter):
         return "double" if decimals else "bigint"
 
     @classmethod
+    def convert_integer_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+        return "bigint"
+
+    @classmethod
     def convert_date_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "date"
 
