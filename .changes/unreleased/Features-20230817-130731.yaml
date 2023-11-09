@@ -1,6 +1,0 @@
-kind: Features
-body: Persist Column level comments when creating views
-time: 2023-08-17T13:07:31.6812862Z
-custom:
-  Author: jurasan
-  Issue: 372
