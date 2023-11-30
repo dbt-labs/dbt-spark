@@ -8,7 +8,7 @@ import dagger as dagger
 async def test_spark(test_args):
     async with dagger.Connection(dagger.Config(log_output=sys.stderr)) as client:
         install_dir = client.host().directory("./", exclude=["\\.pytest_cache/*", ".idea/*"])
-        platform = dagger.Platform("linux/amd64")
+
         tst_container = (
             client.container()
             .from_("python:3.8-slim")
