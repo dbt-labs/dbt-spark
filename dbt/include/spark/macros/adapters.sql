@@ -24,6 +24,20 @@
   {%- endif %}
 {%- endmacro -%}
 
+{% macro location() %}
+  {{ return(adapter.dispatch('location', 'dbt')()) }}
+{%- endmacro -%}
+
+{%- macro spark__location() -%}
+  {%- set configured_location = config.get('location', validator=validation.any[basestring]) -%}
+  {%- if configured_location is not none %}
+    {{- configured_location -}}
+  {%- else -%}
+    {%- set location_root = config.get('location_root', validator=validation.any[basestring]) -%}
+    {%- set identifier = model['alias'] -%}
+    {{- location_root -}}/{{- identifier -}}
+  {%- endif %}
+{%- endmacro -%}
 
 {% macro location_clause() %}
   {{ return(adapter.dispatch('location_clause', 'dbt')()) }}
@@ -33,10 +47,9 @@
   {%- set location_root = config.get('location_root', validator=validation.any[basestring]) -%}
   {%- set identifier = model['alias'] -%}
   {%- if location_root is not none %}
-    location '{{ location_root }}/{{ identifier }}'
+    location '{{ location() }}'
   {%- endif %}
 {%- endmacro -%}
-
 
 {% macro options_clause() -%}
   {{ return(adapter.dispatch('options_clause', 'dbt')()) }}
