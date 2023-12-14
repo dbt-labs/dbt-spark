@@ -1,0 +1,6 @@
+kind: Under the Hood
+body: Remove unused `invalid_insert_overwrite_delta_msg` message
+time: 2023-12-14T13:47:28.444107-07:00
+custom:
+  Author: dbeatty10
+  Issue: "962"
