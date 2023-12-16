@@ -384,11 +384,32 @@ class SparkAdapter(SQLAdapter):
     def get_catalog_by_relations(
         self, manifest: Manifest, relations: Set[BaseRelation]
     ) -> Tuple[agate.Table, List[Exception]]:
-        if len(relations) == 0:
+        info_schemas = {r.information_schema() for r in relations}
+        if len(info_schemas) > 1:
             raise dbt.exceptions.CompilationError(
-                f"Expected non-empty set of relations, found " f"{relations}"
+                f"Expected only one database in get_catalog_by_relations, found {list(info_schemas)}"
             )
-        return self.get_catalog(manifest)
+        elif len(info_schemas) == 1:
+            info_schema = info_schemas.pop()
+        else:
+            raise dbt.exceptions.CompilationError(
+                "Expected a database in get_catalog_by_relations, found none"
+            )
+
+        with executor(self.config) as tpe:
+            # futures: List[Future[agate.Table]] = []
+            futures = [
+                tpe.submit_connected(
+                    self,
+                    "information_schema",
+                    self._get_one_catalog_by_relations,
+                    info_schema,
+                    relations,
+                    manifest,
+                )
+            ]
+            catalogs, exceptions = catch_as_completed(futures)
+        return catalogs, exceptions
 
     def _get_one_catalog(
         self,
