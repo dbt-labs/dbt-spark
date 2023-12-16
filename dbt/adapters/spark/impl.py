@@ -385,25 +385,7 @@ class SparkAdapter(SQLAdapter):
     def get_catalog_by_relations(
         self, manifest: Manifest, relations: Set[BaseRelation]
     ) -> Tuple[agate.Table, List[Exception]]:
-        schema_map = self._get_catalog_schemas(manifest)
-
-        with executor(self.config) as tpe:
-            futures: List[Future[agate.Table]] = []
-            for info, schemas in schema_map.items():
-                for schema in schemas:
-                    if relations_in_schema := [r for r in relations if r.schema == schema]:
-                        futures.append(
-                            tpe.submit_connected(
-                                self,
-                                schema,
-                                self._get_one_catalog_by_relations,
-                                info,
-                                relations_in_schema,
-                                manifest,
-                            )
-                        )
-            catalogs, exceptions = catch_as_completed(futures)
-        return catalogs, exceptions
+        return self.get_catalog(manifest)
 
     def _get_one_catalog(
         self,
