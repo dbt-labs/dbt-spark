@@ -396,7 +396,7 @@ class SparkAdapter(SQLAdapter):
                     [
                         tpe.submit_connected(
                             self,
-                            info_schema.identifier,
+                            "list_schemas",
                             self._get_one_catalog_by_relations,
                             info_schema,
                             relations,
