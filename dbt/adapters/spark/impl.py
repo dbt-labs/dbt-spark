@@ -103,7 +103,7 @@ class SparkAdapter(SQLAdapter):
     }
 
     _capabilities = CapabilityDict(
-        {Capability.SchemaMetadataByRelations: CapabilitySupport(support=Support.NotImplemented)}
+        {Capability.SchemaMetadataByRelations: CapabilitySupport(support=Support.Full)}
     )
 
     Relation: TypeAlias = SparkRelation
@@ -390,15 +390,17 @@ class SparkAdapter(SQLAdapter):
         with executor(self.config) as tpe:
             futures: List[Future[agate.Table]] = []
             for info_schema, relations_in_info_schema in relations_by_info_schema.items():
-                fut = tpe.submit_connected(
-                    self,
-                    info_schema.database,
-                    self._get_one_catalog_by_relations,
-                    info_schema,
-                    relations_in_info_schema,
-                    manifest,
-                )
-                futures.append(fut)
+                for relation in relations_in_info_schema:
+                    futures.append(
+                        tpe.submit_connected(
+                            self,
+                            relation.schema,
+                            self._get_one_catalog_by_relations,
+                            info_schema,
+                            [relation],
+                            manifest,
+                        )
+                    )
             catalogs, exceptions = catch_as_completed(futures)
         return catalogs, exceptions
 
@@ -412,7 +414,7 @@ class SparkAdapter(SQLAdapter):
             raise dbt.exceptions.CompilationError(
                 f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
             )
-        relations = self.list_relations(information_schema.database, list(schemas)[0])
+        relations = self.list_relations(information_schema.database, schemas.pop())
         return self._get_one_catalog_by_relations(information_schema, relations, manifest)
 
     def _get_one_catalog_by_relations(
