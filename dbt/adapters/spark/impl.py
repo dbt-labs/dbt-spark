@@ -104,7 +104,9 @@ class SparkAdapter(SQLAdapter):
 
     _capabilities: CapabilityDict = CapabilityDict(
         {
-            Capability.TableLastModifiedMetadata: CapabilitySupport(support=Support.Full),
+            Capability.TableLastModifiedMetadata: CapabilitySupport(
+                support=Support.NotImplemented
+            ),
         }
     )
 

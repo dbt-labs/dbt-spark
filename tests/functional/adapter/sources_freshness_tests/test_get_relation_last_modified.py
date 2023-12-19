@@ -9,7 +9,10 @@ from tests.functional.adapter.sources_freshness_tests import files
 class TestGetLastRelationModified:
     @pytest.fixture(scope="class")
     def seeds(self):
-        return {"test_source.csv": files.SEED_TEST_SOURCE_CSV}
+        return {
+            "test_source_no_last_modified.csv": files.SEED_TEST_SOURCE_NO_LAST_MODIFIED_CSV,
+            "test_source_last_modified.csv": files.SEED_TEST_SOURCE_LAST_MODIFIED_CSV,
+        }
 
     @pytest.fixture(scope="class")
     def models(self):
@@ -23,8 +26,17 @@ class TestGetLastRelationModified:
         yield
         del os.environ["DBT_GET_LAST_RELATION_TEST_SCHEMA"]
 
-    def test_get_last_relation_modified(self, project):
-        results = run_dbt(["source", "freshness"])
+    @pytest.mark.parametrize(
+        "source,status",
+        [
+            ("test_source.test_source_last_modified", "error"),  # stale
+        ],
+    )
+    def test_get_last_relation_modified(self, project, source, status):
+        statuses = {"pass": True, "error": False}
+        results = run_dbt(
+            ["source", "freshness", "--select", f"source:{source}"], expect_pass=statuses[status]
+        )
         assert len(results) == 1
         result = results[0]
-        assert result.status == "pass"
+        assert result.status == status
