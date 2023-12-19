@@ -420,6 +420,10 @@ class SparkAdapter(SQLAdapter):
         manifest: Manifest,
     ) -> agate.Table:
         columns: List[Dict[str, Any]] = []
+        if len(relations) == 0:
+            raise dbt.exceptions.CompilationError(
+                "Expected at least one relation in spark _get_one_catalog_by_relations, found None"
+            )
         for relation in relations:
             logger.debug(f"Getting table schema for relation {relation}")
             columns.extend(self._get_columns_for_catalog(relation))
