@@ -1,0 +1,6 @@
+kind: Features
+body: Add support for checking table-last-modified by metadata
+time: 2023-12-19T13:41:06.378573-05:00
+custom:
+  Author: mikealfare
+  Issue: "890"
