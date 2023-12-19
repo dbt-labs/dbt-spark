@@ -4,6 +4,7 @@ sources:
     freshness:
       warn_after: {count: 10, period: hour}
       error_after: {count: 1, period: day}
+    schema: "{{ env_var('DBT_GET_LAST_RELATION_TEST_SCHEMA') }}"
     tables:
       - name: test_source_no_last_modified
       - name: test_source_last_modified
