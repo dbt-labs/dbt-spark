@@ -408,10 +408,10 @@ class SparkAdapter(SQLAdapter):
     ) -> agate.Table:
         if len(schemas) != 1:
             raise dbt.exceptions.CompilationError(
-                f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
+                f"Expected only one schema in spark _get_one_catalog, found {schemas}"
             )
         relations = self.list_relations(information_schema.database, schemas.pop())
-        return self._get_one_catalog_by_relations(information_schema, relations, manifest)
+        return self._get_relation_metadata(relations)
 
     def _get_one_catalog_by_relations(
         self,
@@ -419,11 +419,19 @@ class SparkAdapter(SQLAdapter):
         relations: List[BaseRelation],
         manifest: Manifest,
     ) -> agate.Table:
-        columns: List[Dict[str, Any]] = []
-        if len(relations) == 0:
+        schemas = {r.schema for r in relations}
+        identifiers = {r.identifier for r in relations}
+        if len(schemas) != 1:
             raise dbt.exceptions.CompilationError(
-                "Expected at least one relation in spark _get_one_catalog_by_relations, found None"
+                f"Expected only one schema in spark _get_one_catalog_by_relations, found {schemas}"
             )
+        # we need to use the cache to get all the column metadata
+        all_relations = self.cache.get_relations(information_schema.database, schemas.pop())
+        target_relations = [r for r in all_relations if r.identifier in identifiers]
+        return self._get_relation_metadata(target_relations)
+
+    def _get_relation_metadata(self, relations: List[BaseRelation]) -> agate.Table:
+        columns: List[Dict[str, Any]] = []
         for relation in relations:
             logger.debug(f"Getting table schema for relation {relation}")
             columns.extend(self._get_columns_for_catalog(relation))
