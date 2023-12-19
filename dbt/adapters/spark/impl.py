@@ -1,6 +1,7 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable, Set
 
 from dbt.adapters.base.relation import InformationSchema
@@ -14,7 +15,7 @@ import dbt
 import dbt.exceptions
 
 from dbt.adapters.base import AdapterConfig, PythonJobHelper
-from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport
+from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport, FreshnessResponse
 from dbt.adapters.capability import CapabilityDict, CapabilitySupport, Support, Capability
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
@@ -31,6 +32,13 @@ from dbt.contracts.graph.nodes import ConstraintType
 from dbt.contracts.relation import RelationType
 from dbt.events import AdapterLogger
 from dbt.utils import executor, AttrDict
+import pytz
+
+try:
+    from delta.tables import DeltaTable
+except ImportError:
+    pass
+
 
 logger = AdapterLogger("Spark")
 
@@ -403,6 +411,38 @@ class SparkAdapter(SQLAdapter):
             logger.debug("Getting table schema for relation {}", str(relation))
             columns.extend(self._get_columns_for_catalog(relation))
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
+
+    def calculate_freshness_from_metadata(
+        self,
+        source: BaseRelation,
+        manifest: Optional[Manifest] = None,
+    ) -> Tuple[Optional[AdapterResponse], FreshnessResponse]:
+        path = ""
+        if source.is_delta:  # type: ignore
+            last_modified = self._last_modified_pyspark_delta(path)
+        else:
+            last_modified = datetime(1, 1, 1, 0, 0, 0, tzinfo=pytz.UTC)
+        snapshot = datetime.now(tz=pytz.UTC)
+
+        freshness = FreshnessResponse(
+            max_loaded_at=last_modified,
+            snapshotted_at=snapshot,
+            age=(snapshot - last_modified).total_seconds(),
+        )
+
+        return None, freshness
+
+    def _last_modified_pyspark_delta(self, path: str) -> datetime:
+        if DeltaTable is not None:
+            conn = self.connections.get_thread_connection()
+            client = conn.handle
+            table = DeltaTable.forPath(client, path)
+            return table.history(1).select("timestamp").collect()[0][0]
+        else:
+            raise dbt.exceptions.DbtRuntimeError(
+                "DeltaTables were used without import. Please ensure that you install pyspark-delta:\n"
+                "$> pip install dbt-spark[session]"
+            )
 
     def check_schema_exists(self, database: str, schema: str) -> bool:
         results = self.execute_macro(LIST_SCHEMAS_MACRO_NAME, kwargs={"database": database})

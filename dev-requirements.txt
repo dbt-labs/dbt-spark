@@ -23,7 +23,9 @@ pytest-logbook~=1.2
 pytest-xdist~=3.5
 pytz~=2023.3
 tox~=4.11
+types-python-dateutil
 types-pytz~=2023.3
+types-PyYAML
 types-requests~=2.31
 twine~=4.0
 wheel~=0.42
