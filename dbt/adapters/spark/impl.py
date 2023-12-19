@@ -3,7 +3,7 @@ from concurrent.futures import Future
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable, Set
 
-from dbt.adapters.base.relation import InformationSchema, SchemaSearchMap
+from dbt.adapters.base.relation import InformationSchema
 from dbt.adapters.capability import CapabilityDict, CapabilitySupport, Support, Capability
 from dbt.contracts.graph.manifest import Manifest
 
@@ -384,33 +384,19 @@ class SparkAdapter(SQLAdapter):
     def get_catalog_by_relations(
         self, manifest: Manifest, relations: Set[BaseRelation]
     ) -> Tuple[agate.Table, List[Exception]]:
-        schema_map = SchemaSearchMap()
-        for relation in relations:
-            schema_map.add(relation)
-        if len(schema_map) > 1:
-            raise dbt.exceptions.CompilationError(
-                f"Expected only one database in get_catalog, found {list(schema_map)}"
-            )
-        # TODO: remove this prior to merge
-        elif len(schema_map) == 0:
-            raise dbt.exceptions.CompilationError(
-                "Expected at least one database in get_catalog, found None"
-            )
-
         with executor(self.config) as tpe:
             futures: List[Future[agate.Table]] = []
-            for info, schemas in schema_map.items():
-                for schema in schemas:
-                    futures.append(
-                        tpe.submit_connected(
-                            self,
-                            schema,
-                            self._get_one_catalog,
-                            info,
-                            [schema],
-                            manifest,
-                        )
+            for relation in relations:
+                futures.append(
+                    tpe.submit_connected(
+                        self,
+                        str(relation),
+                        self._get_one_catalog_by_relations,
+                        relation.information_schema_only(),
+                        [relation],
+                        manifest,
                     )
+                )
             catalogs, exceptions = catch_as_completed(futures)
         return catalogs, exceptions
 
