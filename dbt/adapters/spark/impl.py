@@ -15,6 +15,7 @@ import dbt.exceptions
 
 from dbt.adapters.base import AdapterConfig, PythonJobHelper
 from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport
+from dbt.adapters.capability import CapabilityDict, CapabilitySupport, Support, Capability
 from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
@@ -100,6 +101,12 @@ class SparkAdapter(SQLAdapter):
         ConstraintType.primary_key: ConstraintSupport.NOT_ENFORCED,
         ConstraintType.foreign_key: ConstraintSupport.NOT_ENFORCED,
     }
+
+    _capabilities: CapabilityDict = CapabilityDict(
+        {
+            Capability.TableLastModifiedMetadata: CapabilitySupport(support=Support.Full),
+        }
+    )
 
     Relation: TypeAlias = SparkRelation
     RelationInfo = Tuple[str, str, str]
