@@ -363,10 +363,10 @@ class SparkAdapter(SQLAdapter):
     def get_catalog(
         self, manifest: Manifest, selected_nodes: Optional[Set] = None
     ) -> Tuple[agate.Table, List[Exception]]:
-        schema_map = self._get_catalog_schemas(manifest)  # info_schema: [relation_schema]
+        schema_map = self._get_catalog_schemas(manifest)
         if len(schema_map) > 1:
             raise dbt.exceptions.CompilationError(
-                f"Expected only one database in get_catalog, found {list(schema_map)}"
+                f"Expected only one database in get_catalog, found " f"{list(schema_map)}"
             )
 
         with executor(self.config) as tpe:
@@ -413,7 +413,7 @@ class SparkAdapter(SQLAdapter):
     ) -> agate.Table:
         if len(schemas) != 1:
             raise dbt.exceptions.CompilationError(
-                f"Expected only one schema in spark _get_one_catalog, found {schemas}"
+                f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
             )
 
         relations = self.list_relations(information_schema.database, schemas.pop())
@@ -433,7 +433,7 @@ class SparkAdapter(SQLAdapter):
     def _get_relation_metadata_at_column_level(self, relations: List[BaseRelation]) -> agate.Table:
         columns: List[Dict[str, Any]] = []
         for relation in relations:
-            logger.debug(f"Getting table schema for relation {relation}")
+            logger.debug("Getting table schema for relation {}", str(relation))
             columns.extend(self._get_columns_for_catalog(relation))
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
