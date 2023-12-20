@@ -417,7 +417,8 @@ class SparkAdapter(SQLAdapter):
         source: BaseRelation,
         manifest: Optional[Manifest] = None,
     ) -> Tuple[Optional[AdapterResponse], FreshnessResponse]:
-        path = ""
+        root = self.AdapterSpecificConfigs.location_root
+        path = f"{root}/{source.database}/{source.schema}/{source.identifier}"
         if source.is_delta:  # type: ignore
             last_modified = self._last_modified_pyspark_delta(path)
         else:
