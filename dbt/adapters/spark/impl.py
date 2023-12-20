@@ -415,6 +415,7 @@ class SparkAdapter(SQLAdapter):
             raise dbt.exceptions.CompilationError(
                 f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
             )
+
         database = information_schema.database
         schema = list(schemas)[0]
         relations = self.list_relations(database, schema)
