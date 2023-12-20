@@ -19,6 +19,7 @@ from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
+from dbt.adapters.spark.cache import SparkRelationsCache
 from dbt.adapters.spark.python_submissions import (
     JobClusterPythonJobHelper,
     AllPurposeClusterPythonJobHelper,
@@ -110,6 +111,10 @@ class SparkAdapter(SQLAdapter):
     Column: TypeAlias = SparkColumn
     ConnectionManager: TypeAlias = SparkConnectionManager
     AdapterSpecificConfigs: TypeAlias = SparkConfig
+
+    def __init__(self, config) -> None:  # type: ignore
+        super().__init__(config)
+        self.cache: SparkRelationsCache = SparkRelationsCache()
 
     @classmethod
     def date_function(cls) -> str:
@@ -410,8 +415,9 @@ class SparkAdapter(SQLAdapter):
             raise dbt.exceptions.CompilationError(
                 f"Expected only one schema in spark _get_one_catalog, found {schemas}"
             )
+
         relations = self.list_relations(information_schema.database, schemas.pop())
-        return self._get_relation_metadata(relations)
+        return self._get_relation_metadata_at_column_level(relations)
 
     def _get_one_catalog_by_relations(
         self,
@@ -419,18 +425,12 @@ class SparkAdapter(SQLAdapter):
         relations: List[BaseRelation],
         manifest: Manifest,
     ) -> agate.Table:
-        schemas = {r.schema for r in relations}
-        identifiers = {r.identifier for r in relations}
-        if len(schemas) != 1:
-            raise dbt.exceptions.CompilationError(
-                f"Expected only one schema in spark _get_one_catalog_by_relations, found {schemas}"
-            )
-        # we need to use the cache to get all the column metadata
-        all_relations = self.cache.get_relations(information_schema.database, schemas.pop())
-        target_relations = [r for r in all_relations if r.identifier in identifiers]
-        return self._get_relation_metadata(target_relations)
+        cached_relations = [
+            self.cache.get_relation_from_stub(relation_stub) for relation_stub in relations
+        ]
+        return self._get_relation_metadata_at_column_level(cached_relations)
 
-    def _get_relation_metadata(self, relations: List[BaseRelation]) -> agate.Table:
+    def _get_relation_metadata_at_column_level(self, relations: List[BaseRelation]) -> agate.Table:
         columns: List[Dict[str, Any]] = []
         for relation in relations:
             logger.debug(f"Getting table schema for relation {relation}")
