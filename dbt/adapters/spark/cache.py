@@ -20,7 +20,7 @@ class SparkRelationsCache(RelationsCache):
                     {
                         lowercase(relation.database) == lowercase(relation_stub.database),
                         lowercase(relation.schema) == lowercase(relation_stub.schema),
-                        lowercase(relation.schema) == lowercase(relation_stub.identifier),
+                        lowercase(relation.identifier) == lowercase(relation_stub.identifier),
                     }
                 )
             ]
