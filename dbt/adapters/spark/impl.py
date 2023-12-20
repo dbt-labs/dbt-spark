@@ -415,9 +415,17 @@ class SparkAdapter(SQLAdapter):
             raise dbt.exceptions.CompilationError(
                 f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
             )
-
-        relations = self.list_relations(information_schema.database, schemas.pop())
+        database = information_schema.database
+        schema = list(schemas)[0]
+        relations = self.list_relations(database, schema)
         return self._get_relation_metadata_at_column_level(relations)
+
+    def _get_relation_metadata_at_column_level(self, relations: List[BaseRelation]) -> agate.Table:
+        columns: List[Dict[str, Any]] = []
+        for relation in relations:
+            logger.debug("Getting table schema for relation {}", str(relation))
+            columns.extend(self._get_columns_for_catalog(relation))
+        return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
     def _get_one_catalog_by_relations(
         self,
@@ -429,13 +437,6 @@ class SparkAdapter(SQLAdapter):
             self.cache.get_relation_from_stub(relation_stub) for relation_stub in relations
         ]
         return self._get_relation_metadata_at_column_level(cached_relations)
-
-    def _get_relation_metadata_at_column_level(self, relations: List[BaseRelation]) -> agate.Table:
-        columns: List[Dict[str, Any]] = []
-        for relation in relations:
-            logger.debug("Getting table schema for relation {}", str(relation))
-            columns.extend(self._get_columns_for_catalog(relation))
-        return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
     def check_schema_exists(self, database: str, schema: str) -> bool:
         results = self.execute_macro(LIST_SCHEMAS_MACRO_NAME, kwargs={"database": database})
