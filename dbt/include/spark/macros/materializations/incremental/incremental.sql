@@ -1,4 +1,4 @@
-{% materialization incremental, adapter='spark', supported_languages=['sql', 'python'] -%}
+{% materialization incremental, adapter='spark', supported_languages=['sql', 'python', 'scala'] -%}
   {#-- Validate early so we don't run SQL if the file_format + strategy combo is invalid --#}
   {%- set raw_file_format = config.get('file_format', default='parquet') -%}
   {%- set raw_strategy = config.get('incremental_strategy') or 'append' -%}
@@ -59,7 +59,7 @@
     {%- call statement('main') -%}
       {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, existing_relation, unique_key, incremental_predicates) }}
     {%- endcall -%}
-    {%- if language == 'python' -%}
+    {%- if language == 'python' or language == 'scala' -%}
       {#--
       This is yucky.
       See note in dbt-spark/dbt/include/spark/macros/adapters.sql

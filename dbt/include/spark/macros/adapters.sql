@@ -178,6 +178,9 @@
     dbt invocation.
      --#}
     {{ py_write_table(compiled_code=compiled_code, target_relation=relation) }}
+  {%- elif language == 'scala' -%}
+    {#-- N.B. See Python comment on writing temp viws --#}
+    {{ scala_write_table(compiled_code=compiled_code, target_relation=relation) }}
   {%- endif -%}
 {%- endmacro -%}
 

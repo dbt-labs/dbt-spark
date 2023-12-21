@@ -5,17 +5,17 @@ from typing import Any, Dict, Callable, Iterable
 import uuid
 
 import dbt.exceptions
-from dbt.adapters.base import PythonJobHelper
+from dbt.adapters.base import PythonJobHelper, ScalaJobHelper
 from dbt.adapters.spark import SparkCredentials
 from dbt.adapters.spark import __version__
 
 DEFAULT_POLLING_INTERVAL = 10
-SUBMISSION_LANGUAGE = "python"
+DEFAULT_SUBMISSION_LANGUAGE = "python"
 DEFAULT_TIMEOUT = 60 * 60 * 24
 DBT_SPARK_VERSION = __version__.version
 
 
-class BaseDatabricksHelper(PythonJobHelper):
+class BaseDatabricksHelper(PythonJobHelper, ScalaJobHelper):
     def __init__(self, parsed_model: Dict, credentials: SparkCredentials) -> None:
         self.credentials = credentials
         self.identifier = parsed_model["alias"]
@@ -32,6 +32,10 @@ class BaseDatabricksHelper(PythonJobHelper):
     @property
     def cluster_id(self) -> str:
         return self.parsed_model["config"].get("cluster_id", self.credentials.cluster_id)
+
+    @property
+    def language(self) -> str:
+        return self.parsed_model.get("language", DEFAULT_SUBMISSION_LANGUAGE)
 
     def get_timeout(self) -> int:
         timeout = self.parsed_model["config"].get("timeout", DEFAULT_TIMEOUT)
@@ -65,14 +69,14 @@ class BaseDatabricksHelper(PythonJobHelper):
             json={
                 "path": path,
                 "content": b64_encoded_content,
-                "language": "PYTHON",
+                "language": self.language.upper(),
                 "overwrite": True,
                 "format": "SOURCE",
             },
         )
         if response.status_code != 200:
             raise dbt.exceptions.DbtRuntimeError(
-                f"Error creating python notebook.\n {response.content!r}"
+                f"Error creating {self.language} notebook.\n {response.content!r}"
             )
 
     def _submit_job(self, path: str, cluster_spec: dict) -> str:
@@ -83,13 +87,14 @@ class BaseDatabricksHelper(PythonJobHelper):
             },
         }
         job_spec.update(cluster_spec)  # updates 'new_cluster' config
-        # PYPI packages
+        # PYPI packages for python models (or maven for scala)
+        package_repo = "pypi" if self.language == "python" else "maven"
         packages = self.parsed_model["config"].get("packages", [])
         # additional format of packages
         additional_libs = self.parsed_model["config"].get("additional_libs", [])
         libraries = []
         for package in packages:
-            libraries.append({"pypi": {"package": package}})
+            libraries.append({package_repo: {"package": package}})
         for lib in additional_libs:
             libraries.append(lib)
         job_spec.update({"libraries": libraries})  # type: ignore
@@ -100,13 +105,13 @@ class BaseDatabricksHelper(PythonJobHelper):
         )
         if submit_response.status_code != 200:
             raise dbt.exceptions.DbtRuntimeError(
-                f"Error creating python run.\n {submit_response.content!r}"
+                f"Error creating {self.language} run.\n {submit_response.content!r}"
             )
         return submit_response.json()["run_id"]
 
     def _submit_through_notebook(self, compiled_code: str, cluster_spec: dict) -> None:
         # it is safe to call mkdirs even if dir already exists and have content inside
-        work_dir = f"/Shared/dbt_python_model/{self.schema}/"
+        work_dir = f"/Shared/dbt_spark_model/{self.schema}/"
         self._create_work_dir(work_dir)
         # add notebook
         whole_file_path = f"{work_dir}{self.identifier}"
@@ -136,7 +141,7 @@ class BaseDatabricksHelper(PythonJobHelper):
         result_state = json_run_output["metadata"]["state"]["result_state"]
         if result_state != "SUCCESS":
             raise dbt.exceptions.DbtRuntimeError(
-                "Python model failed with traceback as:\n"
+                f"{self.language.capitalize()} model failed with traceback as:\n"
                 "(Note that the line number here does not "
                 "match the line number in your code due to dbt templating)\n"
                 f"{json_run_output['error_trace']}"
@@ -144,7 +149,7 @@ class BaseDatabricksHelper(PythonJobHelper):
 
     def submit(self, compiled_code: str) -> None:
         raise NotImplementedError(
-            "BasePythonJobHelper is an abstract class and you should implement submit method."
+            "BaseDatabricksHelper is an abstract class and you should implement submit method."
         )
 
     def polling(
@@ -169,16 +174,16 @@ class BaseDatabricksHelper(PythonJobHelper):
             response = status_func(**status_func_kwargs)
             state = get_state_func(response)
         if exceeded_timeout:
-            raise dbt.exceptions.DbtRuntimeError("python model run timed out")
+            raise dbt.exceptions.DbtRuntimeError(f"{self.language} model run timed out")
         if state != expected_end_state:
             raise dbt.exceptions.DbtRuntimeError(
-                "python model run ended in state"
+                f"{self.language} model run ended in state"
                 f"{state} with state_message\n{get_state_msg_func(response)}"
             )
         return response
 
 
-class JobClusterPythonJobHelper(BaseDatabricksHelper):
+class JobClusterSparkJobHelper(BaseDatabricksHelper):
     def check_credentials(self) -> None:
         if not self.parsed_model["config"].get("job_cluster_config", None):
             raise ValueError("job_cluster_config is required for commands submission method.")
@@ -189,10 +194,11 @@ class JobClusterPythonJobHelper(BaseDatabricksHelper):
 
 
 class DBContext:
-    def __init__(self, credentials: SparkCredentials, cluster_id: str, auth_header: dict) -> None:
+    def __init__(self, credentials: SparkCredentials, cluster_id: str, auth_header: dict, language: str) -> None:
         self.auth_header = auth_header
         self.cluster_id = cluster_id
         self.host = credentials.host
+        self.language = language
 
     def create(self) -> str:
         # https://docs.databricks.com/dev-tools/api/1.2/index.html#create-an-execution-context
@@ -201,7 +207,7 @@ class DBContext:
             headers=self.auth_header,
             json={
                 "clusterId": self.cluster_id,
-                "language": SUBMISSION_LANGUAGE,
+                "language": self.language,
             },
         )
         if response.status_code != 200:
@@ -228,10 +234,11 @@ class DBContext:
 
 
 class DBCommand:
-    def __init__(self, credentials: SparkCredentials, cluster_id: str, auth_header: dict) -> None:
+    def __init__(self, credentials: SparkCredentials, cluster_id: str, auth_header: dict, language: str) -> None:
         self.auth_header = auth_header
         self.cluster_id = cluster_id
         self.host = credentials.host
+        self.language = language
 
     def execute(self, context_id: str, command: str) -> str:
         # https://docs.databricks.com/dev-tools/api/1.2/index.html#run-a-command
@@ -241,7 +248,7 @@ class DBCommand:
             json={
                 "clusterId": self.cluster_id,
                 "contextId": context_id,
-                "language": SUBMISSION_LANGUAGE,
+                "language": self.language,
                 "command": command,
             },
         )
@@ -269,7 +276,7 @@ class DBCommand:
         return response.json()
 
 
-class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
+class AllPurposeClusterSparkJobHelper(BaseDatabricksHelper):
     def check_credentials(self) -> None:
         if not self.cluster_id:
             raise ValueError(
@@ -280,8 +287,8 @@ class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
         if self.parsed_model["config"].get("create_notebook", False):
             self._submit_through_notebook(compiled_code, {"existing_cluster_id": self.cluster_id})
         else:
-            context = DBContext(self.credentials, self.cluster_id, self.auth_header)
-            command = DBCommand(self.credentials, self.cluster_id, self.auth_header)
+            context = DBContext(self.credentials, self.cluster_id, self.auth_header, self.language)
+            command = DBCommand(self.credentials, self.cluster_id, self.auth_header, self.language)
             context_id = context.create()
             try:
                 command_id = command.execute(context_id, compiled_code)
@@ -299,7 +306,7 @@ class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
                 )
                 if response["results"]["resultType"] == "error":
                     raise dbt.exceptions.DbtRuntimeError(
-                        f"Python model failed with traceback as:\n"
+                        f"{self.language.capitalize()} model failed with traceback as:\n"
                         f"{response['results']['cause']}"
                     )
             finally:
