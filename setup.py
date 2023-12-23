@@ -58,7 +58,10 @@ pyhive_extras = [
     "PyHive[hive_pure_sasl]~=0.7.0",
     "thrift>=0.11.0,<0.17.0",
 ]
-session_extras = ["pyspark>=3.0.0,<4.0.0"]
+session_extras = [
+    "delta-spark>=2.0.0,<4.0.0",
+    "pyspark>=3.0.0,<4.0.0",
+]
 all_extras = odbc_extras + pyhive_extras + session_extras
 
 setup(
