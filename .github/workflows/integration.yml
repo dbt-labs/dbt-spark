@@ -147,7 +147,7 @@ jobs:
         run: |
           python -m pip install --user --upgrade pip
           python -m pip --version
-          python -m pip install dagger-io~=0.8.0
+          python -m pip install -r dagger/requirements.txt
 
       - name: Update dev_requirements.txt
         if: inputs.dbt-core-branch != ''
