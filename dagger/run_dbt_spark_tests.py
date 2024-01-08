@@ -10,10 +10,11 @@ from dotenv import find_dotenv, load_dotenv
 PG_PORT = 5432
 load_dotenv(find_dotenv("test.env"))
 DEFAULT_ENV_VARS = {
-"DBT_TEST_USER_1": "buildbot+dbt_test_user_1@dbtlabs.com",
-"DBT_TEST_USER_2":"buildbot+dbt_test_user_2@dbtlabs.com",
-"DBT_TEST_USER_3": "buildbot+dbt_test_user_3@dbtlabs.com",
+    "DBT_TEST_USER_1": os.getenv("DBT_TEST_USER_1", "buildbot+dbt_test_user_1@dbtlabs.com"),
+    "DBT_TEST_USER_2": os.getenv("DBT_TEST_USER_2","buildbot+dbt_test_user_2@dbtlabs.com"),
+    "DBT_TEST_USER_3": os.getenv("DBT_TEST_USER_3", "buildbot+dbt_test_user_3@dbtlabs.com"),
 }
+
 
 def env_variables(envs: dict[str, str]):
     def env_variables_inner(ctr: dagger.Container):
@@ -25,7 +26,6 @@ def env_variables(envs: dict[str, str]):
 
 
 def get_databricks_env_vars():
-
     return {
         "DBT_DATABRICKS_TOKEN": os.environ["DBT_DATABRICKS_TOKEN"],
         "DBT_DATABRICKS_HOST_NAME": os.environ["DBT_DATABRICKS_HOST_NAME"],
@@ -123,18 +123,14 @@ async def test_spark(test_args):
         if "databricks" in test_profile:
             tst_container = tst_container.with_(env_variables(get_databricks_env_vars()))
         tst_container = tst_container.with_(env_variables(DEFAULT_ENV_VARS))
+        test_path = test_args.test_path if test_args.test_path else "tests/functional/adapter"
         result = await tst_container.with_exec(
-            [
-                "python",
-                "-m",
-                "pytest",
-                "-v",
-                "--profile",
-                test_args.profile,
-                "-n",
-                "auto",
-                "tests/functional/",
-            ]
+            ["python", "-m", "pytest",
+             "-v",
+             "--profile", test_args.profile,
+             "-n", "auto",
+             test_path,
+             ]
         ).stdout()
 
         return result
@@ -142,6 +138,7 @@ async def test_spark(test_args):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--profile", required=True, type=str)
+parser.add_argument("--test-path", required=False, type=str)
 args = parser.parse_args()
 
 anyio.run(test_spark, args)
