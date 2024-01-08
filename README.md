@@ -5,9 +5,6 @@
   <a href="https://github.com/dbt-labs/dbt-spark/actions/workflows/main.yml">
     <img src="https://github.com/dbt-labs/dbt-spark/actions/workflows/main.yml/badge.svg?event=push" alt="Unit Tests Badge"/>
   </a>
-  <a href="https://circleci.com/gh/dbt-labs/dbt-spark/?branch=main">
-    <img src="https://circleci.com/gh/dbt-labs/dbt-spark/tree/main.svg?style=shield" alt="Integration Tests Badge"/>
-  </a>
 </p>
 
 **[dbt](https://www.getdbt.com/)** enables data analysts and engineers to transform their data using the same practices that software engineers use to build applications.
