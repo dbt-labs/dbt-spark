@@ -1,10 +1,38 @@
+import os
+
 import argparse
 import sys
 
 import anyio as anyio
 import dagger as dagger
+from dotenv import find_dotenv, load_dotenv
 
 PG_PORT = 5432
+load_dotenv(find_dotenv("test.env"))
+DEFAULT_ENV_VARS = {
+"DBT_TEST_USER_1": "buildbot+dbt_test_user_1@dbtlabs.com",
+"DBT_TEST_USER_2":"buildbot+dbt_test_user_2@dbtlabs.com",
+"DBT_TEST_USER_3": "buildbot+dbt_test_user_3@dbtlabs.com",
+}
+
+def env_variables(envs: dict[str, str]):
+    def env_variables_inner(ctr: dagger.Container):
+        for key, value in envs.items():
+            ctr = ctr.with_env_variable(key, value)
+        return ctr
+
+    return env_variables_inner
+
+
+def get_databricks_env_vars():
+
+    return {
+        "DBT_DATABRICKS_TOKEN": os.environ["DBT_DATABRICKS_TOKEN"],
+        "DBT_DATABRICKS_HOST_NAME": os.environ["DBT_DATABRICKS_HOST_NAME"],
+        "DBT_DATABRICKS_ENDPOINT": os.environ["DBT_DATABRICKS_ENDPOINT"],
+        "DBT_DATABRICKS_CLUSTER_NAME": os.environ["DBT_DATABRICKS_CLUSTER_NAME"],
+        "ODBC_DRIVER": "/opt/simba/spark/lib/64/libsparkodbc_sb64.so",
+    }
 
 
 async def get_postgres_container(client: dagger.Client) -> (dagger.Container, str):
@@ -63,6 +91,7 @@ async def get_spark_container(client: dagger.Client) -> (dagger.Container, str):
 
 async def test_spark(test_args):
     async with dagger.Connection(dagger.Config(log_output=sys.stderr)) as client:
+        test_profile = test_args.profile
         req_files = client.host().directory("./", include=["*.txt", "*.env", "*.ini"])
         dbt_spark_dir = client.host().directory("./dbt")
         test_dir = client.host().directory("./tests")
@@ -80,17 +109,20 @@ async def test_spark(test_args):
             .with_exec(["pip", "install", "-r", "dev-requirements.txt"])
         )
 
-        if test_args.profile == "apache_spark":
+        if test_profile == "apache_spark":
             spark_ctr, spark_host = await get_spark_container(client)
             tst_container = tst_container.with_service_binding(alias=spark_host, service=spark_ctr)
 
-        elif test_args.profile in ["databricks_cluster", "databricks_sql_endpoint"]:
+        elif test_profile in ["databricks_cluster", "databricks_sql_endpoint"]:
             tst_container = tst_container.with_exec("./scripts/configure_odbc.sh")
 
-        elif test_args.profile == "spark_session":
+        elif test_profile == "spark_session":
             tst_container = tst_container.with_exec(["pip", "install", "pyspark"])
             tst_container = tst_container.with_exec(["apt-get", "install", "openjdk-17-jre", "-y"])
 
+        if "databricks" in test_profile:
+            tst_container = tst_container.with_(env_variables(get_databricks_env_vars()))
+        tst_container = tst_container.with_(env_variables(DEFAULT_ENV_VARS))
         result = await tst_container.with_exec(
             [
                 "python",
