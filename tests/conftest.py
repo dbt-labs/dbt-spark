@@ -38,7 +38,7 @@ def dbt_profile_target(request):
 def apache_spark_target():
     return {
         "type": "spark",
-        "host": "localhost",
+        "host": "spark_db",
         "user": "dbt",
         "method": "thrift",
         "port": 10000,

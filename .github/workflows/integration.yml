@@ -96,14 +96,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          - "3.8"
         test:
-          - "spark-thrift"
-          - "spark-session"
-          - "spark-databricks-odbc-sql-endpoint"
-          - "spark-databricks-odbc-cluster"
-          - "spark-databricks-http"
+          - "apache_spark"
+          - "spark_session"
+          - "databricks_sql_endpoint"
+          - "databricks_cluster"
+          - "databricks_http_cluster"
 
     env:
       TOXENV: integration-${{ matrix.test }}
@@ -143,14 +141,13 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
 
       - name: Install python dependencies
         run: |
           python -m pip install --user --upgrade pip
-          python -m pip install tox
           python -m pip --version
-          tox --version
+          python -m pip install dagger-io~=0.8.0
 
       - name: Update dev_requirements.txt
         if: inputs.dbt-core-branch != ''
@@ -158,15 +155,6 @@ jobs:
           pip install bumpversion
           ./.github/scripts/update_dbt_core_branch.sh ${{ inputs.dbt-core-branch }}
 
-      - uses: isbang/compose-action@v1.5.1
-        if: ${{ matrix.test == 'spark-thrift'}}
-        with:
-          compose-file: "./docker-compose.yml"
 
-      - name: Configure ODBC
-        if: ${{ matrix.test == 'spark-databricks-odbc-sql-endpoint' || matrix.test == 'spark-databricks-odbc-cluster' }}
-        run: |
-          ./.github/scripts/configure_odbc.sh
-
-      - name: Run tox for ${{ matrix.test }}
-        run: tox -- --ddtrace
+      - name: Run tests for ${{ matrix.test }}
+        run: python dagger/run_dbt_spark_tests.py --profile ${{ matrix.test }}
