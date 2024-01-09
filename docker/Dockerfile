@@ -2,8 +2,8 @@ ARG OPENJDK_VERSION=8
 FROM eclipse-temurin:${OPENJDK_VERSION}-jre
 
 ARG BUILD_DATE
-ARG SPARK_VERSION=3.1.3
-ARG HADOOP_VERSION=3.2
+ARG SPARK_VERSION=3.3.2
+ARG HADOOP_VERSION=3
 
 LABEL org.label-schema.name="Apache Spark ${SPARK_VERSION}" \
       org.label-schema.build-date=$BUILD_DATE \
@@ -14,7 +14,7 @@ ENV PATH="/usr/spark/bin:/usr/spark/sbin:${PATH}"
 
 RUN apt-get update && \
     apt-get install -y wget netcat procps libpostgresql-jdbc-java && \
-    wget -q "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" && \
+    wget -q "http://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" && \
     tar xzf "spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" && \
     rm "spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" && \
     mv "spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}" /usr/spark && \
