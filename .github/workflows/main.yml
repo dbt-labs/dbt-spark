@@ -95,6 +95,8 @@ jobs:
           sudo apt-get install libsasl2-dev
           python -m pip install --user --upgrade pip
           python -m pip --version
+          python -m pip install -e .
+          python -m pip install -r dev-requirements.txt
 
       - name: Run unit tests
         run: python -m pytest --color=yes --csv unit_results.csv -v tests/unit
