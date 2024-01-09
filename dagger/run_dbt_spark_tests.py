@@ -14,7 +14,7 @@ TESTING_ENV_VARS = {env_name: os.environ[env_name] for env_name in os.environ
                     if env_name.startswith(("DD_", "DBT_"))}
 
 TESTING_ENV_VARS.update({
-    "ODBC_DRIVER": "/opt/simba/spark/lib/64/libsparkodbc_sb64.so",
+    "ODBC_DRIVER": "Simba",
 })
 
 
