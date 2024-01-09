@@ -73,7 +73,6 @@ jobs:
       DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
       DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
       DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
-      ODBC_DRIVER: "Simba"
 
     steps:
       - name: Check out the repository
