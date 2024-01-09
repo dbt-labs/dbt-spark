@@ -10,12 +10,13 @@ from dotenv import find_dotenv, load_dotenv
 PG_PORT = 5432
 load_dotenv(find_dotenv("test.env"))
 # if env vars aren't specified in test.env (i.e. in github actions worker), use the ones from the host
-TESTING_ENV_VARS = {env_name: os.environ[env_name] for env_name in os.environ
-                    if env_name.startswith(("DD_", "DBT_"))}
+TESTING_ENV_VARS = {
+    env_name: os.environ[env_name]
+    for env_name in os.environ
+    if env_name.startswith(("DD_", "DBT_"))
+}
 
-TESTING_ENV_VARS.update({
-    "ODBC_DRIVER": "Simba",
-})
+TESTING_ENV_VARS.update({"ODBC_DRIVER": "Simba"})
 
 
 def env_variables(envs: dict[str, str]):

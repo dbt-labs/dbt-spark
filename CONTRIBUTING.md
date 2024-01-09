@@ -66,14 +66,14 @@ $EDITOR test.env
 There are a few methods for running tests locally.
 
 #### dagger
-To run functional tests we rely on [dagger](https://dagger.io/). This launches a virtual container or containers to test against. 
+To run functional tests we rely on [dagger](https://dagger.io/). This launches a virtual container or containers to test against.
 
 ```sh
 pip install -r dagger/requirements.txt
 python dagger/run_dbt_spark_tests.py --profile databricks_sql_endpoint --test-path tests/functional/adapter/test_basic.py::TestSimpleMaterializationsSpark::test_base
 ```
 
-`--profile`: required, this is the kind of spark connection to test against 
+`--profile`: required, this is the kind of spark connection to test against
 
 _options_:
   - "apache_spark"
