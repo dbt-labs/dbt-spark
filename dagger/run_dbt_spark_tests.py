@@ -11,7 +11,7 @@ PG_PORT = 5432
 load_dotenv(find_dotenv("test.env"))
 DEFAULT_ENV_VARS = {
     "DBT_TEST_USER_1": os.getenv("DBT_TEST_USER_1", "buildbot+dbt_test_user_1@dbtlabs.com"),
-    "DBT_TEST_USER_2": os.getenv("DBT_TEST_USER_2","buildbot+dbt_test_user_2@dbtlabs.com"),
+    "DBT_TEST_USER_2": os.getenv("DBT_TEST_USER_2", "buildbot+dbt_test_user_2@dbtlabs.com"),
     "DBT_TEST_USER_3": os.getenv("DBT_TEST_USER_3", "buildbot+dbt_test_user_3@dbtlabs.com"),
 }
 
@@ -125,12 +125,7 @@ async def test_spark(test_args):
         tst_container = tst_container.with_(env_variables(DEFAULT_ENV_VARS))
         test_path = test_args.test_path if test_args.test_path else "tests/functional/adapter"
         result = await tst_container.with_exec(
-            ["python", "-m", "pytest",
-             "-v",
-             "--profile", test_args.profile,
-             "-n", "auto",
-             test_path,
-             ]
+            ["pytest", "-v", "--profile", test_profile, "-n", "auto", test_path]
         ).stdout()
 
         return result
