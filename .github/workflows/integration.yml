@@ -90,7 +90,8 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Set up Python
+      # the python version used here is not what is used in the tests themselves
+      - name: Set up Python for dagger
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
