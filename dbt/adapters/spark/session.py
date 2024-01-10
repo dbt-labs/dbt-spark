@@ -7,7 +7,7 @@ from types import TracebackType
 from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 
 from dbt.adapters.spark.connections import SparkConnectionWrapper
-from dbt.events import AdapterLogger
+from dbt.adapters.events.logging import AdapterLogger
 from dbt.utils import DECIMALS
 from dbt.exceptions import DbtRuntimeError
 from pyspark.sql import DataFrame, Row, SparkSession

@@ -2,11 +2,13 @@ from contextlib import contextmanager
 
 import dbt.exceptions
 from dbt.adapters.base import Credentials
+from dbt.adapters.contracts.connection import AdapterResponse, ConnectionState
+from dbt.adapters.events.logging import AdapterLogger
 from dbt.adapters.sql import SQLConnectionManager
-from dbt.contracts.connection import ConnectionState, AdapterResponse
-from dbt.events import AdapterLogger
+
 from dbt.utils import DECIMALS
 from dbt.adapters.spark import __version__
+from dbt.adapters.spark.session import Connection
 
 try:
     from TCLIService.ttypes import TOperationState as ThriftState
@@ -22,8 +24,7 @@ except ImportError:
     pyodbc = None
 from datetime import datetime
 import sqlparams
-from dbt.contracts.connection import Connection
-from dbt.dataclass_schema import StrEnum
+from dbt.common.dataclass_schema import StrEnum
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable, Sequence
 

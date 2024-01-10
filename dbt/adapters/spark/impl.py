@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable, Set
 
 from dbt.adapters.base.relation import InformationSchema
+from dbt.adapters.contracts.connection import AdapterResponse
+from dbt.adapters.events.logging import AdapterLogger
+from dbt.common.utils import AttrDict, executor
 from dbt.contracts.graph.manifest import Manifest
 
 from typing_extensions import TypeAlias
@@ -12,6 +15,7 @@ import agate
 
 import dbt
 import dbt.exceptions
+
 
 from dbt.adapters.base import AdapterConfig, PythonJobHelper
 from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport
@@ -24,12 +28,9 @@ from dbt.adapters.spark.python_submissions import (
     AllPurposeClusterPythonJobHelper,
 )
 from dbt.adapters.base import BaseRelation
-from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
-from dbt.contracts.connection import AdapterResponse
-from dbt.contracts.graph.nodes import ConstraintType
-from dbt.contracts.relation import RelationType
-from dbt.events import AdapterLogger
-from dbt.utils import executor, AttrDict
+from dbt.adapters.contracts.relation import RelationType
+from dbt.common.clients.agate_helper import DEFAULT_TYPE_TESTER
+from dbt.common.contracts.constraints import ConstraintType
 
 logger = AdapterLogger("Spark")
 
