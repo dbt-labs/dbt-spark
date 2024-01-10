@@ -3,7 +3,7 @@
 .PHONY: dev
 dev: ## Installs adapter in develop mode along with development dependencies
 	@\
-	pip install -e . -r requirements.txt -r dev-requirements.txt && pre-commit install
+	pip install -e . -r requirements.txt -r dev-requirements.txt -r dagger/requirements.txt && pre-commit install
 
 .PHONY: dev-uninstall
 dev-uninstall: ## Uninstalls all packages while maintaining the virtual environment
@@ -40,12 +40,13 @@ linecheck: ## Checks for all Python lines 100 characters or more
 .PHONY: unit
 unit: ## Runs unit tests with py38.
 	@\
-	tox -e py38
+	python -m pytest tests/unit
 
 .PHONY: test
 test: ## Runs unit tests with py38 and code checks against staged changes.
 	@\
-	tox -p -e py38; \
+	python -m pytest tests/unit; \
+	python dagger/run_dbt_spark_tests.py --profile spark_session \
 	pre-commit run black-check --hook-stage manual | grep -v "INFO"; \
 	pre-commit run flake8-check --hook-stage manual | grep -v "INFO"; \
 	pre-commit run mypy-check --hook-stage manual | grep -v "INFO"
