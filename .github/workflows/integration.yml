@@ -1,0 +1,112 @@
+# **what?**
+# Runs integration tests.
+
+# **why?**
+# Ensure code runs as expected.
+
+# **when?**
+# This will run for all PRs, when code is pushed to a release
+# branch, and when manually triggered.
+
+name: Adapter Integration Tests
+
+on:
+  push:
+    branches:
+      - "main"
+      - "*.latest"
+
+  pull_request_target:
+    paths-ignore:
+      - ".changes/**"
+      - ".flake8"
+      - ".gitignore"
+      - "**.md"
+
+  workflow_dispatch:
+    inputs:
+      dbt-core-branch:
+        description: "branch of dbt-core to use in dev-requirements.txt"
+        required: false
+        type: string
+
+# explicitly turn off permissions for `GITHUB_TOKEN`
+permissions: read-all
+
+# will cancel previous workflows triggered by the same event and for the same ref for PRs or same SHA otherwise
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ contains(github.event_name, 'pull_request_target') && github.event.pull_request.head.ref || github.sha }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  test:
+    name: ${{ matrix.test }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - "apache_spark"
+          - "spark_session"
+          - "databricks_sql_endpoint"
+          - "databricks_cluster"
+          - "databricks_http_cluster"
+
+    env:
+      DBT_INVOCATION_ENV: github-actions
+      DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+      DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+      DD_SITE: datadoghq.com
+      DD_ENV: ci
+      DD_SERVICE: ${{ github.event.repository.name }}
+      DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
+      DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
+      DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
+      DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
+      DBT_DATABRICKS_USER: ${{ secrets.DBT_DATABRICKS_USERNAME }}
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
+
+    steps:
+      - name: Check out the repository
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      # explicitly checkout the branch for the PR,
+      # this is necessary for the `pull_request` event
+      - name: Check out the repository (PR)
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # the python version used here is not what is used in the tests themselves
+      - name: Set up Python for dagger
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install python dependencies
+        run: |
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install -r dagger/requirements.txt
+
+      - name: Update dev_requirements.txt
+        if: inputs.dbt-core-branch != ''
+        run: |
+          pip install bumpversion
+          ./.github/scripts/update_dbt_core_branch.sh ${{ inputs.dbt-core-branch }}
+
+      - name: Run tests for ${{ matrix.test }}
+        run: python dagger/run_dbt_spark_tests.py --profile ${{ matrix.test }}

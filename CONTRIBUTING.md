@@ -65,11 +65,27 @@ $EDITOR test.env
 ### Test commands
 There are a few methods for running tests locally.
 
-#### `tox`
-`tox` takes care of managing Python virtualenvs and installing dependencies in order to run tests. You can also run tests in parallel, for example you can run unit tests for Python 3.8, Python 3.9, and `flake8` checks in parallel with `tox -p`. Also, you can run unit tests for specific python versions with `tox -e py38`. The configuration of these tests are located in `tox.ini`.
+#### dagger
+To run functional tests we rely on [dagger](https://dagger.io/). This launches a virtual container or containers to test against.
 
-#### `pytest`
-Finally, you can also run a specific test or group of tests using `pytest` directly. With a Python virtualenv active and dev dependencies installed you can do things like:
+```sh
+pip install -r dagger/requirements.txt
+python dagger/run_dbt_spark_tests.py --profile databricks_sql_endpoint --test-path tests/functional/adapter/test_basic.py::TestSimpleMaterializationsSpark::test_base
+```
+
+`--profile`: required, this is the kind of spark connection to test against
+
+_options_:
+  - "apache_spark"
+  - "spark_session"
+  - "databricks_sql_endpoint"
+  - "databricks_cluster"
+  - "databricks_http_cluster"
+
+`--test-path`: optional, this is the path to the test file you want to run. If not specified, all tests will be run.
+
+#### pytest
+Finally, you can also run a specific test or group of tests using `pytest` directly (if you have all the dependencies set up on your machine). With a Python virtualenv active and dev dependencies installed you can do things like:
 
 ```sh
 # run all functional tests
