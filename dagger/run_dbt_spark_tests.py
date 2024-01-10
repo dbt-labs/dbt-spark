@@ -41,7 +41,7 @@ async def get_postgres_container(client: dagger.Client) -> (dagger.Container, st
 
 async def get_spark_container(client: dagger.Client) -> (dagger.Container, str):
     spark_dir = client.host().directory("./dagger/spark-container")
-    spark_ctr = (
+    spark_ctr_base = (
         client.container()
         .from_("eclipse-temurin:8-jre")
         .with_directory("/spark_setup", spark_dir)
@@ -66,7 +66,7 @@ async def get_spark_container(client: dagger.Client) -> (dagger.Container, str):
     pg_ctr, pg_host = await get_postgres_container(client)
 
     spark_ctr = (
-        spark_ctr.with_service_binding(alias=pg_host, service=pg_ctr)
+        spark_ctr_base.with_service_binding(alias=pg_host, service=pg_ctr)
         .with_exec(
             [
                 "/scripts/entrypoint.sh",
