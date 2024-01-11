@@ -330,7 +330,9 @@ class TestSparkAdapter(unittest.TestCase):
         input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(relation, input_cols)
+        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(
+            relation, input_cols
+        )
         self.assertEqual(len(rows), 4)
         self.assertEqual(
             rows[0].to_column_dict(omit_none=False),
@@ -419,7 +421,9 @@ class TestSparkAdapter(unittest.TestCase):
         input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(relation, input_cols)
+        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(
+            relation, input_cols
+        )
 
         self.assertEqual(rows[0].to_column_dict().get("table_owner"), "1234")
 
@@ -455,7 +459,9 @@ class TestSparkAdapter(unittest.TestCase):
         input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
         config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(relation, input_cols)
+        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(
+            relation, input_cols
+        )
         self.assertEqual(len(rows), 1)
         self.assertEqual(
             rows[0].to_column_dict(omit_none=False),
@@ -565,7 +571,9 @@ class TestSparkAdapter(unittest.TestCase):
         )
 
         config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(relation)
+        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(
+            relation
+        )
         self.assertEqual(len(columns), 4)
         self.assertEqual(
             columns[0].to_column_dict(omit_none=False),
@@ -650,7 +658,9 @@ class TestSparkAdapter(unittest.TestCase):
         )
 
         config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(relation)
+        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(
+            relation
+        )
         self.assertEqual(len(columns), 4)
         self.assertEqual(
             columns[1].to_column_dict(omit_none=False),
@@ -716,7 +726,9 @@ class TestSparkAdapter(unittest.TestCase):
         )
 
         config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(relation)
+        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(
+            relation
+        )
         self.assertEqual(len(columns), 4)
 
         self.assertEqual(

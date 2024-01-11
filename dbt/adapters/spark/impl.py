@@ -2,7 +2,19 @@ import os
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable, Set
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Union,
+    Type,
+    Tuple,
+    Callable,
+    Set,
+    FrozenSet,
+)
 
 from dbt.adapters.base.relation import InformationSchema
 from dbt.adapters.contracts.connection import AdapterResponse
@@ -358,7 +370,9 @@ class SparkAdapter(SQLAdapter):
             yield as_dict
 
     def get_catalog(
-        self, relation_configs: Iterable[RelationConfig], selected_nodes: Optional[Set] = None
+        self,
+        relation_configs: Iterable[RelationConfig],
+        used_schemas: FrozenSet[Tuple[str, str]],
     ) -> Tuple[agate.Table, List[Exception]]:
         schema_map = self._get_catalog_schemas(relation_configs)
         if len(schema_map) > 1:
@@ -387,7 +401,7 @@ class SparkAdapter(SQLAdapter):
         self,
         information_schema: InformationSchema,
         schemas: Set[str],
-        relation_configs: Iterable[RelationConfig],
+        used_schemas: FrozenSet[Tuple[str, str]],
     ) -> agate.Table:
         if len(schemas) != 1:
             raise dbt.exceptions.CompilationError(

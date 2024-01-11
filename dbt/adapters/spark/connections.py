@@ -4,6 +4,7 @@ import dbt.exceptions
 from dbt.adapters.base import Credentials
 from dbt.adapters.contracts.connection import AdapterResponse, ConnectionState, Connection
 from dbt.adapters.events.logging import AdapterLogger
+from dbt.adapters.exceptions import FailedToConnectError
 from dbt.adapters.sql import SQLConnectionManager
 from dbt.common.exceptions import DbtConfigError
 
@@ -292,11 +293,11 @@ class PyhiveConnectionWrapper(SparkConnectionWrapper):
         if poll_state.errorMessage:
             logger.debug("Poll response: {}".format(poll_state))
             logger.debug("Poll status: {}".format(state))
-            raise dbt.exceptions.DbtDatabaseError(poll_state.errorMessage)
+            raise dbt.common.exceptions.DbtDatabaseError(poll_state.errorMessage)
 
         elif state not in STATE_SUCCESS:
             status_type = ThriftState._VALUES_TO_NAMES.get(state, "Unknown<{!r}>".format(state))
-            raise dbt.exceptions.DbtDatabaseError(
+            raise dbt.common.exceptions.DbtDatabaseError(
                 "Query failed with status: {}".format(status_type)
             )
 
@@ -526,9 +527,7 @@ class SparkConnectionManager(SQLConnectionManager):
                         Connection(server_side_parameters=creds.server_side_parameters)
                     )
                 else:
-                    raise DbtConfigError(
-                        f"invalid credential method: {creds.method}"
-                    )
+                    raise DbtConfigError(f"invalid credential method: {creds.method}")
                 break
             except Exception as e:
                 exc = e
@@ -538,7 +537,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     msg = "Failed to connect"
                     if creds.token is not None:
                         msg += ", is your token valid?"
-                    raise dbt.exceptions.FailedToConnectError(msg) from e
+                    raise FailedToConnectError(msg) from e
                 retryable_message = _is_retryable_error(e)
                 if retryable_message and creds.connect_retries > 0:
                     msg = (
@@ -559,7 +558,7 @@ class SparkConnectionManager(SQLConnectionManager):
                     logger.warning(msg)
                     time.sleep(creds.connect_timeout)
                 else:
-                    raise dbt.exceptions.FailedToConnectError("failed to connect") from e
+                    raise FailedToConnectError("failed to connect") from e
         else:
             raise exc  # type: ignore
 
