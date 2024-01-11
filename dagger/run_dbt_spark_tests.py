@@ -2,6 +2,7 @@ import os
 
 import argparse
 import sys
+from typing import Dict
 
 import anyio as anyio
 import dagger as dagger
@@ -19,7 +20,7 @@ TESTING_ENV_VARS = {
 TESTING_ENV_VARS.update({"ODBC_DRIVER": "Simba"})
 
 
-def env_variables(envs: dict[str, str]):
+def env_variables(envs: Dict[str, str]):
     def env_variables_inner(ctr: dagger.Container):
         for key, value in envs.items():
             ctr = ctr.with_env_variable(key, value)

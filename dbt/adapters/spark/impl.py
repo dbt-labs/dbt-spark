@@ -7,7 +7,6 @@ from dbt.adapters.base.relation import InformationSchema
 from dbt.adapters.contracts.connection import AdapterResponse
 from dbt.adapters.events.logging import AdapterLogger
 from dbt.common.utils import AttrDict, executor
-from dbt.contracts.graph.manifest import Manifest
 
 from typing_extensions import TypeAlias
 
@@ -28,7 +27,7 @@ from dbt.adapters.spark.python_submissions import (
     AllPurposeClusterPythonJobHelper,
 )
 from dbt.adapters.base import BaseRelation
-from dbt.adapters.contracts.relation import RelationType
+from dbt.adapters.contracts.relation import RelationType, RelationConfig
 from dbt.common.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.common.contracts.constraints import ConstraintType
 
@@ -353,9 +352,9 @@ class SparkAdapter(SQLAdapter):
             yield as_dict
 
     def get_catalog(
-        self, manifest: Manifest, selected_nodes: Optional[Set] = None
+        self, relation_configs: Iterable[RelationConfig], selected_nodes: Optional[Set] = None
     ) -> Tuple[agate.Table, List[Exception]]:
-        schema_map = self._get_catalog_schemas(manifest)
+        schema_map = self._get_catalog_schemas(relation_configs)
         if len(schema_map) > 1:
             raise dbt.exceptions.CompilationError(
                 f"Expected only one database in get_catalog, found " f"{list(schema_map)}"
@@ -372,7 +371,7 @@ class SparkAdapter(SQLAdapter):
                             self._get_one_catalog,
                             info,
                             [schema],
-                            manifest,
+                            relation_configs,
                         )
                     )
             catalogs, exceptions = catch_as_completed(futures)
@@ -382,7 +381,7 @@ class SparkAdapter(SQLAdapter):
         self,
         information_schema: InformationSchema,
         schemas: Set[str],
-        manifest: Manifest,
+        relation_configs: Iterable[RelationConfig],
     ) -> agate.Table:
         if len(schemas) != 1:
             raise dbt.exceptions.CompilationError(

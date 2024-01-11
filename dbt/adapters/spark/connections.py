@@ -2,13 +2,13 @@ from contextlib import contextmanager
 
 import dbt.exceptions
 from dbt.adapters.base import Credentials
-from dbt.adapters.contracts.connection import AdapterResponse, ConnectionState
+from dbt.adapters.contracts.connection import AdapterResponse, ConnectionState, Connection
 from dbt.adapters.events.logging import AdapterLogger
 from dbt.adapters.sql import SQLConnectionManager
+from dbt.common.exceptions import DbtConfigError
 
-from dbt.utils import DECIMALS
+from dbt.common.utils.encoding import DECIMALS
 from dbt.adapters.spark import __version__
-from dbt.adapters.spark.session import Connection
 
 try:
     from TCLIService.ttypes import TOperationState as ThriftState
@@ -391,7 +391,7 @@ class SparkConnectionManager(SQLConnectionManager):
 
         for key in required:
             if not hasattr(creds, key):
-                raise dbt.exceptions.DbtProfileError(
+                raise DbtConfigError(
                     "The config '{}' is required when using the {} method"
                     " to connect to Spark".format(key, method)
                 )
@@ -482,7 +482,7 @@ class SparkConnectionManager(SQLConnectionManager):
                             endpoint=creds.endpoint
                         )
                     else:
-                        raise dbt.exceptions.DbtProfileError(
+                        raise DbtConfigError(
                             "Either `cluster` or `endpoint` must set when"
                             " using the odbc method to connect to Spark"
                         )
@@ -526,7 +526,7 @@ class SparkConnectionManager(SQLConnectionManager):
                         Connection(server_side_parameters=creds.server_side_parameters)
                     )
                 else:
-                    raise dbt.exceptions.DbtProfileError(
+                    raise DbtConfigError(
                         f"invalid credential method: {creds.method}"
                     )
                 break
