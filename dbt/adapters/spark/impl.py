@@ -1,3 +1,4 @@
+import os
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
@@ -32,6 +33,11 @@ from dbt.common.clients.agate_helper import DEFAULT_TYPE_TESTER
 from dbt.common.contracts.constraints import ConstraintType
 
 logger = AdapterLogger("Spark")
+packages = ["pyhive.hive", "thrift.transport", "thrift.protocol"]
+log_level = os.getenv("DBT_SPARK_LOG_LEVEL", "ERROR")
+for package in packages:
+    logger.debug(f"Setting {package} logging to {log_level}")
+    logger.set_adapter_dependency_log_level(package, log_level)
 
 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
