@@ -1,12 +1,11 @@
 from contextlib import contextmanager
 
-import dbt.exceptions
 from dbt.adapters.base import Credentials
 from dbt.adapters.contracts.connection import AdapterResponse, ConnectionState, Connection
 from dbt.adapters.events.logging import AdapterLogger
 from dbt.adapters.exceptions import FailedToConnectError
 from dbt.adapters.sql import SQLConnectionManager
-from dbt.common.exceptions import DbtConfigError
+from dbt.common.exceptions import DbtConfigError, DbtRuntimeError, DbtDatabaseError
 
 from dbt.common.utils.encoding import DECIMALS
 from dbt.adapters.spark import __version__
@@ -94,15 +93,15 @@ class SparkCredentials(Credentials):
 
     def __post_init__(self) -> None:
         if self.method is None:
-            raise dbt.exceptions.DbtRuntimeError("Must specify `method` in profile")
+            raise DbtRuntimeError("Must specify `method` in profile")
         if self.host is None:
-            raise dbt.exceptions.DbtRuntimeError("Must specify `host` in profile")
+            raise DbtRuntimeError("Must specify `host` in profile")
         if self.schema is None:
-            raise dbt.exceptions.DbtRuntimeError("Must specify `schema` in profile")
+            raise DbtRuntimeError("Must specify `schema` in profile")
 
         # spark classifies database and schema as the same thing
         if self.database is not None and self.database != self.schema:
-            raise dbt.exceptions.DbtRuntimeError(
+            raise DbtRuntimeError(
                 f"    schema: {self.schema} \n"
                 f"    database: {self.database} \n"
                 f"On Spark, database must be omitted or have the same value as"
@@ -114,7 +113,7 @@ class SparkCredentials(Credentials):
             try:
                 import pyodbc  # noqa: F401
             except ImportError as e:
-                raise dbt.exceptions.DbtRuntimeError(
+                raise DbtRuntimeError(
                     f"{self.method} connection method requires "
                     "additional dependencies. \n"
                     "Install the additional required dependencies with "
@@ -123,7 +122,7 @@ class SparkCredentials(Credentials):
                 ) from e
 
         if self.method == SparkConnectionMethod.ODBC and self.cluster and self.endpoint:
-            raise dbt.exceptions.DbtRuntimeError(
+            raise DbtRuntimeError(
                 "`cluster` and `endpoint` cannot both be set when"
                 f" using {self.method} method to connect to Spark"
             )
@@ -132,7 +131,7 @@ class SparkCredentials(Credentials):
             self.method == SparkConnectionMethod.HTTP
             or self.method == SparkConnectionMethod.THRIFT
         ) and not (ThriftState and THttpClient and hive):
-            raise dbt.exceptions.DbtRuntimeError(
+            raise DbtRuntimeError(
                 f"{self.method} connection method requires "
                 "additional dependencies. \n"
                 "Install the additional required dependencies with "
@@ -143,7 +142,7 @@ class SparkCredentials(Credentials):
             try:
                 import pyspark  # noqa: F401
             except ImportError as e:
-                raise dbt.exceptions.DbtRuntimeError(
+                raise DbtRuntimeError(
                     f"{self.method} connection method requires "
                     "additional dependencies. \n"
                     "Install the additional required dependencies with "
@@ -293,13 +292,11 @@ class PyhiveConnectionWrapper(SparkConnectionWrapper):
         if poll_state.errorMessage:
             logger.debug("Poll response: {}".format(poll_state))
             logger.debug("Poll status: {}".format(state))
-            raise dbt.common.exceptions.DbtDatabaseError(poll_state.errorMessage)
+            raise DbtDatabaseError(poll_state.errorMessage)
 
         elif state not in STATE_SUCCESS:
             status_type = ThriftState._VALUES_TO_NAMES.get(state, "Unknown<{!r}>".format(state))
-            raise dbt.common.exceptions.DbtDatabaseError(
-                "Query failed with status: {}".format(status_type)
-            )
+            raise DbtDatabaseError("Query failed with status: {}".format(status_type))
 
         logger.debug("Poll status: {}, query complete".format(state))
 
@@ -360,9 +357,9 @@ class SparkConnectionManager(SQLConnectionManager):
             thrift_resp = exc.args[0]
             if hasattr(thrift_resp, "status"):
                 msg = thrift_resp.status.errorMessage
-                raise dbt.exceptions.DbtRuntimeError(msg)
+                raise DbtRuntimeError(msg)
             else:
-                raise dbt.exceptions.DbtRuntimeError(str(exc))
+                raise DbtRuntimeError(str(exc))
 
     def cancel(self, connection: Connection) -> None:
         connection.handle.cancel()
