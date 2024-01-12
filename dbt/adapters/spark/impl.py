@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable, Set
 
 from dbt.adapters.base.relation import InformationSchema
+from dbt.adapters.capability import CapabilityDict, CapabilitySupport, Support, Capability
 from dbt.contracts.graph.manifest import Manifest
 
 from typing_extensions import TypeAlias
-
 import agate
 
 import dbt
@@ -19,6 +19,7 @@ from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.spark import SparkConnectionManager
 from dbt.adapters.spark import SparkRelation
 from dbt.adapters.spark import SparkColumn
+from dbt.adapters.spark.cache import SparkRelationsCache
 from dbt.adapters.spark.python_submissions import (
     JobClusterPythonJobHelper,
     AllPurposeClusterPythonJobHelper,
@@ -101,11 +102,19 @@ class SparkAdapter(SQLAdapter):
         ConstraintType.foreign_key: ConstraintSupport.NOT_ENFORCED,
     }
 
+    _capabilities = CapabilityDict(
+        {Capability.SchemaMetadataByRelations: CapabilitySupport(support=Support.Full)}
+    )
+
     Relation: TypeAlias = SparkRelation
     RelationInfo = Tuple[str, str, str]
     Column: TypeAlias = SparkColumn
     ConnectionManager: TypeAlias = SparkConnectionManager
     AdapterSpecificConfigs: TypeAlias = SparkConfig
+
+    def __init__(self, config) -> None:  # type: ignore
+        super().__init__(config)
+        self.cache: SparkRelationsCache = SparkRelationsCache()
 
     @classmethod
     def date_function(cls) -> str:
@@ -377,6 +386,25 @@ class SparkAdapter(SQLAdapter):
             catalogs, exceptions = catch_as_completed(futures)
         return catalogs, exceptions
 
+    def get_catalog_by_relations(
+        self, manifest: Manifest, relations: Set[BaseRelation]
+    ) -> Tuple[agate.Table, List[Exception]]:
+        with executor(self.config) as tpe:
+            futures: List[Future[agate.Table]] = []
+            for relation in relations:
+                futures.append(
+                    tpe.submit_connected(
+                        self,
+                        str(relation),
+                        self._get_one_catalog_by_relations,
+                        relation.information_schema_only(),
+                        [relation],
+                        manifest,
+                    )
+                )
+            catalogs, exceptions = catch_as_completed(futures)
+        return catalogs, exceptions
+
     def _get_one_catalog(
         self,
         information_schema: InformationSchema,
@@ -390,12 +418,26 @@ class SparkAdapter(SQLAdapter):
 
         database = information_schema.database
         schema = list(schemas)[0]
+        relations = self.list_relations(database, schema)
+        return self._get_relation_metadata_at_column_level(relations)
 
+    def _get_relation_metadata_at_column_level(self, relations: List[BaseRelation]) -> agate.Table:
         columns: List[Dict[str, Any]] = []
-        for relation in self.list_relations(database, schema):
+        for relation in relations:
             logger.debug("Getting table schema for relation {}", str(relation))
             columns.extend(self._get_columns_for_catalog(relation))
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
+
+    def _get_one_catalog_by_relations(
+        self,
+        information_schema: InformationSchema,
+        relations: List[BaseRelation],
+        manifest: Manifest,
+    ) -> agate.Table:
+        cached_relations = [
+            self.cache.get_relation_from_stub(relation_stub) for relation_stub in relations
+        ]
+        return self._get_relation_metadata_at_column_level(cached_relations)
 
     def check_schema_exists(self, database: str, schema: str) -> bool:
         results = self.execute_macro(LIST_SCHEMAS_MACRO_NAME, kwargs={"database": database})
