@@ -20,7 +20,6 @@ except ImportError:
     print('Please upgrade setuptools with "pip install --upgrade setuptools" ' "and try again")
     sys.exit(1)
 
-
 # pull long description from README
 this_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(this_directory, "README.md"), "r", encoding="utf8") as f:
@@ -73,8 +72,8 @@ setup(
     packages=find_namespace_packages(include=["dbt", "dbt.*"]),
     include_package_data=True,
     install_requires=[
-        "dbt-core~={}".format(dbt_core_version),
         "sqlparams>=3.0.0",
+        "dbt-common @ git+https://github.com/dbt-labs/dbt-common.git#egg=dbt",
     ],
     extras_require={
         "ODBC": odbc_extras,
