@@ -9,7 +9,7 @@ from unittest import TestCase
 
 import agate
 import pytest
-from dbt.common.dataclass_schema import ValidationError
+from dbt_common.dataclass_schema import ValidationError
 from dbt.config.project import PartialProject
 
 

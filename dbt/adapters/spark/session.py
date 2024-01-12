@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 
 from dbt.adapters.spark.connections import SparkConnectionWrapper
 from dbt.adapters.events.logging import AdapterLogger
-from dbt.common.utils.encoding import DECIMALS
-from dbt.common.exceptions import DbtRuntimeError
+from dbt_common.utils.encoding import DECIMALS
+from dbt_common.exceptions import DbtRuntimeError
 from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql.utils import AnalysisException
 

@@ -19,8 +19,8 @@ from typing import (
 from dbt.adapters.base.relation import InformationSchema
 from dbt.adapters.contracts.connection import AdapterResponse
 from dbt.adapters.events.logging import AdapterLogger
-from dbt.common.exceptions import DbtRuntimeError, CompilationError
-from dbt.common.utils import AttrDict, executor
+from dbt_common.exceptions import DbtRuntimeError, CompilationError
+from dbt_common.utils import AttrDict, executor
 
 from typing_extensions import TypeAlias
 
@@ -38,8 +38,8 @@ from dbt.adapters.spark.python_submissions import (
 )
 from dbt.adapters.base import BaseRelation
 from dbt.adapters.contracts.relation import RelationType, RelationConfig
-from dbt.common.clients.agate_helper import DEFAULT_TYPE_TESTER
-from dbt.common.contracts.constraints import ConstraintType
+from dbt_common.clients.agate_helper import DEFAULT_TYPE_TESTER
+from dbt_common.contracts.constraints import ConstraintType
 
 logger = AdapterLogger("Spark")
 packages = ["pyhive.hive", "thrift.transport", "thrift.protocol"]

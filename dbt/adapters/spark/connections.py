@@ -5,9 +5,9 @@ from dbt.adapters.contracts.connection import AdapterResponse, ConnectionState, 
 from dbt.adapters.events.logging import AdapterLogger
 from dbt.adapters.exceptions import FailedToConnectError
 from dbt.adapters.sql import SQLConnectionManager
-from dbt.common.exceptions import DbtConfigError, DbtRuntimeError, DbtDatabaseError
+from dbt_common.exceptions import DbtConfigError, DbtRuntimeError, DbtDatabaseError
 
-from dbt.common.utils.encoding import DECIMALS
+from dbt_common.utils.encoding import DECIMALS
 from dbt.adapters.spark import __version__
 
 try:
@@ -24,7 +24,7 @@ except ImportError:
     pyodbc = None
 from datetime import datetime
 import sqlparams
-from dbt.common.dataclass_schema import StrEnum
+from dbt_common.dataclass_schema import StrEnum
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable, Sequence
 

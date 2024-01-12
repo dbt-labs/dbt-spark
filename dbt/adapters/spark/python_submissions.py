@@ -5,7 +5,7 @@ from typing import Any, Dict, Callable, Iterable
 import uuid
 
 from dbt.adapters.base import PythonJobHelper
-from dbt.common.exceptions import DbtRuntimeError
+from dbt_common.exceptions import DbtRuntimeError
 
 from dbt.adapters.spark import SparkCredentials
 from dbt.adapters.spark import __version__

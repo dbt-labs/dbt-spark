@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, TypeVar, Union
 
 from dbt.adapters.base.column import Column
-from dbt.common.dataclass_schema import dbtClassMixin
+from dbt_common.dataclass_schema import dbtClassMixin
 
 Self = TypeVar("Self", bound="SparkColumn")
 

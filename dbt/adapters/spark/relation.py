@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from dbt.adapters.base.relation import BaseRelation, Policy
 from dbt.adapters.events.logging import AdapterLogger
 
-from dbt.common.exceptions import DbtRuntimeError
+from dbt_common.exceptions import DbtRuntimeError
 
 logger = AdapterLogger("Spark")
 
