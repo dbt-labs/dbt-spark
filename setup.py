@@ -74,6 +74,7 @@ setup(
     install_requires=[
         "sqlparams>=3.0.0",
         "dbt-common @ git+https://github.com/dbt-labs/dbt-common.git#egg=dbt",
+        "dbt-adapters @ git+https://github.com/dbt-labs/dbt-adapters.git#egg=dbt",
     ],
     extras_require={
         "ODBC": odbc_extras,
