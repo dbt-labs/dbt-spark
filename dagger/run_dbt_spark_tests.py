@@ -86,7 +86,9 @@ async def get_spark_container(client: dagger.Client) -> (dagger.Container, str):
 async def test_spark(test_args):
     async with dagger.Connection(dagger.Config(log_output=sys.stderr)) as client:
         test_profile = test_args.profile
-        req_files = client.host().directory("./", include=["*.txt", "*.env", "*.ini", "*.md", "setup.py"])
+        req_files = client.host().directory(
+            "./", include=["*.txt", "*.env", "*.ini", "*.md", "setup.py"]
+        )
         dbt_spark_dir = client.host().directory("./dbt")
         test_dir = client.host().directory("./tests")
         scripts = client.host().directory("./dagger/scripts")
