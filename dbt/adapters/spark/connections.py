@@ -1,7 +1,11 @@
 from contextlib import contextmanager
 
-from dbt.adapters.base import Credentials
-from dbt.adapters.contracts.connection import AdapterResponse, ConnectionState, Connection
+from dbt.adapters.contracts.connection import (
+    AdapterResponse,
+    ConnectionState,
+    Connection,
+    Credentials,
+)
 from dbt.adapters.events.logging import AdapterLogger
 from dbt.adapters.exceptions import FailedToConnectError
 from dbt.adapters.sql import SQLConnectionManager
