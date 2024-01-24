@@ -73,6 +73,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "sqlparams>=3.0.0",
+        "dbt-core~={}".format(dbt_core_version),
         "dbt-common<1.0",
         "dbt-adapters~=0.1.0a1",
     ],

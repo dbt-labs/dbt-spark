@@ -42,9 +42,9 @@ def apache_spark_target():
         "user": "dbt",
         "method": "thrift",
         "port": 10000,
-        "connect_retries": 3,
-        "connect_timeout": 5,
-        "retry_all": True,
+        "connect_retries": 2,
+        "connect_timeout": 3,
+        "retry_all": False,
     }
 
 
@@ -59,7 +59,7 @@ def databricks_cluster_target():
         "port": 443,
         "connect_retries": 3,
         "connect_timeout": 5,
-        "retry_all": True,
+        "retry_all": False,
         "user": os.getenv("DBT_DATABRICKS_USER"),
     }
 

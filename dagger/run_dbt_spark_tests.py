@@ -29,18 +29,19 @@ def env_variables(envs: Dict[str, str]):
     return env_variables_inner
 
 
-async def get_postgres_container(client: dagger.Client) -> (dagger.Container, str):
-    ctr = await (
+def get_postgres_container(client: dagger.Client) -> (dagger.Container, str):
+    ctr = (
         client.container()
         .from_("postgres:13")
         .with_env_variable("POSTGRES_PASSWORD", "postgres")
         .with_exposed_port(PG_PORT)
+        .as_service()
     )
 
     return ctr, "postgres_db"
 
 
-async def get_spark_container(client: dagger.Client) -> (dagger.Container, str):
+def get_spark_container(client: dagger.Client) -> (dagger.Service, str):
     spark_dir = client.host().directory("./dagger/spark-container")
     spark_ctr_base = (
         client.container()
@@ -64,7 +65,7 @@ async def get_spark_container(client: dagger.Client) -> (dagger.Container, str):
     )
 
     # postgres is the metastore here
-    pg_ctr, pg_host = await get_postgres_container(client)
+    pg_ctr, pg_host = get_postgres_container(client)
 
     spark_ctr = (
         spark_ctr_base.with_service_binding(alias=pg_host, service=pg_ctr)
@@ -78,6 +79,7 @@ async def get_spark_container(client: dagger.Client) -> (dagger.Container, str):
             ]
         )
         .with_exposed_port(10000)
+        .as_service()
     )
 
     return spark_ctr, "spark_db"
@@ -86,32 +88,46 @@ async def get_spark_container(client: dagger.Client) -> (dagger.Container, str):
 async def test_spark(test_args):
     async with dagger.Connection(dagger.Config(log_output=sys.stderr)) as client:
         test_profile = test_args.profile
+
+        # create cache volumes, these are persisted between runs saving time when developing locally
+        os_reqs_cache = client.cache_volume("os_reqs")
+        pip_cache = client.cache_volume("pip")
+
+        # setup directories as we don't want to copy the whole repo into the container
         req_files = client.host().directory(
             "./", include=["*.txt", "*.env", "*.ini", "*.md", "setup.py"]
         )
         dbt_spark_dir = client.host().directory("./dbt")
         test_dir = client.host().directory("./tests")
         scripts = client.host().directory("./dagger/scripts")
+
         platform = dagger.Platform("linux/amd64")
         tst_container = (
             client.container(platform=platform)
             .from_("python:3.8-slim")
-            .with_directory("/.", req_files)
-            .with_directory("/dbt", dbt_spark_dir)
-            .with_directory("/tests", test_dir)
-            .with_directory("/scripts", scripts)
-            .with_exec("./scripts/install_os_reqs.sh")
-            .with_exec(["pip", "install", "-e", "."])
+            .with_directory("/src", req_files)
+            .with_directory("/src/dbt", dbt_spark_dir)
+            .with_directory("/src/tests", test_dir)
+            .with_directory("/src/scripts", scripts)
+            .with_workdir("/src")
+            .with_mounted_cache("/var/cache/apt/archives", os_reqs_cache)
+            .with_exec(["./scripts/install_os_reqs.sh"])
+        )
+
+        tst_container = (
+            tst_container.with_mounted_cache("/root/.cache/pip", pip_cache)
+            .with_exec(["pip", "install", "-U", "pip"])
             .with_exec(["pip", "install", "-r", "requirements.txt"])
             .with_exec(["pip", "install", "-r", "dev-requirements.txt"])
+            .with_exec(["pip", "install", "-e", "."])
         )
 
         if test_profile == "apache_spark":
-            spark_ctr, spark_host = await get_spark_container(client)
+            spark_ctr, spark_host = get_spark_container(client)
             tst_container = tst_container.with_service_binding(alias=spark_host, service=spark_ctr)
 
         elif test_profile in ["databricks_cluster", "databricks_sql_endpoint"]:
-            tst_container = tst_container.with_exec("./scripts/configure_odbc.sh")
+            tst_container = tst_container.with_exec(["./scripts/configure_odbc.sh"])
 
         elif test_profile == "spark_session":
             tst_container = tst_container.with_exec(["pip", "install", "pyspark"])
