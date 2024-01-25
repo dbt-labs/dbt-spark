@@ -105,17 +105,16 @@ async def test_spark(test_args):
         tst_container = (
             client.container(platform=platform)
             .from_("python:3.8-slim")
-            .with_directory("/src", req_files)
-            .with_directory("/src/dbt", dbt_spark_dir)
-            .with_directory("/src/tests", test_dir)
-            .with_directory("/src/scripts", scripts)
-            .with_workdir("/src")
             .with_mounted_cache("/var/cache/apt/archives", os_reqs_cache)
+            .with_mounted_cache("/root/.cache/pip", pip_cache)
+            # install OS deps first so any local changes don't invalidate the cache
+            .with_directory("/scripts", scripts)
             .with_exec(["./scripts/install_os_reqs.sh"])
-        )
-
-        tst_container = (
-            tst_container.with_mounted_cache("/root/.cache/pip", pip_cache)
+            # install dbt-spark + python deps
+            .with_directory("/src", req_files)
+            .with_directory("src/dbt", dbt_spark_dir)
+            .with_directory("src/tests", test_dir)
+            .with_workdir("/src")
             .with_exec(["pip", "install", "-U", "pip"])
             .with_exec(["pip", "install", "-r", "requirements.txt"])
             .with_exec(["pip", "install", "-r", "dev-requirements.txt"])
@@ -127,7 +126,11 @@ async def test_spark(test_args):
             tst_container = tst_container.with_service_binding(alias=spark_host, service=spark_ctr)
 
         elif test_profile in ["databricks_cluster", "databricks_sql_endpoint"]:
-            tst_container = tst_container.with_exec(["./scripts/configure_odbc.sh"])
+            tst_container = (
+                tst_container.with_workdir("/")
+                .with_exec(["./scripts/configure_odbc.sh"])
+                .with_workdir("/src")
+            )
 
         elif test_profile == "spark_session":
             tst_container = tst_container.with_exec(["pip", "install", "pyspark"])
