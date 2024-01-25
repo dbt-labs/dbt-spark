@@ -1,2 +1,2 @@
-dagger-io~=0.8.0
+dagger-io~=0.9.7
 python-dotenv
