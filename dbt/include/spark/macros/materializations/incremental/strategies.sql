@@ -17,9 +17,15 @@
 
 {% macro get_insert_into_sql(source_relation, target_relation) %}
 
-    {%- set dest_columns = adapter.get_columns_in_relation(target_relation) -%}
-    {%- set dest_cols_csv = dest_columns | map(attribute='quoted') | join(', ') -%}
-    insert into table {{ target_relation }}
+    {%- set common_columns = [] -%}
+    {%- set source_columns = adapter.get_columns_in_relation(source_relation) | map(attribute="name") -%}
+    {%- for dest_col in adapter.get_columns_in_relation(target_relation) -%}
+      {% if dest_col.name in source_columns %}
+          {%- if common_columns.append(dest_col) -%}{%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- set dest_cols_csv = common_columns | map(attribute='quoted') | join(', ') -%}
+    insert into table {{ target_relation }} ({{ dest_cols_csv }})
     select {{dest_cols_csv}} from {{ source_relation }}
 
 {% endmacro %}
