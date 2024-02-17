@@ -50,13 +50,7 @@ pyhive_extras = [
 ]
 session_extras = ["pyspark>=3.0.0,<4.0.0"]
 connect_extras = [
-    "pyspark==3.5.0",
-    "pandas>=1.05",
-    "pyarrow>=4.0.0",
-    "numpy>=1.15",
-    "grpcio>=1.46,<1.57",
-    "grpcio-status>=1.46,<1.57",
-    "googleapis-common-protos==1.56.4",
+    "pyspark[connect]>=3.5.0<4.0.0",
 ]
 all_extras = odbc_extras + pyhive_extras + session_extras + connect_extras
 

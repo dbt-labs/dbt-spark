@@ -57,6 +57,7 @@ jobs:
           - "databricks_sql_endpoint"
           - "databricks_cluster"
           - "databricks_http_cluster"
+          - "spark_connect"
 
     env:
       DBT_INVOCATION_ENV: github-actions
