@@ -17,9 +17,12 @@ class TestSparkUnitTestingTypes(BaseUnitTestingTypes):
             ["true", "true"],
             ["date '2011-11-11'", "2011-11-11"],
             ["timestamp '2013-11-03 00:00:00-0'", "2013-11-03 00:00:00-0"],
-            # ["map(struct('Hello', 'World'), 'Greeting')", '''"map(struct('Hello', 'World'), 'Greeting')"'''],
-            # ['named_struct("a", 1, "b", 2, "c", 3)', """'named_struct("a", 1, "b", 2, "c", 3)'"""],
-            # ["array(1, 2, 3)", "'array(1, 2, 3)'"],
+            ["array(1, 2, 3)", "'array(1, 2, 3)'"],
+            [
+                "map('10', 't', '15', 'f', '20', NULL)",
+                """'map("10", "t", "15", "f", "20", NULL)'""",
+            ],
+            ['named_struct("a", 1, "b", 2, "c", 3)', """'named_struct("a", 1, "b", 2, "c", 3)'"""],
         ]
 
 
