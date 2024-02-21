@@ -11,4 +11,3 @@ ignore =
     E203,
     E741,
     E501,
-exclude = test
