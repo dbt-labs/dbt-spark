@@ -34,6 +34,10 @@ test.env
 # pycharm
 .idea/
 
+# Pipenv
+Pipfile.lock
+Pipfile
+
 # MacOS
 .DS_Store
 
