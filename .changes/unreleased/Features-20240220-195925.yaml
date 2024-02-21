@@ -1,0 +1,6 @@
+kind: Features
+body: Implement spark__safe_cast and add functional tests for unit testing
+time: 2024-02-20T19:59:25.907821-05:00
+custom:
+  Author: michelleark
+  Issue: "987"
