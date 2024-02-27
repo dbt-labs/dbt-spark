@@ -64,7 +64,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "sqlparams>=3.0.0",
-        "dbt-common<1.0",
+        "dbt-common<2.0",
         "dbt-adapters~=0.1.0a1",
     ],
     extras_require={
