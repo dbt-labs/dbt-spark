@@ -112,13 +112,25 @@ async def test_spark(test_args):
             .with_exec(["./scripts/install_os_reqs.sh"])
             # install dbt-spark + python deps
             .with_directory("/src", req_files)
-            .with_directory("src/dbt", dbt_spark_dir)
-            .with_directory("src/tests", test_dir)
-            .with_workdir("/src")
             .with_exec(["pip", "install", "-U", "pip"])
+            .with_workdir("/src")
             .with_exec(["pip", "install", "-r", "requirements.txt"])
             .with_exec(["pip", "install", "-r", "dev-requirements.txt"])
+        )
+
+        # install local dbt-spark changes
+        tst_container = (
+            tst_container.with_workdir("/")
+            .with_directory("src/dbt", dbt_spark_dir)
+            .with_workdir("/src")
             .with_exec(["pip", "install", "-e", "."])
+        )
+
+        # install local test changes
+        tst_container = (
+            tst_container.with_workdir("/")
+            .with_directory("src/tests", test_dir)
+            .with_workdir("/src")
         )
 
         if test_profile == "apache_spark":

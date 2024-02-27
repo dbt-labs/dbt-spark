@@ -387,6 +387,7 @@
         "identifier": tmp_identifier
     }) -%}
 
+    {%- set tmp_relation = tmp_relation.include(database=false, schema=false) -%}
     {% do return(tmp_relation) %}
 {% endmacro %}
 
