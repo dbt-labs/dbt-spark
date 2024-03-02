@@ -44,7 +44,7 @@ on:
       package_test_command:
         description: "Package test command"
         type: string
-        default: "dbt --version"
+        default: "python -c \"import dbt.adapters.spark\""
         required: true
       env_setup_script_path:
         description: "Environment setup script path"
