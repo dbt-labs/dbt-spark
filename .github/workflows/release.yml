@@ -89,7 +89,7 @@ jobs:
   audit-version-and-changelog:
     name: Bump package version, Generate changelog
 
-    uses: dbt-labs/dbt-release/.github/workflows/release-prep.yml@main
+    uses: dbt-labs/dbt-spark/.github/workflows/release-prep.yml@main
 
     with:
       sha: ${{ inputs.sha }}

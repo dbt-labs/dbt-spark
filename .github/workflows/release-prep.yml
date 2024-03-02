@@ -1,0 +1,650 @@
+# **what?**
+# Perform the version bump, generate the changelog and run tests.
+#
+# Inputs:
+#  sha:                   The commit to attach to this release
+#  version_number:        The release version number (i.e. 1.0.0b1, 1.2.3rc2, 1.0.0)
+#  target_branch:         The branch that we will release from
+#  env_setup_script_path: Path to the environment setup script
+#  test_run:              Test run (The temp branch will be used for release)
+#  nightly_release:       Identifier that this is nightly release
+#
+# Outputs:
+#   final_sha:      The sha that will actually be released.  This can differ from the
+#                   input sha if adding a version bump and/or changelog
+#   changelog_path: Path to the changelog file (ex .changes/1.2.3-rc1.md)
+#
+# Branching strategy:
+#  - During execution workflow execution the temp branch will be generated.
+#  - For normal runs the temp branch will be removed once changes were merged to target branch;
+#  - For test runs we will keep temp branch and will use it for release;
+#  Naming strategy:
+#  - For normal runs:      prep-release/${{ inputs.version_number }}_$GITHUB_RUN_ID
+#  - For test runs:        prep-release/test-run/${{ inputs.version_number }}_$GITHUB_RUN_ID
+#  - For nightly releases: prep-release/nightly-release/${{ inputs.version_number }}_$GITHUB_RUN_ID
+#
+# **why?**
+# Reusable and consistent GitHub release process.
+#
+# **when?**
+# Call when ready to kick off a build and release
+#
+# Validation Checks
+#
+#  1. Bump the version if it has not been bumped
+#  2. Generate the changelog (via changie) if there is no markdown file for this version
+#
+
+name: Version Bump and Changelog Generation
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+      version_number:
+        required: true
+        type: string
+      target_branch:
+        required: true
+        type: string
+      env_setup_script_path:
+        required: false
+        type: string
+        default: ""
+      test_run:
+        required: false
+        default: true
+        type: boolean
+      nightly_release:
+        type: boolean
+        default: false
+        required: false
+    outputs:
+      final_sha:
+        description: The new commit that includes the changelog and version bump.
+        value: ${{ jobs.determine-release-sha.outputs.final_sha }}
+      changelog_path:
+        description: The path to the changelog for this version
+        value: ${{ jobs.audit-changelog.outputs.changelog_path }}
+    secrets:
+      FISHTOWN_BOT_PAT:
+        description: "Token to commit/merge changes into branches"
+        required: true
+      IT_TEAM_MEMBERSHIP:
+        description: "Token that can view org level teams"
+        required: true
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHON_TARGET_VERSION: 3.8
+  NOTIFICATION_PREFIX: "[Release Preparation]"
+
+jobs:
+  log-inputs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "[DEBUG] Print Variables"
+        run: |
+          # WORKFLOW INPUTS
+          echo The last commit sha in the release:   ${{ inputs.sha }}
+          echo The release version number:           ${{ inputs.version_number }}
+          echo The branch that we will release from: ${{ inputs.target_branch }}
+          echo Path to the environment setup script: ${{ inputs.env_setup_script_path }}
+          echo Test run:                             ${{ inputs.test_run }}
+          echo Nightly release:                      ${{ inputs.nightly_release }}
+          # ENVIRONMENT VARIABLES
+          echo Python target version:                ${{ env.PYTHON_TARGET_VERSION }}
+          echo Notification prefix:                  ${{ env.NOTIFICATION_PREFIX }}
+
+  audit-changelog:
+    runs-on: ubuntu-latest
+
+    outputs:
+      changelog_path: ${{ steps.set_path.outputs.changelog_path }}
+      exists: ${{ steps.set_existence.outputs.exists }}
+      base_version: ${{ steps.semver.outputs.base-version }}
+      prerelease: ${{ steps.semver.outputs.pre-release }}
+      is_prerelease: ${{ steps.semver.outputs.is-pre-release }}
+
+    steps:
+      - name: "Checkout ${{ github.repository }} Commit ${{ inputs.sha }}"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: "Audit Version And Parse Into Parts"
+        id: semver
+        uses: dbt-labs/actions/parse-semver@v1.1.0
+        with:
+          version: ${{ inputs.version_number }}
+
+      - name: "Set Changelog Path"
+        id: set_path
+        run: |
+          path=".changes/"
+          if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
+          then
+            path+="${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md"
+          else
+            path+="${{ steps.semver.outputs.base-version }}.md"
+          fi
+          # Send notification
+          echo "changelog_path=$path" >> $GITHUB_OUTPUT
+          title="Changelog path"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$changelog_path"
+
+      - name: "Set Changelog Existence For Subsequent Jobs"
+        id: set_existence
+        run: |
+          does_exist=false
+          if test -f ${{ steps.set_path.outputs.changelog_path }}
+          then
+            does_exist=true
+          fi
+          echo "exists=$does_exist">> $GITHUB_OUTPUT
+
+      - name: "[Notification] Set Changelog Existence For Subsequent Jobs"
+        run: |
+          title="Changelog exists"
+          if [[ ${{ steps.set_existence.outputs.exists }} == true ]]
+          then
+            message="Changelog file ${{ steps.set_path.outputs.changelog_path }} already exists"
+          else
+            message="Changelog file ${{ steps.set_path.outputs.changelog_path }} doesn't exist"
+          fi
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+      - name: "Spark safety check"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          if [[ ${{ steps.set_existence.outputs.exists }} != true ]]
+          then
+            title="Spark version-bump.yml check"
+            message="dbt-spark needs version-bump.yml run before running the release.  The changelog is not up to date."
+            echo "::error title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+            exit 1
+          fi
+
+      - name: "[DEBUG] Print Outputs"
+        run: |
+          echo changelog_path: ${{ steps.set_path.outputs.changelog_path }}
+          echo exists:         ${{ steps.set_existence.outputs.exists }}
+          echo base_version:   ${{ steps.semver.outputs.base-version }}
+          echo prerelease:     ${{ steps.semver.outputs.pre-release }}
+          echo is_prerelease:  ${{ steps.semver.outputs.is-pre-release }}
+
+  audit-version-in-code:
+    runs-on: ubuntu-latest
+
+    outputs:
+      up_to_date: ${{ steps.version-check.outputs.up_to_date }}
+
+    steps:
+      - name: "Checkout ${{ github.repository }} Commit ${{ inputs.sha }}"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: "Check Current Version In Code"
+        id: version-check
+        run: |
+          is_updated=false
+          if grep -Fxq "current_version = ${{ inputs.version_number }}" .bumpversion.cfg
+          then
+            is_updated=true
+          fi
+          echo "up_to_date=$is_updated" >> $GITHUB_OUTPUT
+
+      - name: "[Notification] Check Current Version In Code"
+        run: |
+          title="Version check"
+          if [[ ${{ steps.version-check.outputs.up_to_date }} == true ]]
+          then
+            message="The version in the codebase is equal to the provided version"
+          else
+            message="The version in the codebase differs from the provided version"
+          fi
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+      - name: "Spark safety check"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          if [[ ${{ steps.version-check.outputs.up_to_date }} != true ]]
+          then
+            title="Spark version-bump.yml check"
+            message="dbt-spark needs version-bump.yml run before running the release.  The version bump is not up to date."
+            echo "::error title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+            exit 1
+          fi
+
+      - name: "[DEBUG] Print Outputs"
+        run: |
+          echo up_to_date: ${{ steps.version-check.outputs.up_to_date }}
+
+  skip-generate-changelog:
+    runs-on: ubuntu-latest
+    needs: [audit-changelog]
+    if: needs.audit-changelog.outputs.exists == 'true'
+
+    steps:
+      - name: "Changelog Exists, Skip Generating New Changelog"
+        run: |
+          # Send notification
+          title="Skip changelog generation"
+          message="A changelog file already exists at ${{ needs.audit-changelog.outputs.changelog_path }}, skipping generating changelog"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+  skip-version-bump:
+    runs-on: ubuntu-latest
+    needs: [audit-version-in-code]
+    if: needs.audit-version-in-code.outputs.up_to_date == 'true'
+
+    steps:
+      - name: "Version Already Bumped"
+        run: |
+          # Send notification
+          title="Skip version bump"
+          message="The version has already been bumped to ${{ inputs.version_number }}, skipping version bump"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+  create-temp-branch:
+    runs-on: ubuntu-latest
+    needs: [audit-changelog, audit-version-in-code]
+    if: needs.audit-changelog.outputs.exists == 'false' || needs.audit-version-in-code.outputs.up_to_date == 'false'
+
+    outputs:
+      branch_name: ${{ steps.variables.outputs.branch_name }}
+
+    steps:
+      - name: "Checkout ${{ github.repository }} Commit ${{ inputs.sha }}"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: "Generate Branch Name"
+        id: variables
+        run: |
+          name="prep-release/"
+          if [[ ${{ inputs.nightly_release }} == true  ]]
+          then
+            name+="nightly-release/"
+          elif [[ ${{ inputs.test_run }} == true ]]
+          then
+            name+="test-run/"
+          fi
+          name+="${{ inputs.version_number }}_$GITHUB_RUN_ID"
+          echo "branch_name=$name" >> $GITHUB_OUTPUT
+
+      - name: "Create Branch - ${{ steps.variables.outputs.branch_name }}"
+        run: |
+          git checkout -b ${{ steps.variables.outputs.branch_name }}
+          git push -u origin ${{ steps.variables.outputs.branch_name }}
+
+      - name: "[Notification] Temp branch created"
+        run: |
+          # Send notification
+          title="Temp branch generated"
+          message="The ${{ steps.variables.outputs.branch_name }} branch created"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+      - name: "[DEBUG] Print Outputs"
+        run: |
+          echo branch_name ${{ steps.variables.outputs.branch_name }}
+
+  generate-changelog-bump-version:
+    runs-on: ubuntu-latest
+    needs: [audit-changelog, audit-version-in-code, create-temp-branch]
+
+    steps:
+      - name: "Checkout ${{ github.repository }} Branch ${{ needs.create-temp-branch.outputs.branch_name }}"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-temp-branch.outputs.branch_name }}
+
+      - name: "Install Spark Dependencies"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install libsasl2-dev
+
+      - name: "Add Homebrew To PATH"
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+
+      - name: "Install Homebrew Packages"
+        run: |
+          brew install pre-commit
+          brew tap miniscruff/changie https://github.com/miniscruff/changie
+          brew install changie
+
+      - name: "Set json File Name"
+        id: json_file
+        run: |
+          echo "name=output_$GITHUB_RUN_ID.json" >> $GITHUB_OUTPUT
+
+      - name: "Get Core Team Membership"
+        run: |
+          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/core-group/members > ${{ steps.json_file.outputs.name }}
+        env:
+          GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
+
+      - name: "Set Core Team Membership for Changie Contributors exclusion"
+        id: set_team_membership
+        run: |
+          team_list=$(jq -r '.[].login' ${{ steps.json_file.outputs.name }})
+          echo $team_list
+          team_list_single=$(echo $team_list | tr '\n' ' ')
+          echo "CHANGIE_CORE_TEAM=$team_list_single" >> $GITHUB_ENV
+
+      - name: "Delete the json File"
+        run: |
+          rm ${{ steps.json_file.outputs.name }}
+
+      - name: "Generate Release Changelog"
+        if: needs.audit-changelog.outputs.exists == 'false'
+        run: |
+          if [[ ${{ needs.audit-changelog.outputs.is_prerelease }} -eq 1 ]]
+          then
+            changie batch ${{ needs.audit-changelog.outputs.base_version }} --move-dir '${{ needs.audit-changelog.outputs.base_version }}' --prerelease ${{ needs.audit-changelog.outputs.prerelease }}
+          elif [[ -d ".changes/${{ needs.audit-changelog.outputs.base_version }}" ]]
+          then
+            changie batch ${{ needs.audit-changelog.outputs.base_version }} --include '${{ needs.audit-changelog.outputs.base_version }}' --remove-prereleases
+          else # releasing a final patch with no prereleases
+            changie batch ${{ needs.audit-changelog.outputs.base_version }}
+          fi
+          changie merge
+          git status
+
+      - name: "Check Changelog Created Successfully"
+        if: needs.audit-changelog.outputs.exists == 'false'
+        run: |
+          title="Changelog"
+          if [[ -f ${{ needs.audit-changelog.outputs.changelog_path }} ]]
+          then
+            message="Changelog file created successfully"
+            echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+          else
+            message="Changelog failed to generate"
+            echo "::error title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+            exit 1
+          fi
+
+      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_TARGET_VERSION }}
+
+      - name: "Install Python Dependencies"
+        if: needs.audit-version-in-code.outputs.up_to_date == 'false'
+        run: |
+          python3 -m venv env
+          source env/bin/activate
+          python -m pip install --upgrade pip
+
+      - name: "Bump Version To ${{ inputs.version_number }}"
+        if: needs.audit-version-in-code.outputs.up_to_date == 'false'
+        # note: bumpversion is no longer supported, it actually points to bump2version now
+        run: |
+          source env/bin/activate
+          if [ -f "editable-requirements.txt" ]
+          then
+            python -m pip install -r dev-requirements.txt -r editable-requirements.txt
+          else
+            python -m pip install -r dev-requirements.txt
+          fi
+          env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_number }} major
+          git status
+
+      - name: "[Notification] Bump Version To ${{ inputs.version_number }}"
+        if: needs.audit-version-in-code.outputs.up_to_date == 'false'
+        run: |
+          title="Version bump"
+          message="Version successfully bumped in codebase to ${{ inputs.version_number }}"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+      # this step will fail on whitespace errors but also correct them
+      - name: "Remove Trailing Whitespace Via Pre-commit"
+        continue-on-error: true
+        run: |
+          pre-commit run trailing-whitespace --files .bumpversion.cfg CHANGELOG.md .changes/*
+          git status
+
+      # this step will fail on newline errors but also correct them
+      - name: "Removing Extra Newlines Via Pre-commit"
+        continue-on-error: true
+        run: |
+          pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/*
+          git status
+
+      - name: "Commit & Push Changes"
+        run: |
+          #Data for commit
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          commit_message="Bumping version to ${{ inputs.version_number }} and generate changelog"
+          #Commit changes to branch
+          git config user.name "$user"
+          git config user.email "$email"
+          git pull
+          git add .
+          git commit -m "$commit_message"
+          git push
+
+  run-unit-tests:
+    name: unit test / python ${{ matrix.python-version }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libsasl2-dev
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install -r requirements.txt
+          python -m pip install -r dev-requirements.txt
+          python -m pip install -e .
+
+      - name: Run unit tests
+        run: python -m pytest --color=yes --csv unit_results.csv -v tests/unit
+
+  run-integration-tests:
+    name: ${{ matrix.test }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - "apache_spark"
+          - "spark_session"
+          - "databricks_sql_endpoint"
+          - "databricks_cluster"
+          - "databricks_http_cluster"
+
+    env:
+      DBT_INVOCATION_ENV: github-actions
+      DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+      DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+      DD_SITE: datadoghq.com
+      DD_ENV: ci
+      DD_SERVICE: ${{ github.event.repository.name }}
+      DBT_DATABRICKS_CLUSTER_NAME: ${{ secrets.DBT_DATABRICKS_CLUSTER_NAME }}
+      DBT_DATABRICKS_HOST_NAME: ${{ secrets.DBT_DATABRICKS_HOST_NAME }}
+      DBT_DATABRICKS_ENDPOINT: ${{ secrets.DBT_DATABRICKS_ENDPOINT }}
+      DBT_DATABRICKS_TOKEN: ${{ secrets.DBT_DATABRICKS_TOKEN }}
+      DBT_DATABRICKS_USER: ${{ secrets.DBT_DATABRICKS_USERNAME }}
+      DBT_TEST_USER_1: "buildbot+dbt_test_user_1@dbtlabs.com"
+      DBT_TEST_USER_2: "buildbot+dbt_test_user_2@dbtlabs.com"
+      DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
+
+    steps:
+      - name: Check out the repository
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      # explicitly checkout the branch for the PR,
+      # this is necessary for the `pull_request` event
+      - name: Check out the repository (PR)
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # the python version used here is not what is used in the tests themselves
+      - name: Set up Python for dagger
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install python dependencies
+        run: |
+          python -m pip install --user --upgrade pip
+          python -m pip --version
+          python -m pip install -r dagger/requirements.txt
+
+      - name: Run tests for ${{ matrix.test }}
+        run: python dagger/run_dbt_spark_tests.py --profile ${{ matrix.test }}
+
+  merge-changes-into-target-branch:
+    runs-on: ubuntu-latest
+    needs: [run-unit-tests, run-integration-tests, create-temp-branch, audit-version-in-code, audit-changelog]
+    if: |
+        !failure() && !cancelled() &&
+        inputs.test_run == false &&
+        (
+          needs.audit-changelog.outputs.exists == 'false' ||
+          needs.audit-version-in-code.outputs.up_to_date == 'false'
+        )
+
+    steps:
+      - name: "[Debug] Print Variables"
+        run: |
+          echo target_branch: ${{ inputs.target_branch }}
+          echo branch_name:   ${{ needs.create-temp-branch.outputs.branch_name }}
+          echo inputs.test_run: ${{ inputs.test_run }}
+          echo needs.audit-changelog.outputs.exists: ${{ needs.audit-changelog.outputs.exists }}
+          echo needs.audit-version-in-code.outputs.up_to_date: ${{ needs.audit-version-in-code.outputs.up_to_date }}
+
+      - name: "Checkout Repo ${{ github.repository }}"
+        uses: actions/checkout@v4
+
+      - name: "Merge Changes Into ${{ inputs.target_branch }}"
+        uses: everlytic/branch-merge@1.1.5
+        with:
+          source_ref: ${{ needs.create-temp-branch.outputs.branch_name }}
+          target_branch: ${{ inputs.target_branch }}
+          github_token: ${{ secrets.FISHTOWN_BOT_PAT }}
+          commit_message_template: "[Automated] Merged {source_ref} into target {target_branch} during release process"
+
+      - name: "[Notification] Changes Merged into ${{ inputs.target_branch }}"
+        run: |
+          title="Changelog and Version Bump Branch Merge"
+          message="The ${{ needs.create-temp-branch.outputs.branch_name }} branch was merged into ${{ inputs.target_branch }}"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+  determine-release-sha:
+    runs-on: ubuntu-latest
+    needs:
+      [
+        create-temp-branch,
+        merge-changes-into-target-branch,
+        audit-changelog,
+        audit-version-in-code,
+      ]
+    # always run this job, regardless of if the dependant jobs were skipped
+    if: ${{ !failure() && !cancelled() }}
+
+    # Get the sha that will be released.  If the changelog already exists on the input sha and the version has already been bumped,
+    # then it is what we will release. Otherwise we generated a changelog and did the version bump in this workflow and there is a
+    # new sha to use from the merge we just did.  Grab that here instead.
+    outputs:
+      final_sha: ${{ steps.resolve_commit_sha.outputs.release_sha }}
+
+    steps:
+      - name: "[Debug] Print Variables"
+        run: |
+          echo target_branch:    ${{ inputs.target_branch }}
+          echo new_branch:       ${{ needs.create-temp-branch.outputs.branch_name }}
+          echo changelog_exists: ${{ needs.audit-changelog.outputs.exists }}
+          echo up_to_date:       ${{ needs.audit-version-in-code.outputs.up_to_date }}
+
+      - name: "Resolve Branch To Checkout"
+        id: resolve_branch
+        run: |
+          branch=""
+          if [[ ${{ inputs.test_run == true }} ]]
+          then
+            branch=${{ needs.create-temp-branch.outputs.branch_name }}
+          else
+            branch=${{ inputs.target_branch }}
+          fi
+          echo "target_branch=$branch" >> $GITHUB_OUTPUT
+
+      - name: "[Notification] Resolve Branch To Checkout"
+        run: |
+          title="Branch pick"
+          message="The ${{ steps.resolve_branch.outputs.target_branch }} branch will be used for release"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+      - name: "Checkout Resolved Branch - ${{ steps.resolve_branch.outputs.target_branch }}"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve_branch.outputs.target_branch }}
+
+      - name: "[Debug] Log Branch"
+        run: git status
+
+      - name: "Resolve Commit SHA For Release"
+        id: resolve_commit_sha
+        run: |
+          commit_sha=""
+          if [[ ${{ needs.audit-changelog.outputs.exists }} == false ]] || [[ ${{ needs.audit-version-in-code.outputs.up_to_date }} == false ]]
+          then
+            commit_sha=$(git rev-parse HEAD)
+          else
+            commit_sha=${{ inputs.sha }}
+          fi
+          echo "release_sha=$commit_sha" >> $GITHUB_OUTPUT
+
+      - name: "[Notification] Resolve Commit SHA For Release"
+        run: |
+          title="Release commit pick"
+          message="The ${{ steps.resolve_commit_sha.outputs.release_sha }} commit will be used for release"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+      - name: "Remove Temp Branch - ${{ needs.create-temp-branch.outputs.branch_name }}"
+        if: ${{ inputs.test_run == false && needs.create-temp-branch.outputs.branch_name != '' }}
+        run: |
+          git push origin -d ${{ needs.create-temp-branch.outputs.branch_name }}
+
+      - name: "[Debug] Print Outputs"
+        run: |
+          echo release_sha: ${{ steps.resolve_commit_sha.outputs.release_sha }}
