@@ -1,0 +1,7 @@
+kind: Fixes
+body: fix missing schema in catalog for delta tables
+time: 2023-01-12T19:34:06.197611+02:00
+custom:
+  Author: hanna-liashchuk
+  Issue: "368"
+  PR: "589"
