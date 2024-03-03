@@ -1,0 +1,6 @@
+kind: "Dependencies"
+body: "Update flake8 requirement from ~=6.1 to ~=7.0"
+time: 2024-01-05T22:13:37.00000Z
+custom:
+  Author: dependabot[bot]
+  PR: 969
