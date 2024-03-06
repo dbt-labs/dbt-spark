@@ -40,7 +40,7 @@ def _get_plugin_version_dict():
 
 
 package_name = "dbt-spark"
-package_version = "1.8.0a1"
+package_version = "1.8.0b1"
 description = """The Apache Spark adapter plugin for dbt"""
 
 odbc_extras = ["pyodbc~=4.0.39"]
@@ -64,8 +64,8 @@ setup(
     include_package_data=True,
     install_requires=[
         "sqlparams>=3.0.0",
-        "dbt-common<1.0",
-        "dbt-adapters~=0.1.0a1",
+        "dbt-common>=0.1.0a1,<2.0",
+        "dbt-adapters>=0.1.0a1,<2.0",
     ],
     extras_require={
         "ODBC": odbc_extras,

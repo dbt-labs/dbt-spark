@@ -44,7 +44,7 @@ on:
       package_test_command:
         description: "Package test command"
         type: string
-        default: "dbt --version"
+        default: "python -c \"import dbt.adapters.spark\""
         required: true
       env_setup_script_path:
         description: "Environment setup script path"
@@ -89,7 +89,7 @@ jobs:
   audit-version-and-changelog:
     name: Bump package version, Generate changelog
 
-    uses: dbt-labs/dbt-release/.github/workflows/release-prep.yml@main
+    uses: dbt-labs/dbt-spark/.github/workflows/release-prep.yml@main
 
     with:
       sha: ${{ inputs.sha }}
