@@ -1,0 +1,64 @@
+name: Release internal patch
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_number:
+        description: "The release version number (i.e. 1.0.0b1)"
+        type: string
+        required: true
+      sha:
+        description: "The sha to use (leave empty to use latest on main)"
+        type: string
+        required: false
+      package_test_command:
+        description: "Package test command"
+        type: string
+        default: "python -c \"import dbt.adapters.spark\""
+        required: true
+      dbms_name:
+        description: "The name of the warehouse the adapter connects to."
+        type: string
+        default: "spark"
+        required: true
+  workflow_call:
+    inputs:
+      version_number:
+        description: "The release version number (i.e. 1.0.0b1)"
+        type: string
+        required: true
+      sha:
+        description: "The sha to use (leave empty to use latest on main)"
+        type: string
+        required: false
+      package_test_command:
+        description: "Package test command"
+        type: string
+        default: "python -c \"import dbt.adapters.spark\""
+        required: true
+      dbms_name:
+        description: "The name of the warehouse the adapter connects to."
+        type: string
+        default: "spark"
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHON_TARGET_VERSION: 3.11
+
+jobs:
+  invoke-reusable-workflow:
+    name: Build and Release Internally
+
+    uses: VersusFacit/dbt-release/.github/workflows/internal-archive-release.yml@main
+
+    with:
+      version_number: ${{ inputs.version_number }}
+      package_test_command: ${{ inputs.package_test_command }}
+      dbms_name: ${{ inputs.dbms_name }}
+      sha: ${{ inputs.sha }}
+
+    secrets: inherit
