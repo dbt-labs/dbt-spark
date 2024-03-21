@@ -10,7 +10,7 @@
 #
 # Manual trigger.
 
-name: Release internal patch
+name: "Release internal patch"
 
 on:
   workflow_dispatch:
