@@ -132,7 +132,7 @@ jobs:
     name: "Build and Release Internally"
     needs: [run-integration-tests]
 
-    uses: "dbt-labs/dbt-release/.github/workflows/internal-archive-release.yml@mp/finish_internal_workflow"
+    uses: "dbt-labs/dbt-release/.github/workflows/internal-archive-release.yml@main"
 
     with:
       version_number: "${{ inputs.version_number }}"
