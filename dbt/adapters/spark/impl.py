@@ -507,6 +507,19 @@ class SparkAdapter(SQLAdapter):
         """Override for DebugTask method"""
         self.execute("select 1 as id")
 
+        self.connections.get_thread_connection().handle.close()
+
+    def cleanup_connections(self) -> None:
+        self.connections.cleanup_all()
+        logger.debug("cleanup_connections")
+
+        # close all sessions
+        for conn_mgr in SparkConnectionManager.connection_managers:
+            SparkConnectionManager.connection_managers[conn_mgr].delete_session()
+
+        # reset connection_manager list
+        SparkConnectionManager.connection_managers = {}
+
 
 # spark does something interesting with joins when both tables have the same
 # static values for the join condition and complains that the join condition is
