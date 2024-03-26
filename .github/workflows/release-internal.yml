@@ -1,10 +1,10 @@
 # What?
 #
-# Tag and release an arbitrary sha. Uploads to an internal archive for further processing.
+# Tag and release an arbitrary ref. Uploads to an internal archive for further processing.
 #
 # How?
 #
-# After checking out and testing the provided sha, the image is built and uploaded.
+# After checking out and testing the provided ref, the image is built and uploaded.
 #
 # When?
 #
@@ -19,7 +19,7 @@ on:
         description: "The release version number (i.e. 1.0.0b1)"
         type: string
         required: true
-      sha:
+      ref:
         description: "The ref (sha or branch name) to use"
         type: string
         default: "main"
@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8"]
 
     steps:
       - name: Check out the repository
@@ -115,7 +115,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       # the python version used here is not what is used in the tests themselves
       - name: Set up Python for dagger
@@ -142,6 +142,6 @@ jobs:
       version_number: "${{ inputs.version_number }}"
       package_test_command: "${{ inputs.package_test_command }}"
       dbms_name: "spark"
-      sha: "${{ inputs.sha }}"
+      ref: "${{ inputs.ref }}"
 
     secrets: "inherit"
