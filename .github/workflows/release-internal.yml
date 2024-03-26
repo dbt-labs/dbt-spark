@@ -39,24 +39,19 @@ env:
 
 jobs:
   run-unit-tests:
-    name: unit test / python ${{ matrix.python-version }}
+    name: "Unit tests"
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8"]
-
     steps:
-      - name: Check out the repository
+      - name: "Check out the repository"
         uses: actions/checkout@v3
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: "Set up Python ${{ env.PYTHON_TARGET_VERSION }}"
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "${{ env.PYTHON_TARGET_VERSION }}"
 
       - name: Install python dependencies
         run: |
@@ -72,7 +67,8 @@ jobs:
         run: python -m pytest --color=yes --csv unit_results.csv -v tests/unit
 
   run-integration-tests:
-    name: ${{ matrix.test }}
+    name: "${{ matrix.test }}"
+    needs: [run-unit-tests]
     runs-on: ubuntu-latest
 
     strategy:
@@ -129,12 +125,12 @@ jobs:
           python -m pip --version
           python -m pip install -r dagger/requirements.txt
 
-      - name: Run tests for ${{ matrix.test }}
+      - name: "Run tests for ${{ matrix.test }}"
         run: python dagger/run_dbt_spark_tests.py --profile ${{ matrix.test }}
 
   invoke-reusable-workflow:
     name: "Build and Release Internally"
-    needs: [run-unit-tests, run-integration-tests]
+    needs: [run-integration-tests]
 
     uses: "dbt-labs/dbt-release/.github/workflows/internal-archive-release.yml@mp/finish_internal_workflow"
 
