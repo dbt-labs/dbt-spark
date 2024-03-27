@@ -236,7 +236,7 @@ class SparkAdapter(SQLAdapter):
             )
         except DbtRuntimeError as e:
             errmsg = getattr(e, "msg", "")
-            if f"Database '{schema_relation}' not found" in errmsg:
+            if f"Database '{schema_relation}' not found" in errmsg:  # noqa: E713
                 return []
             # Iceberg compute engine behavior: show table
             elif "SHOW TABLE EXTENDED is not supported for v2 tables" in errmsg:
