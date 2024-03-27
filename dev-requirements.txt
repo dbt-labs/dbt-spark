@@ -7,7 +7,7 @@ git+https://github.com/dbt-labs/dbt-adapters.git#subdirectory=dbt-tests-adapter
 
 # if version 1.x or greater -> pin to major version
 # if version 0.x -> pin to minor
-black~=23.12
+black>=24.3
 bumpversion~=0.6.0
 click~=8.1
 flake8~=6.1;python_version>="3.8"
