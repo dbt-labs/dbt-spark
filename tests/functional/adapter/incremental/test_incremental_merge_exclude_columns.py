@@ -5,7 +5,7 @@ from dbt.tests.adapter.incremental.test_incremental_merge_exclude_columns import
 )
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
+@pytest.mark.skip_profile("spark_session", "apache_spark", "spark_connect")
 class TestMergeExcludeColumns(BaseMergeExcludeColumns):
     @pytest.fixture(scope="class")
     def project_config_update(self):

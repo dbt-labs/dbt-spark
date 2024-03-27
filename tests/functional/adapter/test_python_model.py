@@ -8,17 +8,23 @@ from dbt.tests.adapter.python_model.test_python_model import (
 from dbt.tests.adapter.python_model.test_spark import BasePySparkTests
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "apache_spark", "spark_session", "databricks_sql_endpoint", "spark_connect"
+)
 class TestPythonModelSpark(BasePythonModelTests):
     pass
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "apache_spark", "spark_session", "databricks_sql_endpoint", "spark_connect"
+)
 class TestPySpark(BasePySparkTests):
     pass
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "apache_spark", "spark_session", "databricks_sql_endpoint", "spark_connect"
+)
 class TestPythonIncrementalModelSpark(BasePythonIncrementalTests):
     @pytest.fixture(scope="class")
     def project_config_update(self):
@@ -63,7 +69,9 @@ def model(dbt, spark):
 """
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "apache_spark", "spark_session", "databricks_sql_endpoint", "spark_connect"
+)
 class TestChangingSchemaSpark:
     @pytest.fixture(scope="class")
     def models(self):

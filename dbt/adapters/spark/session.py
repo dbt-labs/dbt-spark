@@ -6,7 +6,7 @@ import datetime as dt
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 
-from dbt.adapters.spark.connections import SparkConnectionWrapper
+from dbt.adapters.spark.connections import SparkConnectionMethod, SparkConnectionWrapper
 from dbt.adapters.events.logging import AdapterLogger
 from dbt_common.utils.encoding import DECIMALS
 from dbt_common.exceptions import DbtRuntimeError
@@ -27,9 +27,17 @@ class Cursor:
     https://github.com/mkleehammer/pyodbc/wiki/Cursor
     """
 
-    def __init__(self, *, server_side_parameters: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        *,
+        conn_method: SparkConnectionMethod,
+        conn_url: str,
+        server_side_parameters: Optional[Dict[str, Any]] = None,
+    ) -> None:
         self._df: Optional[DataFrame] = None
         self._rows: Optional[List[Row]] = None
+        self.conn_method: SparkConnectionMethod = conn_method
+        self.conn_url: str = conn_url
         self.server_side_parameters = server_side_parameters or {}
 
     def __enter__(self) -> Cursor:
@@ -113,12 +121,15 @@ class Cursor:
         if len(parameters) > 0:
             sql = sql % parameters
 
-        builder = SparkSession.builder.enableHiveSupport()
+        builder = SparkSession.builder
 
         for parameter, value in self.server_side_parameters.items():
             builder = builder.config(parameter, value)
 
-        spark_session = builder.getOrCreate()
+        if self.conn_method == SparkConnectionMethod.CONNECT:
+            spark_session = builder.remote(self.conn_url).getOrCreate()
+        elif self.conn_method == SparkConnectionMethod.SESSION:
+            spark_session = builder.enableHiveSupport().getOrCreate()
 
         try:
             self._df = spark_session.sql(sql)
@@ -175,7 +186,15 @@ class Connection:
     https://github.com/mkleehammer/pyodbc/wiki/Connection
     """
 
-    def __init__(self, *, server_side_parameters: Optional[Dict[Any, str]] = None) -> None:
+    def __init__(
+        self,
+        *,
+        conn_method: SparkConnectionMethod,
+        conn_url: str,
+        server_side_parameters: Optional[Dict[Any, str]] = None,
+    ) -> None:
+        self.conn_method = conn_method
+        self.conn_url = conn_url
         self.server_side_parameters = server_side_parameters or {}
 
     def cursor(self) -> Cursor:
@@ -187,7 +206,11 @@ class Connection:
         out : Cursor
             The cursor.
         """
-        return Cursor(server_side_parameters=self.server_side_parameters)
+        return Cursor(
+            conn_method=self.conn_method,
+            conn_url=self.conn_url,
+            server_side_parameters=self.server_side_parameters,
+        )
 
 
 class SessionConnectionWrapper(SparkConnectionWrapper):

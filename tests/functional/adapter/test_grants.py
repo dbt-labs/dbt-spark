@@ -6,7 +6,7 @@ from dbt.tests.adapter.grants.test_seed_grants import BaseSeedGrants
 from dbt.tests.adapter.grants.test_snapshot_grants import BaseSnapshotGrants
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session")
+@pytest.mark.skip_profile("apache_spark", "spark_session", "spark_connect")
 class TestModelGrantsSpark(BaseModelGrants):
     def privilege_grantee_name_overrides(self):
         # insert --> modify
@@ -18,7 +18,7 @@ class TestModelGrantsSpark(BaseModelGrants):
         }
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session")
+@pytest.mark.skip_profile("apache_spark", "spark_session", "spark_connect")
 class TestIncrementalGrantsSpark(BaseIncrementalGrants):
     @pytest.fixture(scope="class")
     def project_config_update(self):
@@ -30,7 +30,7 @@ class TestIncrementalGrantsSpark(BaseIncrementalGrants):
         }
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session")
+@pytest.mark.skip_profile("apache_spark", "spark_session", "spark_connect")
 class TestSeedGrantsSpark(BaseSeedGrants):
     # seeds in dbt-spark are currently "full refreshed," in such a way that
     # the grants are not carried over
@@ -39,7 +39,7 @@ class TestSeedGrantsSpark(BaseSeedGrants):
         return False
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session")
+@pytest.mark.skip_profile("apache_spark", "spark_session", "spark_connect")
 class TestSnapshotGrantsSpark(BaseSnapshotGrants):
     @pytest.fixture(scope="class")
     def project_config_update(self):
@@ -51,7 +51,7 @@ class TestSnapshotGrantsSpark(BaseSnapshotGrants):
         }
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session")
+@pytest.mark.skip_profile("apache_spark", "spark_session", "spark_connect")
 class TestInvalidGrantsSpark(BaseInvalidGrants):
     def grantee_does_not_exist_error(self):
         return "RESOURCE_DOES_NOT_EXIST"

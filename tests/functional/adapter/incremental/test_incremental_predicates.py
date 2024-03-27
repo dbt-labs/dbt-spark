@@ -27,7 +27,7 @@ select cast(3 as bigint) as id, 'anyway' as msg, 'purple' as color
 """
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
+@pytest.mark.skip_profile("spark_session", "apache_spark", "spark_connect")
 class TestIncrementalPredicatesMergeSpark(BaseIncrementalPredicates):
     @pytest.fixture(scope="class")
     def project_config_update(self):
@@ -46,7 +46,7 @@ class TestIncrementalPredicatesMergeSpark(BaseIncrementalPredicates):
         }
 
 
-@pytest.mark.skip_profile("spark_session", "apache_spark")
+@pytest.mark.skip_profile("spark_session", "apache_spark", "spark_connect")
 class TestPredicatesMergeSpark(BaseIncrementalPredicates):
     @pytest.fixture(scope="class")
     def project_config_update(self):
