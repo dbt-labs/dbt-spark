@@ -1,2 +1,3 @@
 dagger-io~=0.9.7
 python-dotenv
+beartype<0.18.0
