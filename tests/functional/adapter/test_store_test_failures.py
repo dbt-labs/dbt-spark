@@ -34,7 +34,7 @@ class TestSparkStoreTestFailures(StoreTestFailuresBase):
         self.run_tests_store_failures_and_assert(project)
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session")
+@pytest.mark.skip_profile("apache_spark", "spark_session", "spark_connect")
 class TestSparkStoreTestFailuresWithDelta(StoreTestFailuresBase):
     @pytest.fixture(scope="class")
     def project_config_update(self):
@@ -82,7 +82,8 @@ class TestStoreTestFailuresAsProjectLevelView(basic.StoreTestFailuresAsProjectLe
     pass
 
 
-@pytest.mark.skip_profile("spark_session")
+# spark connect fails because of issue [ADAP-931]
+@pytest.mark.skip_profile("spark_session", "spark_connect")
 class TestStoreTestFailuresAsGeneric(basic.StoreTestFailuresAsGeneric):
     pass
 

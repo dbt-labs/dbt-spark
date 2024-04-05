@@ -14,7 +14,7 @@ from tests.functional.adapter.dbt_clone.fixtures import (
 )
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session")
+@pytest.mark.skip_profile("apache_spark", "spark_session", "spark_connect")
 class TestSparkBigqueryClonePossible(BaseClonePossible):
     @pytest.fixture(scope="class")
     def models(self):
