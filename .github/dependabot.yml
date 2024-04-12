@@ -6,7 +6,7 @@ updates:
       interval: "daily"
     rebase-strategy: "disabled"
   - package-ecosystem: "github-actions"
-    directory: "/.github/workflows"
+    directory: "/"
     schedule:
       interval: "weekly"
     rebase-strategy: "disabled"
