@@ -17,6 +17,6 @@ clear \
 "#########################################\n"\
 && docker build --tag dbt-spark-1.0.0b1 \
   --target dbt-spark \
-  --build-arg dbt_spark_ref=dbt-spark@v1.0.0b1 \
+  --build-arg commit_ref=v1.0.0b1 \
   docker \
 && docker run dbt-spark-1.0.0b1 --version

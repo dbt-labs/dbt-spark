@@ -13,8 +13,8 @@
 # This will only run manually. Run this workflow only after the
 # version bump workflow is completed and related changes are reviewed and merged.
 #
-
-name: Release to GitHub and PyPI
+name: "Release to GitHub, PyPI, and Docker"
+run-name: "Release ${{ inputs.version_number }} to GitHub, PyPI, and Docker"
 
 on:
   workflow_dispatch:
@@ -88,26 +88,20 @@ jobs:
   # so that the integration tests stage will be skipped.
   audit-version-and-changelog:
     name: Bump package version, Generate changelog
-
     uses: dbt-labs/dbt-spark/.github/workflows/release-prep.yml@main
-
     with:
       sha: ${{ inputs.sha }}
       version_number: ${{ inputs.version_number }}
       target_branch: ${{ inputs.target_branch }}
       env_setup_script_path: ""
       test_run: ${{ inputs.test_run }}
-
     secrets: inherit
 
   log-outputs-audit-version-and-changelog:
     name: "[Log output] Bump package version, Generate changelog"
     if: ${{ !failure() && !cancelled() }}
-
     needs: [audit-version-and-changelog]
-
     runs-on: ubuntu-latest
-
     steps:
       - name: Print variables
         run: |
@@ -118,9 +112,7 @@ jobs:
     name: Build, Test, Package
     if: ${{ !failure() && !cancelled() }}
     needs: [audit-version-and-changelog]
-
     uses: dbt-labs/dbt-release/.github/workflows/build.yml@main
-
     with:
       sha: ${{ needs.audit-version-and-changelog.outputs.final_sha }}
       version_number: ${{ inputs.version_number }}
@@ -129,7 +121,6 @@ jobs:
       s3_bucket_name: ${{ inputs.s3_bucket_name }}
       package_test_command: ${{ inputs.package_test_command }}
       test_run: ${{ inputs.test_run }}
-
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -137,11 +128,8 @@ jobs:
   github-release:
     name: GitHub Release
     if: ${{ !failure() && !cancelled() }}
-
     needs: [audit-version-and-changelog, build-test-package]
-
     uses: dbt-labs/dbt-release/.github/workflows/github-release.yml@main
-
     with:
       sha: ${{ needs.audit-version-and-changelog.outputs.final_sha }}
       version_number: ${{ inputs.version_number }}
@@ -150,59 +138,38 @@ jobs:
 
   pypi-release:
     name: PyPI Release
-
     needs: [github-release]
-
     uses: dbt-labs/dbt-release/.github/workflows/pypi-release.yml@main
-
     with:
       version_number: ${{ inputs.version_number }}
       test_run: ${{ inputs.test_run }}
-
     secrets:
       PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
-  is-docker-release:
-    name: "Is Docker Release"
-    runs-on: ubuntu-latest
-    needs: [pypi-release]
-    outputs:
-      is-docker-release: ${{ steps.semver.outputs.is-pre-release == 0 }}
-    steps:
-      - name: "Audit version to determine if it is a pre-release"
-        id: semver
-        uses: dbt-labs/actions/parse-semver@v1.1.0
-        with:
-          version: ${{ inputs.version_number }}
-
   docker-release:
     name: "Docker Release"
-    needs: [is-docker-release]
-    if: ${{ needs.is-docker-release.outputs.is-docker-release }}
+    if: ${{ !failure() && !cancelled() }}
+    needs: [bump-version-generate-changelog, build-test-package, github-release]
     permissions:
       packages: write
-    uses: dbt-labs/dbt-release/.github/workflows/release-docker.yml@main
+    uses: dbt-labs/dbt-release/.github/workflows/release-docker.yml@docker-release
     with:
-      package: "dbt-spark"
+      package: ${{ github.event.repository.name }}
       version_number: ${{ inputs.version_number }}
       test_run: ${{ inputs.test_run }}
 
   slack-notification:
     name: Slack Notification
     if: ${{ failure() && (!inputs.test_run || inputs.nightly_release) }}
-
     needs:
       [
-        audit-version-and-changelog,
-        build-test-package,
         github-release,
         pypi-release,
+        docker-release,
       ]
-
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
       status: "failure"
-
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}

@@ -14,11 +14,12 @@ docker build --tag <your_image_name> --target dbt-spark <path/to/dockerfile>
 
 ---
 
-By default the images will be populated with the most recent release of `dbt-spark`.  If you need to use a different version you can specify it by git ref using the `--build-arg` flag:
+By default the image will be populated with the latest version of `dbt-spark` on `main`.
+If you need to use a different version you can specify it by git ref using the `--build-arg` flag:
 ```shell
 docker build --tag <your_image_name> \
   --target dbt-spark \
-  --build-arg dbt_spark_ref=<git_ref> \
+  --build-arg commit_ref=<commit_ref> \
   <path/to/dockerfile>
 ```
 
@@ -35,32 +36,22 @@ cd dbt-core/docker
 docker build \
   --tag my-other-dbt \
   --target dbt-spark \
-  --build-arg dbt_spark_ref=dbt-spark@v1.0.0b1 \
+  --build-arg commit_ref=v1.0.0b1 \
  .
 ```
 
 ## Special cases
 There are a few special cases worth noting:
 * The `dbt-spark` database adapter comes in three different versions named `PyHive`, `ODBC`, and the default `all`.
-If you wish to override this you can use the `--build-arg` flag with the value of `dbt_spark_version=<version_name>`.
+If you wish to override this you can use the `--build-arg` flag with the value of `extras=<extras_name>`.
 See the [docs](https://docs.getdbt.com/reference/warehouse-profiles/spark-profile) for more information.
 ```shell
 docker build --tag my_dbt \
   --target dbt-spark \
-  --build-arg dbt_spark_ref=dbt-spark@1.0.0b1 \
-  --build-arg dbt_spark_version=PyHive \
+  --build-arg commit_ref=v1.0.0b1 \
+  --build-arg extras=PyHive \
   <path/to/dockerfile>
 ```
-
-* If you need to build against another architecture (linux/arm64 in this example) you can override the `build_for` build arg:
-```shell
-docker build --tag my_dbt \
-  --target dbt-spark \
-  --build-arg build_for=linux/arm64 \
-  <path/to/dockerfile>
-```
-
-Supported architectures can be found in the python docker [dockerhub page](https://hub.docker.com/_/python).
 
 ## Running an image in a container:
 The `ENTRYPOINT` for this Dockerfile is the command `dbt` so you can bind-mount your project to `/usr/app` and use dbt as normal:
