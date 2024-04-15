@@ -155,8 +155,8 @@ jobs:
       packages: write
     uses: dbt-labs/dbt-release/.github/workflows/release-docker.yml@docker-release
     with:
-      package: ${{ github.event.repository.name }}
       version_number: ${{ inputs.version_number }}
+      dockerfile: "docker-release/Dockerfile"
       test_run: ${{ inputs.test_run }}
 
   slack-notification:
