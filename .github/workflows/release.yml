@@ -150,7 +150,7 @@ jobs:
   docker-release:
     name: "Docker Release"
     if: ${{ !failure() && !cancelled() }}
-    needs: [bump-version-generate-changelog, build-test-package, github-release]
+    needs: [github-release]
     permissions:
       packages: write
     uses: dbt-labs/dbt-release/.github/workflows/release-docker.yml@main
