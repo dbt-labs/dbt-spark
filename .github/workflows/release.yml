@@ -56,6 +56,11 @@ on:
         type: boolean
         default: true
         required: false
+      only_docker:
+        description: "Only release Docker image, skip GitHub & PyPI"
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: write # this is the permission that allows creating a new release
@@ -66,7 +71,7 @@ defaults:
 
 jobs:
   log-inputs:
-    name: Log Inputs
+    name: "Log Inputs"
     runs-on: ubuntu-latest
     steps:
       - name: "[DEBUG] Print Variables"
@@ -79,6 +84,7 @@ jobs:
           echo AWS S3 bucket name:                 ${{ inputs.s3_bucket_name }}
           echo Package test command:               ${{ inputs.package_test_command }}
           echo Test run:                           ${{ inputs.test_run }}
+          echo Only Docker:                        ${{ inputs.only_docker }}
 
   # The Spark repository uses CircleCI to run integration tests.
   # Because of this, the process of version bumps will be manual
@@ -87,7 +93,7 @@ jobs:
   # We are passing `env_setup_script_path` as an empty string
   # so that the integration tests stage will be skipped.
   audit-version-and-changelog:
-    name: Bump package version, Generate changelog
+    name: "Bump package version, Generate changelog"
     uses: dbt-labs/dbt-spark/.github/workflows/release-prep.yml@main
     with:
       sha: ${{ inputs.sha }}
@@ -99,7 +105,7 @@ jobs:
 
   log-outputs-audit-version-and-changelog:
     name: "[Log output] Bump package version, Generate changelog"
-    if: ${{ !failure() && !cancelled() }}
+    if: ${{ !failure() && !cancelled() && !inputs.only_docker }}
     needs: [audit-version-and-changelog]
     runs-on: ubuntu-latest
     steps:
@@ -109,8 +115,8 @@ jobs:
           echo Changelog path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
 
   build-test-package:
-    name: Build, Test, Package
-    if: ${{ !failure() && !cancelled() }}
+    name: "Build, Test, Package"
+    if: ${{ !failure() && !cancelled() && !inputs.only_docker }}
     needs: [audit-version-and-changelog]
     uses: dbt-labs/dbt-release/.github/workflows/build.yml@main
     with:
@@ -126,8 +132,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   github-release:
-    name: GitHub Release
-    if: ${{ !failure() && !cancelled() }}
+    name: "GitHub Release"
+    if: ${{ !failure() && !cancelled() && !inputs.only_docker }}
     needs: [audit-version-and-changelog, build-test-package]
     uses: dbt-labs/dbt-release/.github/workflows/github-release.yml@main
     with:
@@ -137,7 +143,8 @@ jobs:
       test_run: ${{ inputs.test_run }}
 
   pypi-release:
-    name: PyPI Release
+    name: "PyPI Release"
+    if: ${{ !failure() && !cancelled() && !inputs.only_docker }}
     needs: [github-release]
     uses: dbt-labs/dbt-release/.github/workflows/pypi-release.yml@main
     with:
@@ -149,7 +156,10 @@ jobs:
 
   docker-release:
     name: "Docker Release"
-    if: ${{ !failure() && !cancelled() }}
+    # We cannot release to docker on a test run because it uses the tag in GitHub as
+    # what we need to release but draft releases don't actually tag the commit so it
+    # finds nothing to release
+    if: ${{ !failure() && !cancelled() && (!inputs.test_run || inputs.only_docker) }}
     needs: [github-release]
     permissions:
       packages: write
