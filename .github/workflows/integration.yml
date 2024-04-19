@@ -92,7 +92,7 @@ jobs:
 
       # the python version used here is not what is used in the tests themselves
       - name: Set up Python for dagger
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
