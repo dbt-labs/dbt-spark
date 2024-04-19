@@ -1,8 +1,17 @@
 version: 2
 updates:
-  # python dependencies
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "daily"
+    rebase-strategy: "disabled"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "disabled"
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
     rebase-strategy: "disabled"
