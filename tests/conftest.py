@@ -52,9 +52,9 @@ def databricks_cluster_target():
     return {
         "type": "spark",
         "method": "odbc",
-        "host": os.getenv("DBT_DATABRICKS_HOST_NAME"),
+        "host": os.getenv("DBT_ENV_SECRET_DBT_DATABRICKS_HOST_NAME"),
         "cluster": os.getenv("DBT_DATABRICKS_CLUSTER_NAME"),
-        "token": os.getenv("DBT_DATABRICKS_TOKEN"),
+        "token": os.getenv("DBT_ENV_SECRET_DBT_DATABRICKS_TOKEN"),
         "driver": os.getenv("ODBC_DRIVER"),
         "port": 443,
         "connect_retries": 3,
@@ -68,9 +68,9 @@ def databricks_sql_endpoint_target():
     return {
         "type": "spark",
         "method": "odbc",
-        "host": os.getenv("DBT_DATABRICKS_HOST_NAME"),
-        "endpoint": os.getenv("DBT_DATABRICKS_ENDPOINT"),
-        "token": os.getenv("DBT_DATABRICKS_TOKEN"),
+        "host": os.getenv("DBT_ENV_SECRET_DBT_DATABRICKS_HOST_NAME"),
+        "endpoint": os.getenv("DBT_ENV_SECRET_DBT_DATABRICKS_ENDPOINT"),
+        "token": os.getenv("DBT_ENV_SECRET_DBT_DATABRICKS_TOKEN"),
         "driver": os.getenv("ODBC_DRIVER"),
         "port": 443,
         "connect_retries": 3,
@@ -82,9 +82,9 @@ def databricks_sql_endpoint_target():
 def databricks_http_cluster_target():
     return {
         "type": "spark",
-        "host": os.getenv("DBT_DATABRICKS_HOST_NAME"),
+        "host": os.getenv("DBT_ENV_SECRET_DBT_DATABRICKS_HOST_NAME"),
         "cluster": os.getenv("DBT_DATABRICKS_CLUSTER_NAME"),
-        "token": os.getenv("DBT_DATABRICKS_TOKEN"),
+        "token": os.getenv("DBT_ENV_SECRET_DBT_DATABRICKS_TOKEN"),
         "method": "http",
         "port": 443,
         "connect_retries": 3,
