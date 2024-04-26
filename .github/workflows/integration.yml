@@ -77,7 +77,7 @@ jobs:
     steps:
       - name: Check out the repository
         if: github.event_name != 'pull_request_target'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
 
@@ -85,14 +85,14 @@ jobs:
       # this is necessary for the `pull_request` event
       - name: Check out the repository (PR)
         if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha }}
 
       # the python version used here is not what is used in the tests themselves
       - name: Set up Python for dagger
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
