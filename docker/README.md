@@ -1,6 +1,5 @@
 # Docker for dbt
-This docker file is suitable for building dbt Docker images locally or using with CI/CD to automate populating a container registry.
-
+`Dockerfile` is suitable for building dbt Docker images locally or using with CI/CD to automate populating a container registry.
 
 ## Building an image:
 This Dockerfile can create images for the following target: `dbt-spark`
