@@ -64,4 +64,4 @@ help: ## Show this help message.
 
 .PHONY: docker-prod
 docker-prod:
-	docker build -f docker-release/Dockerfile -t dbt-spark .
+	docker build -f docker/Dockerfile -t dbt-spark .
