@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: "daily"
     rebase-strategy: "disabled"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "disabled"
   - package-ecosystem: "docker"
     directory: "/docker"
     schedule:
