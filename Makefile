@@ -62,12 +62,6 @@ help: ## Show this help message.
 	@echo 'targets:'
 	@grep -E '^[7+a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-
-.PHONY: docker-dev
-docker-dev:
-	docker build -f docker-dev/Dockerfile -t dbt-spark-dev .
-	docker run --rm -it --name dbt-spark-dev -v $(shell pwd):/opt/code dbt-spark-dev
-
 .PHONY: docker-prod
 docker-prod:
 	docker build -f docker-release/Dockerfile -t dbt-spark .
