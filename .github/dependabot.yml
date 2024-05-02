@@ -20,8 +20,3 @@ updates:
     schedule:
       interval: "weekly"
     rebase-strategy: "disabled"
-  - package-ecosystem: "docker"
-    directory: "/docker-release"
-    schedule:
-      interval: "weekly"
-    rebase-strategy: "disabled"
