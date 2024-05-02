@@ -166,7 +166,7 @@ jobs:
     uses: dbt-labs/dbt-release/.github/workflows/release-docker.yml@main
     with:
       version_number: ${{ inputs.version_number }}
-      dockerfile: "docker-release/Dockerfile"
+      dockerfile: "docker/Dockerfile"
       test_run: ${{ inputs.test_run }}
 
   slack-notification:
