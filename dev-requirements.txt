@@ -27,7 +27,7 @@ pytz~=2023.3
 types-pytz~=2023.3
 types-requests~=2.31
 twine~=4.0
-wheel~=0.42
+wheel~=0.43
 
 # Adapter specific dependencies
 mock~=5.1
