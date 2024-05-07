@@ -1,0 +1,6 @@
+kind: "Dependencies"
+body: "Bump mypy from 1.7.1 to 1.8.0"
+time: 2023-12-21T22:47:07.00000Z
+custom:
+  Author: dependabot[bot]
+  PR: 967
