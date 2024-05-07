@@ -1,6 +1,0 @@
-kind: Dependencies
-body: Add `dbt-core` as a dependency to preserve backwards compatibility for installation
-time: 2024-04-03T13:54:36.667724-04:00
-custom:
-  Author: mikealfare
-  PR: "1002"
