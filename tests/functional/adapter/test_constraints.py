@@ -358,10 +358,6 @@ class TestSparkIncrementalConstraintsRollback(
             "constraints_schema.yml": constraints_yml,
         }
 
-    @pytest.mark.skip(
-        "Databricks now raises an exception, which gets raised prior to the `expected_pass` check."
-        "See https://github.com/dbt-labs/dbt-spark/issues/1009"
-    )
     def test__constraints_enforcement_rollback(
         self, project, expected_color, expected_error_messages, null_model_sql
     ):
