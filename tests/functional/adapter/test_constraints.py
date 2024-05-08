@@ -358,13 +358,6 @@ class TestSparkIncrementalConstraintsRollback(
             "constraints_schema.yml": constraints_yml,
         }
 
-    def test__constraints_enforcement_rollback(
-        self, project, expected_color, expected_error_messages, null_model_sql
-    ):
-        super().test__constraints_enforcement_rollback(
-            project, expected_color, expected_error_messages, null_model_sql
-        )
-
 
 # TODO: Like the tests above, this does test that model-level constraints don't
 # result in errors, but it does not verify that they are actually present in
