@@ -1,6 +1,0 @@
-kind: Under the Hood
-body: Update dependabot config to cover GHA and Docker
-time: 2024-04-10T18:35:35.093246-04:00
-custom:
-  Author: mikealfare
-  Issue: "1006"
