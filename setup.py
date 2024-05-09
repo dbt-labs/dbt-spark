@@ -41,7 +41,7 @@ def _get_plugin_version_dict():
 
 
 package_name = "dbt-spark"
-package_version = "1.8.0rc1"
+package_version = "1.8.0"
 description = """The Apache Spark adapter plugin for dbt"""
 
 odbc_extras = ["pyodbc~=4.0.39"]
