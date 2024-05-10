@@ -316,7 +316,7 @@ class BaseSparkConstraintsRollbackSetup:
             "violate the new NOT NULL constraint",
             "(id > 0) violated by row with values:",  # incremental mats
             "DELTA_VIOLATE_CONSTRAINT_WITH_VALUES",  # incremental mats
-            "NOT NULL constraint violated for column",
+            "NOT NULL constraint violated for col",
         ]
 
     def assert_expected_error_messages(self, error_message, expected_error_messages):
@@ -357,17 +357,6 @@ class TestSparkIncrementalConstraintsRollback(
             "my_model.sql": my_incremental_model_sql,
             "constraints_schema.yml": constraints_yml,
         }
-
-    @pytest.mark.skip(
-        "Databricks now raises an exception, which gets raised prior to the `expected_pass` check."
-        "See https://github.com/dbt-labs/dbt-spark/issues/1009"
-    )
-    def test__constraints_enforcement_rollback(
-        self, project, expected_color, expected_error_messages, null_model_sql
-    ):
-        super().test__constraints_enforcement_rollback(
-            project, expected_color, expected_error_messages, null_model_sql
-        )
 
 
 # TODO: Like the tests above, this does test that model-level constraints don't
