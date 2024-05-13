@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update pyodbc requirement from ~=5.0.0 to ~=5.0.1"
-time: 2023-10-27T23:02:51.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 925

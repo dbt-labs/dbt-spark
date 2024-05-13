@@ -19,7 +19,6 @@ on:
   pull_request_target:
     paths-ignore:
       - ".changes/**"
-      - ".flake8"
       - ".gitignore"
       - "**.md"
 
