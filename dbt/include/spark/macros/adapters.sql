@@ -138,7 +138,7 @@
 
 {#-- We can't use temporary tables with `create ... as ()` syntax --#}
 {% macro spark__create_temporary_view(relation, compiled_code) -%}
-    create or replace temporary view {{ relation.identifier }} as
+    create or replace temporary view {{ relation }} as
       {{ compiled_code }}
 {%- endmacro -%}
 
