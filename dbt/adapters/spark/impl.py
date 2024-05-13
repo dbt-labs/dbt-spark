@@ -151,7 +151,7 @@ class SparkAdapter(SQLAdapter):
     def convert_datetime_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         return "timestamp"
 
-    def quote(self, identifier: str) -> str:  # type: ignore
+    def quote(self, identifier: str) -> str:
         return "`{}`".format(identifier)
 
     def _get_relation_information(self, row: agate.Row) -> RelationInfo:
