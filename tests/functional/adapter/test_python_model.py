@@ -24,13 +24,6 @@ class TestPythonIncrementalModelSpark(BasePythonIncrementalTests):
     def project_config_update(self):
         return {}
 
-    @pytest.mark.skip(
-        "Databricks can't find the transaction log"
-        "See https://github.com/dbt-labs/dbt-spark/issues/1033"
-    )
-    def test_incremental(self, project):
-        super().test_incremental(project)
-
 
 models__simple_python_model = """
 import pandas
