@@ -163,7 +163,7 @@ jobs:
     needs: [github-release]
     permissions:
       packages: write
-    uses: dbt-labs/dbt-release/.github/workflows/release-docker.yml@latest-wrangler-new-docker
+    uses: dbt-labs/dbt-release/.github/workflows/release-docker.yml@main
     with:
       version_number: ${{ inputs.version_number }}
       dockerfile: "docker/Dockerfile"
