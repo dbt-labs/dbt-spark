@@ -2,7 +2,9 @@ version: "3.7"
 services:
 
   dbt-spark3-thrift:
-    build: docker/
+    build:
+      context: ./docker
+      dockerfile: spark.Dockerfile
     ports:
       - "10000:10000"
       - "4040:4040"
