@@ -27,11 +27,9 @@ stages:
   - stage: Test
     jobs:
       - job: UnitTests
+        workspace:
+          clean: all
         steps:
-          - task: UsePythonVersion@0
-            displayName: Set python version
-            inputs:
-              versionSpec: "3.10"
           - script: |
               python -m venv venv
               . ./venv/bin/activate
