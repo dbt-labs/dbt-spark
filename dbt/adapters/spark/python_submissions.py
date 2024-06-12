@@ -274,8 +274,7 @@ class DBCommand:
 
 class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
     def check_credentials(self) -> None:
-        if not self.cluster_id:
-            pass # CCCS-LCC Note: No credentials needed as it's retrieved from the system
+        pass # CCCS-LCC Note: No credentials needed as it's retrieved from the system
 
     def submit(self, compiled_code: str) -> None:
         try:
