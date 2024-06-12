@@ -42,7 +42,7 @@ stages:
             displayName: Install dbt-spark-hogwarts
             workingDirectory: $(Pipeline.Workspace)/s
           - script: |
-              . ./venv/bin/activate
+              . env/bin/activate
               python -m tox -e unit
             workingDirectory: $(Pipeline.Workspace)/s
             displayName: Test
