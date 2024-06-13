@@ -14,6 +14,7 @@ from typing import (
     Callable,
     Set,
     FrozenSet,
+    TYPE_CHECKING,
 )
 
 from dbt.adapters.base.relation import InformationSchema
@@ -24,7 +25,10 @@ from dbt_common.utils import AttrDict, executor
 
 from typing_extensions import TypeAlias
 
-import agate
+if TYPE_CHECKING:
+    # Indirectly imported via agate_helper, which is lazy loaded further downfile.
+    # Used by mypy for earlier type hints.
+    import agate
 
 from dbt.adapters.base import AdapterConfig, PythonJobHelper
 from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport
@@ -127,28 +131,28 @@ class SparkAdapter(SQLAdapter):
         return "current_timestamp()"
 
     @classmethod
-    def convert_text_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_text_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "string"
 
     @classmethod
-    def convert_number_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_number_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         decimals = agate_table.aggregate(agate.MaxPrecision(col_idx))
         return "double" if decimals else "bigint"
 
     @classmethod
-    def convert_integer_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_integer_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "bigint"
 
     @classmethod
-    def convert_date_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_date_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "date"
 
     @classmethod
-    def convert_time_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_time_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "time"
 
     @classmethod
-    def convert_datetime_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_datetime_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "timestamp"
 
     def quote(self, identifier: str) -> str:
@@ -193,7 +197,7 @@ class SparkAdapter(SQLAdapter):
 
     def _build_spark_relation_list(
         self,
-        row_list: agate.Table,
+        row_list: "agate.Table",
         relation_info_func: Callable[[agate.Row], RelationInfo],
     ) -> List[BaseRelation]:
         """Aggregate relations with format metadata included."""
@@ -370,7 +374,7 @@ class SparkAdapter(SQLAdapter):
         self,
         relation_configs: Iterable[RelationConfig],
         used_schemas: FrozenSet[Tuple[str, str]],
-    ) -> Tuple[agate.Table, List[Exception]]:
+    ) -> Tuple["agate.Table", List[Exception]]:
         schema_map = self._get_catalog_schemas(relation_configs)
         if len(schema_map) > 1:
             raise CompilationError(
@@ -378,7 +382,7 @@ class SparkAdapter(SQLAdapter):
             )
 
         with executor(self.config) as tpe:
-            futures: List[Future[agate.Table]] = []
+            futures: List[Future["agate.Table"]] = []
             for info, schemas in schema_map.items():
                 for schema in schemas:
                     futures.append(
@@ -399,7 +403,8 @@ class SparkAdapter(SQLAdapter):
         information_schema: InformationSchema,
         schemas: Set[str],
         used_schemas: FrozenSet[Tuple[str, str]],
-    ) -> agate.Table:
+    ) -> "agate.Table":
+        import agate
         if len(schemas) != 1:
             raise CompilationError(
                 f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
@@ -486,7 +491,7 @@ class SparkAdapter(SQLAdapter):
             "all_purpose_cluster": AllPurposeClusterPythonJobHelper,
         }
 
-    def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
+    def standardize_grants_dict(self, grants_table: "agate.Table") -> dict:
         grants_dict: Dict[str, List[str]] = {}
         for row in grants_table:
             grantee = row["Principal"]
