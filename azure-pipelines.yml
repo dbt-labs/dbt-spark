@@ -33,6 +33,7 @@ stages:
               python.version: "3.10"
         steps:
           - script: |
+              sudo apt-get install libsasl2-dev
               virtualenv -p python$(pythonVersion) env
               . env/bin/activate
               pip install --upgrade pip
