@@ -34,6 +34,7 @@ stages:
         steps:
           - script: |
               sudo apt-get install libsasl2-dev
+              sudo apt-get install libbz2-dev
               virtualenv -p python$(pythonVersion) env
               . env/bin/activate
               pip install --upgrade pip
@@ -43,6 +44,8 @@ stages:
             displayName: Install dbt-spark-hogwarts
             workingDirectory: $(Pipeline.Workspace)/s
           - script: |
+              sudo apt-get install libsasl2-dev
+              sudo apt-get install libbz2-dev
               . env/bin/activate
               python -m tox -e unit
             workingDirectory: $(Pipeline.Workspace)/s
