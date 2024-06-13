@@ -136,6 +136,8 @@ class SparkAdapter(SQLAdapter):
 
     @classmethod
     def convert_number_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
+        import agate
+
         decimals = agate_table.aggregate(agate.MaxPrecision(col_idx))
         return "double" if decimals else "bigint"
 
@@ -158,7 +160,7 @@ class SparkAdapter(SQLAdapter):
     def quote(self, identifier: str) -> str:
         return "`{}`".format(identifier)
 
-    def _get_relation_information(self, row: agate.Row) -> RelationInfo:
+    def _get_relation_information(self, row: "agate.Row") -> RelationInfo:
         """relation info was fetched with SHOW TABLES EXTENDED"""
         try:
             _schema, name, _, information = row
@@ -169,7 +171,7 @@ class SparkAdapter(SQLAdapter):
 
         return _schema, name, information
 
-    def _get_relation_information_using_describe(self, row: agate.Row) -> RelationInfo:
+    def _get_relation_information_using_describe(self, row: "agate.Row") -> RelationInfo:
         """Relation info fetched using SHOW TABLES and an auxiliary DESCRIBE statement"""
         try:
             _schema, name, _ = row
@@ -198,7 +200,7 @@ class SparkAdapter(SQLAdapter):
     def _build_spark_relation_list(
         self,
         row_list: "agate.Table",
-        relation_info_func: Callable[[agate.Row], RelationInfo],
+        relation_info_func: Callable[["agate.Row"], RelationInfo],
     ) -> List[BaseRelation]:
         """Aggregate relations with format metadata included."""
         relations = []
@@ -404,7 +406,6 @@ class SparkAdapter(SQLAdapter):
         schemas: Set[str],
         used_schemas: FrozenSet[Tuple[str, str]],
     ) -> "agate.Table":
-        import agate
         if len(schemas) != 1:
             raise CompilationError(
                 f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
@@ -417,6 +418,9 @@ class SparkAdapter(SQLAdapter):
         for relation in self.list_relations(database, schema):
             logger.debug("Getting table schema for relation {}", str(relation))
             columns.extend(self._get_columns_for_catalog(relation))
+
+        import agate
+
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
     def check_schema_exists(self, database: str, schema: str) -> bool:
