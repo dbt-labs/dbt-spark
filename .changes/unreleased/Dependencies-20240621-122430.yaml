@@ -1,0 +1,6 @@
+kind: Dependencies
+body: Pin numpy to be lower than 2.0
+time: 2024-06-21T12:24:30.482026-05:00
+custom:
+    Author: McKnight-42
+    PR: "1053"
