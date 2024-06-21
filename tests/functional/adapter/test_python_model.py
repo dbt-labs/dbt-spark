@@ -15,7 +15,9 @@ class TestPythonModelSpark(BasePythonModelTests):
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestPySpark(BasePySparkTests):
-    pass
+    @pytest.mark.skip("https://github.com/dbt-labs/dbt-spark/issues/1054")
+    def test_different_dataframes(self, project):
+        return super().test_different_dataframes(project)
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
@@ -69,6 +71,7 @@ class TestChangingSchemaSpark:
     def models(self):
         return {"simple_python_model.py": models__simple_python_model}
 
+    @pytest.mark.skip("https://github.com/dbt-labs/dbt-spark/issues/1054")
     def test_changing_schema_with_log_validation(self, project, logs_dir):
         run_dbt(["run"])
         write_file(
