@@ -35,7 +35,7 @@ def model(dbt, spark):
         materialized='table',
         submission_method='job_cluster',
         job_cluster_config={
-            "spark_version": "7.3.x-scala2.12",
+            "spark_version": "12.2.x-scala2.12",
             "node_type_id": "i3.xlarge",
             "num_workers": 0,
             "spark_conf": {
