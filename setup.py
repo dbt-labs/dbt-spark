@@ -69,6 +69,7 @@ setup(
         "dbt-adapters>=1.1.1,<2.0",
         # add dbt-core to ensure backwards compatibility of installation, this is not a functional dependency
         "dbt-core>=1.8.0",
+        "numpy>=1.0,<2.0",
     ],
     extras_require={
         "ODBC": odbc_extras,
