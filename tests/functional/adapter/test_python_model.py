@@ -48,7 +48,7 @@ def model(dbt, spark):
                 "ResourceClass": "SingleNode"
             }
         },
-        packages=['spacy', 'torch', 'pydantic<1.10.3']
+        packages=['spacy', 'torch', 'pydantic>=1.10.8']
     )
     data = [[1,2]] * 10
     return spark.createDataFrame(data, schema=['test', 'test2'])
@@ -67,11 +67,23 @@ def model(dbt, spark):
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestChangingSchemaSpark:
+    """
+    Confirm that we can setup a spot instance and parse required packages into the Databricks job.
+
+    Notes:
+        - This test generates a spot instance on demand using the settings from `job_cluster_config`
+        in `models__simple_python_model` above. It takes several minutes to run due to creating the cluster.
+        The job can be monitored via "Data Engineering > Job Runs" or "Workflows > Job Runs"
+        in the Databricks UI (instead of via the normal cluster).
+        - The `spark_version` argument will need to periodically be updated. It will eventually become
+        unsupported and start experiencing issues.
+        - See https://github.com/explosion/spaCy/issues/12659 for why we're pinning pydantic
+    """
+
     @pytest.fixture(scope="class")
     def models(self):
         return {"simple_python_model.py": models__simple_python_model}
 
-    @pytest.mark.skip("https://github.com/dbt-labs/dbt-spark/issues/1054")
     def test_changing_schema_with_log_validation(self, project, logs_dir):
         run_dbt(["run"])
         write_file(
