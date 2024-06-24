@@ -10,15 +10,12 @@
 #
 # Manual trigger.
 
-name: "Release internal patch"
+name: "Release to Cloud"
+run-name: "Release to Cloud off of ${{ inputs.ref }}"
 
 on:
   workflow_dispatch:
     inputs:
-      version_number:
-        description: "The release version number (i.e. 1.0.0b1)"
-        type: string
-        required: true
       ref:
         description: "The ref (sha or branch name) to use"
         type: string
@@ -29,6 +26,11 @@ on:
         type: string
         default: "python -c \"import dbt.adapters.spark\""
         required: true
+      skip_tests:
+        description: "Should the tests be skipped? (default to false)"
+        type: boolean
+        required: true
+        default: false
 
 defaults:
   run:
@@ -129,15 +131,14 @@ jobs:
         run: python dagger/run_dbt_spark_tests.py --profile ${{ matrix.test }}
 
   invoke-reusable-workflow:
-    name: "Build and Release Internally"
+    name: "Create cloud release"
     needs: [run-integration-tests]
-
     uses: "dbt-labs/dbt-release/.github/workflows/internal-archive-release.yml@main"
 
     with:
-      version_number: "${{ inputs.version_number }}"
       package_test_command: "${{ inputs.package_test_command }}"
       dbms_name: "spark"
       ref: "${{ inputs.ref }}"
+      skip_tests: "${{ inputs.skip_tests }}"
 
     secrets: "inherit"
