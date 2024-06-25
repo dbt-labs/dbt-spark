@@ -13,5 +13,6 @@ class TestSparkShowSqlHeader(BaseShowSqlHeader):
     pass
 
 
+@pytest.mark.skip_profile("spark_session")
 class TestSparkShowDoesNotHandleDoubleLimit(BaseShowDoesNotHandleDoubleLimit):
     pass
