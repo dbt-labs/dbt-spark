@@ -15,9 +15,22 @@ class TestPythonModelSpark(BasePythonModelTests):
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestPySpark(BasePySparkTests):
-    @pytest.mark.skip("https://github.com/dbt-labs/dbt-spark/issues/1054")
     def test_different_dataframes(self, project):
-        return super().test_different_dataframes(project)
+        """
+        Test that python models are supported using dataframes from:
+        - pandas
+        - pyspark
+        - pyspark.pandas (formerly dataspark.koalas)
+
+        Note:
+            The CI environment is on Apache Spark >3.1, which includes koalas as pyspark.pandas.
+            The only Databricks runtime that supports Apache Spark <=3.1 is 9.1 LTS, which is EOL 2024-09-23.
+            For more information, see:
+            - https://github.com/databricks/koalas
+            - https://docs.databricks.com/en/release-notes/runtime/index.html
+        """
+        results = run_dbt(["run", "--exclude", "koalas_df"])
+        assert len(results) == 3
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
