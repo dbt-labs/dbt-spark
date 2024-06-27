@@ -2,8 +2,8 @@
 # TODO: how to automate switching from develop to version branches?
 git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-core&subdirectory=core
 git+https://github.com/dbt-labs/dbt-common.git
-git+https://github.com/dbt-labs/dbt-adapters.git
-git+https://github.com/dbt-labs/dbt-adapters.git#subdirectory=dbt-tests-adapter
+git+https://github.com/dbt-labs/dbt-adapters.git@ADAP-207/get_show_sql_has_no_wrapping
+git+https://github.com/dbt-labs/dbt-adapters.git@ADAP-207/get_show_sql_has_no_wrapping#subdirectory=dbt-tests-adapter
 
 # dev
 ipdb~=0.13.13
