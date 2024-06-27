@@ -27,7 +27,7 @@ from dbt.adapters.exceptions import FailedToConnectError
 from dbt_common.exceptions import DbtRuntimeError
 
 
-from dbt.events import AdapterLogger
+from dbt.adapters.events.logging import AdapterLogger
 from dbt.utils import DECIMALS
 
 from datetime import datetime
