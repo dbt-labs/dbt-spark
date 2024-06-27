@@ -7,6 +7,8 @@
 
 ## Previous Releases
 For information on prior major and minor releases, see their changelogs:
+- [1.8](https://github.com/dbt-labs/dbt-spark/blob/1.8.latest/CHANGELOG.md)
+- [1.7](https://github.com/dbt-labs/dbt-spark/blob/1.7.latest/CHANGELOG.md)
 - [1.6](https://github.com/dbt-labs/dbt-spark/blob/1.6.latest/CHANGELOG.md)
 - [1.5](https://github.com/dbt-labs/dbt-spark/blob/1.5.latest/CHANGELOG.md)
 - [1.4](https://github.com/dbt-labs/dbt-spark/blob/1.4.latest/CHANGELOG.md)
