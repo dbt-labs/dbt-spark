@@ -123,7 +123,7 @@ jobs:
 
       - name: "Audit Version And Parse Into Parts"
         id: semver
-        uses: dbt-labs/actions/parse-semver@v1.1.0
+        uses: dbt-labs/actions/parse-semver@v1.1.1
         with:
           version: ${{ inputs.version_number }}
 
