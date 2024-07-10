@@ -43,6 +43,7 @@ class TestPythonIncrementalModelSpark(BasePythonIncrementalTests):
 models__simple_python_model = """
 import pandas
 import torch
+import spacy
 
 def model(dbt, spark):
     dbt.config(
