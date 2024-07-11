@@ -278,7 +278,9 @@ class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
 
     def submit(self, compiled_code: str) -> None:
         try:
+            from copy import deepcopy
             spark = SparkSession.builder.getOrCreate() # Local passed to compiled_code call
+            model_config = deepcopy(self.parsed_model.get('config'))
             exec(compiled_code, locals())
         except Exception as e:
             print(f"There's an issue with the Python model. See trace: {traceback.format_exc()}")
