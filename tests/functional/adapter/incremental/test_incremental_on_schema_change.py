@@ -4,6 +4,7 @@ from dbt.tests.util import run_dbt
 
 from dbt.tests.adapter.incremental.test_incremental_on_schema_change import (
     BaseIncrementalOnSchemaChangeSetup,
+    BaseIncrementalCaseSenstivityOnSchemaChange,
 )
 
 
@@ -80,3 +81,7 @@ class TestDeltaOnSchemaChange(BaseIncrementalOnSchemaChangeSetup):
     def test_run_incremental_sync_all_columns(self, project):
         self.run_incremental_sync_all_columns(project)
         self.run_incremental_sync_remove_only(project)
+
+
+class TestIncrementalCaseSenstivityOnSchemaChange(BaseIncrementalCaseSenstivityOnSchemaChange):
+    pass
