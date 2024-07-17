@@ -2,6 +2,7 @@
 Note that all imports should be inside the functions to avoid import/mocking
 issues.
 """
+
 import string
 import os
 from unittest import mock
@@ -9,7 +10,7 @@ from unittest import TestCase
 
 import agate
 import pytest
-from dbt.dataclass_schema import ValidationError
+from dbt_common.dataclass_schema import ValidationError
 from dbt.config.project import PartialProject
 
 

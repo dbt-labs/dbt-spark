@@ -1,17 +1,34 @@
+import os
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Union, Type, Tuple, Callable, Set
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Union,
+    Type,
+    Tuple,
+    Callable,
+    Set,
+    FrozenSet,
+    TYPE_CHECKING,
+)
 
 from dbt.adapters.base.relation import InformationSchema
-from dbt.contracts.graph.manifest import Manifest
+from dbt.adapters.contracts.connection import AdapterResponse
+from dbt.adapters.events.logging import AdapterLogger
+from dbt_common.exceptions import DbtRuntimeError, CompilationError
+from dbt_common.utils import AttrDict, executor
 
 from typing_extensions import TypeAlias
 
-import agate
-
-import dbt
-import dbt.exceptions
+if TYPE_CHECKING:
+    # Indirectly imported via agate_helper, which is lazy loaded further downfile.
+    # Used by mypy for earlier type hints.
+    import agate
 
 from dbt.adapters.base import AdapterConfig, PythonJobHelper
 from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport
@@ -24,14 +41,16 @@ from dbt.adapters.spark.python_submissions import (
     AllPurposeClusterPythonJobHelper,
 )
 from dbt.adapters.base import BaseRelation
-from dbt.clients.agate_helper import DEFAULT_TYPE_TESTER
-from dbt.contracts.connection import AdapterResponse
-from dbt.contracts.graph.nodes import ConstraintType
-from dbt.contracts.relation import RelationType
-from dbt.events import AdapterLogger
-from dbt.utils import executor, AttrDict
+from dbt.adapters.contracts.relation import RelationType, RelationConfig
+from dbt_common.clients.agate_helper import DEFAULT_TYPE_TESTER
+from dbt_common.contracts.constraints import ConstraintType
 
 logger = AdapterLogger("Spark")
+packages = ["pyhive.hive", "thrift.transport", "thrift.protocol"]
+log_level = os.getenv("DBT_SPARK_LOG_LEVEL", "ERROR")
+for package in packages:
+    logger.debug(f"Setting {package} logging to {log_level}")
+    logger.set_adapter_dependency_log_level(package, log_level)
 
 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"
@@ -112,50 +131,52 @@ class SparkAdapter(SQLAdapter):
         return "current_timestamp()"
 
     @classmethod
-    def convert_text_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_text_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "string"
 
     @classmethod
-    def convert_number_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_number_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
+        import agate
+
         decimals = agate_table.aggregate(agate.MaxPrecision(col_idx))
         return "double" if decimals else "bigint"
 
     @classmethod
-    def convert_integer_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_integer_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "bigint"
 
     @classmethod
-    def convert_date_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_date_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "date"
 
     @classmethod
-    def convert_time_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_time_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "time"
 
     @classmethod
-    def convert_datetime_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+    def convert_datetime_type(cls, agate_table: "agate.Table", col_idx: int) -> str:
         return "timestamp"
 
-    def quote(self, identifier: str) -> str:  # type: ignore
+    def quote(self, identifier: str) -> str:
         return "`{}`".format(identifier)
 
-    def _get_relation_information(self, row: agate.Row) -> RelationInfo:
+    def _get_relation_information(self, row: "agate.Row") -> RelationInfo:
         """relation info was fetched with SHOW TABLES EXTENDED"""
         try:
             _schema, name, _, information = row
         except ValueError:
-            raise dbt.exceptions.DbtRuntimeError(
+            raise DbtRuntimeError(
                 f'Invalid value from "show tables extended ...", got {len(row)} values, expected 4'
             )
 
         return _schema, name, information
 
-    def _get_relation_information_using_describe(self, row: agate.Row) -> RelationInfo:
+    def _get_relation_information_using_describe(self, row: "agate.Row") -> RelationInfo:
         """Relation info fetched using SHOW TABLES and an auxiliary DESCRIBE statement"""
         try:
             _schema, name, _ = row
         except ValueError:
-            raise dbt.exceptions.DbtRuntimeError(
+            raise DbtRuntimeError(
                 f'Invalid value from "show tables ...", got {len(row)} values, expected 3'
             )
 
@@ -164,7 +185,7 @@ class SparkAdapter(SQLAdapter):
             table_results = self.execute_macro(
                 DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name}
             )
-        except dbt.exceptions.DbtRuntimeError as e:
+        except DbtRuntimeError as e:
             logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
             table_results = AttrDict()
 
@@ -178,8 +199,8 @@ class SparkAdapter(SQLAdapter):
 
     def _build_spark_relation_list(
         self,
-        row_list: agate.Table,
-        relation_info_func: Callable[[agate.Row], RelationInfo],
+        row_list: "agate.Table",
+        relation_info_func: Callable[["agate.Row"], RelationInfo],
     ) -> List[BaseRelation]:
         """Aggregate relations with format metadata included."""
         relations = []
@@ -219,7 +240,7 @@ class SparkAdapter(SQLAdapter):
                 row_list=show_table_extended_rows,
                 relation_info_func=self._get_relation_information,
             )
-        except dbt.exceptions.DbtRuntimeError as e:
+        except DbtRuntimeError as e:
             errmsg = getattr(e, "msg", "")
             if f"Database '{schema_relation}' not found" in errmsg:
                 return []
@@ -236,7 +257,7 @@ class SparkAdapter(SQLAdapter):
                         row_list=show_table_rows,
                         relation_info_func=self._get_relation_information_using_describe,
                     )
-                except dbt.exceptions.DbtRuntimeError as e:
+                except DbtRuntimeError as e:
                     description = "Error while retrieving information about"
                     logger.debug(f"{description} {schema_relation}: {e.msg}")
                     return []
@@ -298,7 +319,7 @@ class SparkAdapter(SQLAdapter):
                 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME, kwargs={"relation": relation}
             )
             columns = self.parse_describe_extended(relation, rows)
-        except dbt.exceptions.DbtRuntimeError as e:
+        except DbtRuntimeError as e:
             # spark would throw error when table doesn't exist, where other
             # CDW would just return and empty list, normalizing the behavior here
             errmsg = getattr(e, "msg", "")
@@ -352,16 +373,18 @@ class SparkAdapter(SQLAdapter):
             yield as_dict
 
     def get_catalog(
-        self, manifest: Manifest, selected_nodes: Optional[Set] = None
-    ) -> Tuple[agate.Table, List[Exception]]:
-        schema_map = self._get_catalog_schemas(manifest)
+        self,
+        relation_configs: Iterable[RelationConfig],
+        used_schemas: FrozenSet[Tuple[str, str]],
+    ) -> Tuple["agate.Table", List[Exception]]:
+        schema_map = self._get_catalog_schemas(relation_configs)
         if len(schema_map) > 1:
-            raise dbt.exceptions.CompilationError(
+            raise CompilationError(
                 f"Expected only one database in get_catalog, found " f"{list(schema_map)}"
             )
 
         with executor(self.config) as tpe:
-            futures: List[Future[agate.Table]] = []
+            futures: List[Future["agate.Table"]] = []
             for info, schemas in schema_map.items():
                 for schema in schemas:
                     futures.append(
@@ -371,7 +394,7 @@ class SparkAdapter(SQLAdapter):
                             self._get_one_catalog,
                             info,
                             [schema],
-                            manifest,
+                            relation_configs,
                         )
                     )
             catalogs, exceptions = catch_as_completed(futures)
@@ -381,10 +404,10 @@ class SparkAdapter(SQLAdapter):
         self,
         information_schema: InformationSchema,
         schemas: Set[str],
-        manifest: Manifest,
-    ) -> agate.Table:
+        used_schemas: FrozenSet[Tuple[str, str]],
+    ) -> "agate.Table":
         if len(schemas) != 1:
-            raise dbt.exceptions.CompilationError(
+            raise CompilationError(
                 f"Expected only one schema in spark _get_one_catalog, found " f"{schemas}"
             )
 
@@ -395,6 +418,9 @@ class SparkAdapter(SQLAdapter):
         for relation in self.list_relations(database, schema):
             logger.debug("Getting table schema for relation {}", str(relation))
             columns.extend(self._get_columns_for_catalog(relation))
+
+        import agate
+
         return agate.Table.from_object(columns, column_types=DEFAULT_TYPE_TESTER)
 
     def check_schema_exists(self, database: str, schema: str) -> bool:
@@ -469,7 +495,7 @@ class SparkAdapter(SQLAdapter):
             "all_purpose_cluster": AllPurposeClusterPythonJobHelper,
         }
 
-    def standardize_grants_dict(self, grants_table: agate.Table) -> dict:
+    def standardize_grants_dict(self, grants_table: "agate.Table") -> dict:
         grants_dict: Dict[str, List[str]] = {}
         for row in grants_table:
             grantee = row["Principal"]

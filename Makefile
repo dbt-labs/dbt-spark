@@ -3,7 +3,7 @@
 .PHONY: dev
 dev: ## Installs adapter in develop mode along with development dependencies
 	@\
-	pip install -e . -r requirements.txt -r dev-requirements.txt && pre-commit install
+	pip install -e . -r requirements.txt -r dev-requirements.txt -r dagger/requirements.txt && pre-commit install
 
 .PHONY: dev-uninstall
 dev-uninstall: ## Uninstalls all packages while maintaining the virtual environment
@@ -11,44 +11,22 @@ dev-uninstall: ## Uninstalls all packages while maintaining the virtual environm
 	pip freeze | grep -v "^-e" | cut -d "@" -f1 | xargs pip uninstall -y
 	pip uninstall -y dbt-spark
 
-.PHONY: mypy
-mypy: ## Runs mypy against staged changes for static type checking.
-	@\
-	pre-commit run --hook-stage manual mypy-check | grep -v "INFO"
-
-.PHONY: flake8
-flake8: ## Runs flake8 against staged changes to enforce style guide.
-	@\
-	pre-commit run --hook-stage manual flake8-check | grep -v "INFO"
-
-.PHONY: black
-black: ## Runs black  against staged changes to enforce style guide.
-	@\
-	pre-commit run --hook-stage manual black-check -v | grep -v "INFO"
-
 .PHONY: lint
 lint: ## Runs flake8 and mypy code checks against staged changes.
 	@\
-	pre-commit run flake8-check --hook-stage manual | grep -v "INFO"; \
-	pre-commit run mypy-check --hook-stage manual | grep -v "INFO"
-
-.PHONY: linecheck
-linecheck: ## Checks for all Python lines 100 characters or more
-	@\
-	find dbt -type f -name "*.py" -exec grep -I -r -n '.\{100\}' {} \;
+	pre-commit run --all-files
 
 .PHONY: unit
 unit: ## Runs unit tests with py38.
 	@\
-	tox -e py38
+	python -m pytest tests/unit
 
 .PHONY: test
 test: ## Runs unit tests with py38 and code checks against staged changes.
 	@\
-	tox -p -e py38; \
-	pre-commit run black-check --hook-stage manual | grep -v "INFO"; \
-	pre-commit run flake8-check --hook-stage manual | grep -v "INFO"; \
-	pre-commit run mypy-check --hook-stage manual | grep -v "INFO"
+	python -m pytest tests/unit; \
+	python dagger/run_dbt_spark_tests.py --profile spark_session \
+	pre-commit run --all-files
 
 .PHONY: clean
 	@echo "cleaning repo"
@@ -60,3 +38,7 @@ help: ## Show this help message.
 	@echo
 	@echo 'targets:'
 	@grep -E '^[7+a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+.PHONY: docker-prod
+docker-prod:
+	docker build -f docker/Dockerfile -t dbt-spark .

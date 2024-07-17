@@ -20,7 +20,6 @@ except ImportError:
     print('Please upgrade setuptools with "pip install --upgrade setuptools" ' "and try again")
     sys.exit(1)
 
-
 # pull long description from README
 this_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(this_directory, "README.md"), "r", encoding="utf8") as f:
@@ -32,7 +31,8 @@ def _get_plugin_version_dict():
     _version_path = os.path.join(this_directory, "dbt", "adapters", "spark", "__version__.py")
     _semver = r"""(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"""
     _pre = r"""((?P<prekind>a|b|rc)(?P<pre>\d+))?"""
-    _version_pattern = rf"""version\s*=\s*["']{_semver}{_pre}["']"""
+    _build = r"""(\+build[0-9]+)?"""
+    _version_pattern = rf"""version\s*=\s*["']{_semver}{_pre}{_build}["']"""
     with open(_version_path) as f:
         match = re.search(_version_pattern, f.read().strip())
         if match is None:
@@ -40,17 +40,8 @@ def _get_plugin_version_dict():
         return match.groupdict()
 
 
-# require a compatible minor version (~=), prerelease if this is a prerelease
-def _get_dbt_core_version():
-    parts = _get_plugin_version_dict()
-    minor = "{major}.{minor}.0".format(**parts)
-    pre = parts["prekind"] + "1" if parts["prekind"] else ""
-    return f"{minor}{pre}"
-
-
 package_name = "dbt-spark"
-package_version = "1.8.0a1"
-dbt_core_version = _get_dbt_core_version()
+package_version = "1.9.0a1"
 description = """The Apache Spark adapter plugin for dbt"""
 
 odbc_extras = ["pyodbc~=4.0.39"]
@@ -73,8 +64,11 @@ setup(
     packages=find_namespace_packages(include=["dbt", "dbt.*"]),
     include_package_data=True,
     install_requires=[
-        "dbt-core~={}".format(dbt_core_version),
         "sqlparams>=3.0.0",
+        "dbt-common>=1.0.4,<2.0",
+        "dbt-adapters>=1.1.1,<2.0",
+        # add dbt-core to ensure backwards compatibility of installation, this is not a functional dependency
+        "dbt-core>=1.8.0",
     ],
     extras_require={
         "ODBC": odbc_extras,

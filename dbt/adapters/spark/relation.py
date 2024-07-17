@@ -2,9 +2,9 @@ from typing import Optional, TypeVar
 from dataclasses import dataclass, field
 
 from dbt.adapters.base.relation import BaseRelation, Policy
+from dbt.adapters.events.logging import AdapterLogger
 
-from dbt.exceptions import DbtRuntimeError
-from dbt.events import AdapterLogger
+from dbt_common.exceptions import DbtRuntimeError
 
 logger = AdapterLogger("Spark")
 

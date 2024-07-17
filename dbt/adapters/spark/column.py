@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, TypeVar, Union
 
 from dbt.adapters.base.column import Column
-from dbt.dataclass_schema import dbtClassMixin
+from dbt_common.dataclass_schema import dbtClassMixin
 
 Self = TypeVar("Self", bound="SparkColumn")
 
@@ -21,7 +21,7 @@ class SparkColumn(dbtClassMixin, Column):
     def translate_type(cls, dtype: str) -> str:
         return dtype
 
-    def can_expand_to(self: Self, other_column: Self) -> bool:  # type: ignore
+    def can_expand_to(self: Self, other_column: Self) -> bool:
         """returns True if both columns are strings"""
         return self.is_string() and other_column.is_string()
 

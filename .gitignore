@@ -44,3 +44,5 @@ test.env
 .hive-metastore/
 .spark-warehouse/
 dbt-integration-tests
+/.tool-versions
+/.hypothesis/*
