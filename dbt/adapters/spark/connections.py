@@ -65,9 +65,9 @@ class SparkConnectionMethod(StrEnum):
 @dataclass
 class SparkCredentials(Credentials):
     host: Optional[str] = None
-    schema: Optional[str] = None  # type: ignore
+    schema: Optional[str] = None
     method: SparkConnectionMethod = None  # type: ignore
-    database: Optional[str] = None  # type: ignore
+    database: Optional[str] = None
     driver: Optional[str] = None
     cluster: Optional[str] = None
     endpoint: Optional[str] = None
@@ -568,7 +568,7 @@ class SparkConnectionManager(SQLConnectionManager):
         return connection
 
     @classmethod
-    def data_type_code_to_name(cls, type_code: Union[type, str]) -> str:  # type: ignore
+    def data_type_code_to_name(cls, type_code: Union[type, str]) -> str:
         """
         :param Union[type, str] type_code: The sql to execute.
             * type_code is a python type (!) in pyodbc https://github.com/mkleehammer/pyodbc/wiki/Cursor#description, and a string for other spark runtimes.

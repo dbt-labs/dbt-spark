@@ -1,6 +1,0 @@
-kind: Fixes
-body: Support new agate Integer type and empty seed test
-time: 2023-11-07T13:41:41.033441-05:00
-custom:
-  Author: gshank
-  Issue: "935"
