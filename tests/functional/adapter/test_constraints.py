@@ -316,7 +316,7 @@ class BaseSparkConstraintsRollbackSetup:
             "violate the new NOT NULL constraint",
             "(id > 0) violated by row with values:",  # incremental mats
             "DELTA_VIOLATE_CONSTRAINT_WITH_VALUES",  # incremental mats
-            "NOT NULL constraint violated for column",
+            "NOT NULL constraint violated for col",
         ]
 
     def assert_expected_error_messages(self, error_message, expected_error_messages):

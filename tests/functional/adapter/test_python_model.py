@@ -15,7 +15,22 @@ class TestPythonModelSpark(BasePythonModelTests):
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestPySpark(BasePySparkTests):
-    pass
+    def test_different_dataframes(self, project):
+        """
+        Test that python models are supported using dataframes from:
+        - pandas
+        - pyspark
+        - pyspark.pandas (formerly dataspark.koalas)
+
+        Note:
+            The CI environment is on Apache Spark >3.1, which includes koalas as pyspark.pandas.
+            The only Databricks runtime that supports Apache Spark <=3.1 is 9.1 LTS, which is EOL 2024-09-23.
+            For more information, see:
+            - https://github.com/databricks/koalas
+            - https://docs.databricks.com/en/release-notes/runtime/index.html
+        """
+        results = run_dbt(["run", "--exclude", "koalas_df"])
+        assert len(results) == 3
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
@@ -35,7 +50,7 @@ def model(dbt, spark):
         materialized='table',
         submission_method='job_cluster',
         job_cluster_config={
-            "spark_version": "7.3.x-scala2.12",
+            "spark_version": "12.2.x-scala2.12",
             "node_type_id": "i3.xlarge",
             "num_workers": 0,
             "spark_conf": {
@@ -46,7 +61,7 @@ def model(dbt, spark):
                 "ResourceClass": "SingleNode"
             }
         },
-        packages=['spacy', 'torch', 'pydantic<1.10.3']
+        packages=['spacy', 'torch', 'pydantic>=1.10.8']
     )
     data = [[1,2]] * 10
     return spark.createDataFrame(data, schema=['test', 'test2'])
@@ -65,6 +80,19 @@ def model(dbt, spark):
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestChangingSchemaSpark:
+    """
+    Confirm that we can setup a spot instance and parse required packages into the Databricks job.
+
+    Notes:
+        - This test generates a spot instance on demand using the settings from `job_cluster_config`
+        in `models__simple_python_model` above. It takes several minutes to run due to creating the cluster.
+        The job can be monitored via "Data Engineering > Job Runs" or "Workflows > Job Runs"
+        in the Databricks UI (instead of via the normal cluster).
+        - The `spark_version` argument will need to periodically be updated. It will eventually become
+        unsupported and start experiencing issues.
+        - See https://github.com/explosion/spaCy/issues/12659 for why we're pinning pydantic
+    """
+
     @pytest.fixture(scope="class")
     def models(self):
         return {"simple_python_model.py": models__simple_python_model}

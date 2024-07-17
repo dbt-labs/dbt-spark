@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update pre-commit-hooks requirement from ~=4.4 to ~=4.5"
-time: 2023-10-09T22:07:32.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 903
