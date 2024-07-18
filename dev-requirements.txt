@@ -23,4 +23,4 @@ thrift_sasl~=0.4.3
 # build
 bumpversion~=0.6.0
 twine~=4.0
-wheel~=0.42
+wheel~=0.43
