@@ -1,0 +1,6 @@
+kind: Fixes
+body: Pin `setuptools` to address pypa/setuptools#4483
+time: 2024-07-18T10:14:07.574636-04:00
+custom:
+  Author: mikealfare
+  Issue: "1064"
