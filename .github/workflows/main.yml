@@ -112,6 +112,7 @@ jobs:
         with:
           name: unit_results_${{ matrix.python-version }}-${{ steps.date.outputs.date }}.csv
           path: unit_results.csv
+          overwrite: true
 
   build:
     name: build packages
@@ -160,6 +161,7 @@ jobs:
         with:
           name: dist
           path: dist/
+          overwrite: true
 
   test-build:
     name: verify packages / python ${{ matrix.python-version }} / ${{ matrix.os }}
