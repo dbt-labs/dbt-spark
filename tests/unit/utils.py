@@ -2,6 +2,7 @@
 Note that all imports should be inside the functions to avoid import/mocking
 issues.
 """
+
 import string
 import os
 from unittest import mock

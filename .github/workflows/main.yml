@@ -59,9 +59,6 @@ jobs:
           python -m pip --version
           python -m pip install pre-commit
           pre-commit --version
-          python -m pip install mypy==0.942
-          python -m pip install types-requests
-          mypy --version
           python -m pip install -r requirements.txt
           python -m pip install -r dev-requirements.txt
           python -c "import dbt.adapters.spark"
@@ -189,7 +186,7 @@ jobs:
           python -m pip install --user --upgrade pip
           python -m pip install --upgrade wheel
           python -m pip --version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
