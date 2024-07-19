@@ -1,78 +1,101 @@
 trigger:
+  batch: true
   branches:
     include:
-      - cccs
+      - cccs/*
 
-pool: cauldron-vmss
+pr:
+  branches:
+    include:
+      - cccs/main
+
+parameters:
+  - name: forceBuildPython
+    displayName: Force build Python artifact & push to feed
+    type: boolean
+    default: false
 
 variables:
-  tag: '$(Build.BuildId)'
+  tag: "$(Build.BuildId)"
+  pythonArtifactName: "dbt-spark-cccs"
+  pythonVersion: "3.10"
+  isMaster: $[eq(variables['Build.SourceBranch'], 'refs/heads/cccs-main')]
+
+pool: cybertron-build-pool
 
 stages:
-- stage: Build_and_Publish_Python_Artifact
-  displayName: 'Build, package and publish python artifacts'
-  jobs:
-  - job: BuildPythonArtifact
-    displayName: 'Build and package python artifacts'
-    strategy:
-      matrix:
-        Python38:
-          python.version: '3.8'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(python.version)'
-      displayName: 'Use Python $(python.version)'
-    - script: |
-        python -m pip install --user --upgrade pip
-        python -m pip install --upgrade setuptools wheel twine check-wheel-contents
-        python -m pip --version
-      displayName: 'Install python dependencies'
-    - task: ShellScript@2
-      inputs:
-        scriptPath: ./scripts/build-dist.sh
-      displayName: 'Build distributions'
-    - script: |
-        ls -lh dist/
-      displayName: 'Show distributions'
-    - script: |
-        twine check dist/*
-      displayName: 'Check distribution descriptions'
-    - script: |
-        check-wheel-contents dist/*.whl --ignore W007,W008
-      displayName: 'Check wheel contents'
-    - task: CopyFiles@2
-      inputs:
-        targetFolder: $(Build.ArtifactStagingDirectory)
-      displayName: 'Stage build artifact to publish'
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish build artifacts'
-      inputs:
-        pathtoPublish: '$(Build.ArtifactStagingDirectory)/dist'
-        artifactName: 'dist'
-        publishLocation: 'Container'
-  - job: PublishArtifactToNexus
-    dependsOn: BuildPythonArtifact
-    displayName: 'Publish python artifacts to nexus'
-    strategy:
-      matrix:
-        Python38:
-          python.version: '3.8'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(python.version)'
-      displayName: 'Use Python $(python.version)'
-    - task: DownloadBuildArtifacts@0
-      inputs:
-        buildType: 'current'
-        downloadType: 'specific'
-        downloadPath: '$(Pipeline.Workspace)'
-      displayName: 'Download build artifact'
-    - task: TwineAuthenticate@1
-      inputs:
-        pythonUploadServiceConnection: nexus-u-pypi-cccs
-    - script: |
-        pip install twine
-        python -m twine upload --skip-existing -r "nexus-u-pypi-cccs" --config-file $(PYPIRC_PATH) $(Pipeline.Workspace)/dist/* --verbose
-      displayName: 'Publish artifact to nexus'
+  - stage: Test
+    jobs:
+      - job: UnitTests
+        strategy:
+          matrix:
+            python3_10:
+              python.version: "3.10"
+        steps:
+          - script: |
+              virtualenv -p python$(pythonVersion) env
+              . env/bin/activate
+              pip install --upgrade pip
+              pip install --no-cache-dir -e .
+              pip install --no-cache-dir -r dev-requirements.txt -r requirements.txt
+
+            displayName: Install dbt-spark-hogwarts
+            workingDirectory: $(Pipeline.Workspace)/s
+          - script: |
+              . env/bin/activate
+              python -m tox -e unit
+            workingDirectory: $(Pipeline.Workspace)/s
+            displayName: Test
+  - stage: Build_and_push
+    jobs:
+      - job: Build
+        workspace:
+          clean: all
+        steps:
+          # Version is explicitly set to 1.
+          - script: |
+              # Determine the value of dev based on the branch name
+              if [ "$(Build.SourceBranchName)" == "main" ]; then
+                dev=""
+              else
+                dev="dev"
+              fi
+          
+              virtualenv -p python$(pythonVersion) env
+              source env/bin/activate
+              pip install wheel
+              pip install -r requirements.txt
+              # Version explicitly set to 1.4.7 until we move to dbt-core 1.6.0 and above
+              # where the version of this package will be <dbt-core-version>.<seq-build-id>
+              # VERSION=$(python setup.py --version).${dev}$(tag)
+              VERSION=1.4.7.${dev}$(tag)
+              DBT_SPARK_PACKAGE_VERSION=${VERSION} python setup.py sdist bdist_wheel
+            displayName: "Install and Build."
+          - task: CopyFiles@2
+            inputs:
+              targetFolder: $(Build.ArtifactStagingDirectory)
+            displayName: "Stage build artifact to publish"
+          - task: PublishBuildArtifacts@1
+            displayName: Publish build artifacts
+            inputs:
+              pathtoPublish: "$(Build.ArtifactStagingDirectory)/dist"
+              artifactName: "python_dist"
+              publishLocation: "Container"
+      - job: Publish
+        dependsOn: Build
+        condition: or(eq(variables.isMaster, true), eq('${{ parameters.forceBuildPython }}', true))
+        workspace:
+          clean: all
+        steps:
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              buildType: "current"
+              downloadType: "specific"
+              downloadPath: "$(Pipeline.Workspace)"
+            displayName: "Download build artifact."
+          - script: |
+              virtualenv -p python$(pythonVersion) env
+              source env/bin/activate
+              pip install twine
+              python -m twine upload -r pypi-ap --config-file /azp/pypirc/pypirc $(Pipeline.Workspace)/python_dist/*
+            displayName: "Publish artifact to BagOfHolding."

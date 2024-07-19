@@ -4,6 +4,9 @@ import requests
 from typing import Any, Dict
 import uuid
 
+from pyspark.sql import SparkSession
+import traceback
+
 import dbt.exceptions
 from dbt.adapters.base import PythonJobHelper
 from dbt.adapters.spark import SparkCredentials
@@ -271,36 +274,14 @@ class DBCommand:
 
 class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
     def check_credentials(self) -> None:
-        if not self.cluster_id:
-            raise ValueError(
-                "Databricks cluster_id is required for all_purpose_cluster submission method with running with notebook."
-            )
+        pass # CCCS-LCC Note: No credentials needed as it's retrieved from the system
 
     def submit(self, compiled_code: str) -> None:
-        if self.parsed_model["config"].get("create_notebook", False):
-            self._submit_through_notebook(compiled_code, {"existing_cluster_id": self.cluster_id})
-        else:
-            context = DBContext(self.credentials, self.cluster_id, self.auth_header)
-            command = DBCommand(self.credentials, self.cluster_id, self.auth_header)
-            context_id = context.create()
-            try:
-                command_id = command.execute(context_id, compiled_code)
-                # poll until job finish
-                response = self.polling(
-                    status_func=command.status,
-                    status_func_kwargs={
-                        "context_id": context_id,
-                        "command_id": command_id,
-                    },
-                    get_state_func=lambda response: response["status"],
-                    terminal_states=("Cancelled", "Error", "Finished"),
-                    expected_end_state="Finished",
-                    get_state_msg_func=lambda response: response.json()["results"]["data"],
-                )
-                if response["results"]["resultType"] == "error":
-                    raise dbt.exceptions.RuntimeException(
-                        f"Python model failed with traceback as:\n"
-                        f"{response['results']['cause']}"
-                    )
-            finally:
-                context.destroy(context_id)
+        try:
+            from copy import deepcopy
+            spark = SparkSession.builder.getOrCreate() # Local passed to compiled_code call
+            model_config = deepcopy(self.parsed_model.get('config'))
+            exec(compiled_code, locals())
+        except Exception as e:
+            print(f"There's an issue with the Python model. See trace: {traceback.format_exc()}")
+            raise dbt.exceptions.RuntimeException(f"The Python model failed with traceback: {e}")
