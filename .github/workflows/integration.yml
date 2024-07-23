@@ -10,7 +10,7 @@
 
 name: Adapter Integration Tests
 
-run-name: ${{ inputs.name }} by @${{ github.actor }}
+run-name: "${{ contains(github.event_name, 'workflow_') && inputs.name || github.event_name }}: ${{ contains(github.event_name, 'workflow_') &&  inputs.adapter_branch || github.ref_name }} by @${{ github.actor }}"
 
 on:
   push:
@@ -41,6 +41,11 @@ on:
         type: string
         required: false
         default: main
+      adapter_branch:
+        description: "The branch of this adapter repository to use"
+        type: string
+        required: false
+        default: main
   workflow_call:
     inputs:
       dbt_core_branch:
@@ -55,6 +60,11 @@ on:
         default: "Adapter Integration Tests"
       dbt_adapters_branch:
         description: "The branch of dbt-adapters to use"
+        type: string
+        required: false
+        default: main
+      adapter_branch:
+        description: "The branch of this adapter repository to use"
         type: string
         required: false
         default: main
@@ -105,10 +115,19 @@ jobs:
 
     steps:
       - name: Check out the repository
-        if: github.event_name != 'pull_request_target'
+        if: github.event_name != 'pull_request_target' && github.event_name != 'workflow_dispatch' && github.event_name != 'workflow_call'
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Check out the repository (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          # We can't actually change branch until this is in main, because it
+          # won't find the update_dev_packages.sh script.
+          # ref: ${{ inputs.adapter_branch }}
 
       # explicitly checkout the branch for the PR,
       # this is necessary for the `pull_request` event
