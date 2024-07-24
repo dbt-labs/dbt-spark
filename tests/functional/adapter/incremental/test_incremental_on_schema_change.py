@@ -88,7 +88,6 @@ _MODELS__SRC_ARTISTS = """
         materialized='table',
     )
 }}
-g
 {% if var("version", 0) == 0 %}
 
     select {{ dbt.current_timestamp() }} as inserted_at, 'john' as name
