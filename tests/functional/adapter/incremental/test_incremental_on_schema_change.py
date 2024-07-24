@@ -1,10 +1,9 @@
 import pytest
 
-from dbt.tests.util import run_dbt
+from dbt.tests.util import run_dbt, run_dbt_and_capture
 
 from dbt.tests.adapter.incremental.test_incremental_on_schema_change import (
     BaseIncrementalOnSchemaChangeSetup,
-    BaseIncrementalCaseSenstivityOnSchemaChange,
 )
 
 
@@ -83,5 +82,57 @@ class TestDeltaOnSchemaChange(BaseIncrementalOnSchemaChangeSetup):
         self.run_incremental_sync_remove_only(project)
 
 
-class TestIncrementalCaseSenstivityOnSchemaChange(BaseIncrementalCaseSenstivityOnSchemaChange):
-    pass
+_MODELS__SRC_ARTISTS = """
+{{
+    config(
+        materialized='table',
+    )
+}}
+g
+{% if var("version", 0) == 0 %}
+
+    select {{ dbt.current_timestamp() }} as inserted_at, 'john' as name
+
+{% else %}
+
+    -- add a non-zero version to the end of the command to get a different version:
+    -- --vars "{'version': 1}"
+    select {{ dbt.current_timestamp() }} as inserted_at, 'john' as name, 'engineer' as `Job`
+
+{% endif %}
+"""
+
+_MODELS__DIM_ARTISTS = """
+{{
+    config(
+        materialized='incremental',
+        on_schema_change='append_new_columns',
+    )
+}}
+
+select  * from {{ ref("src_artists") }}
+"""
+
+
+@pytest.mark.skip_profile("apache_spark", "spark_session")
+class TestIncrementalCaseSenstivityOnSchemaChange:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "src_artists.sql": _MODELS__SRC_ARTISTS,
+            "dim_artists.sql": _MODELS__DIM_ARTISTS,
+        }
+
+    def test_run_incremental_check_quoting_on_new_columns(self, project):
+        select = "src_artists dim_artists"
+        run_dbt(["run", "--models", select, "--full-refresh"])
+        res, logs = run_dbt_and_capture(
+            ["show", "--inline", "select * from {{ ref('dim_artists') }}"]
+        )
+        assert "Job" not in logs
+
+        run_dbt(["run", "--vars", "{'version': 1}"])
+        res, logs = run_dbt_and_capture(
+            ["show", "--inline", "select * from {{ ref('dim_artists') }}"]
+        )
+        assert "Job" in logs
