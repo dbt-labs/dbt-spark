@@ -103,9 +103,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-          # We can't actually change branch until this is in main, because it
-          # won't find the update_dev_packages.sh script.
-          # ref: ${{ inputs.adapter_branch }}
+          ref: ${{ inputs.adapter_branch }}
 
       # explicitly checkout the branch for the PR,
       # this is necessary for the `pull_request` event
