@@ -97,8 +97,8 @@ jobs:
       DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
 
     steps:
-      - name: Check out the repository
-        if: github.event_name != 'pull_request_target' && github.event_name != 'workflow_dispatch'
+      - name: Check out the repository (push)
+        if: github.event_name == 'push'
         uses: actions/checkout@v4
         with:
           persist-credentials: false
