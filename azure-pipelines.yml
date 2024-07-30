@@ -19,7 +19,7 @@ variables:
   tag: "$(Build.BuildId)"
   pythonArtifactName: "dbt-spark-cccs"
   pythonVersion: "3.10"
-  isMaster: $[eq(variables['Build.SourceBranch'], 'refs/heads/cccs-main')]
+  isMaster: $[eq(variables['Build.SourceBranch'], 'refs/heads/cccs/main')]
 
 pool: cybertron-build-pool
 
@@ -55,7 +55,7 @@ stages:
           # Version is explicitly set to 1.
           - script: |
               # Determine the value of dev based on the branch name
-              if [ "$(Build.SourceBranchName)" == "main" ]; then
+              if [ "$(Build.SourceBranch)" == "refs/heads/cccs/main" ]; then
                 dev=""
               else
                 dev="dev"
