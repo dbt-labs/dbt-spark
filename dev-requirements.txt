@@ -17,5 +17,5 @@ pytest-xdist~=3.6
 
 # build
 bumpversion~=0.6.0
-twine~=4.0
+twine~=5.1
 wheel~=0.43
