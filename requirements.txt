@@ -1,7 +1,7 @@
 pyhive[hive_pure_sasl]~=0.7.0
 requests>=2.28.1
 
-pyodbc~=4.0.39 --no-binary pyodbc
+pyodbc~=5.1.0 --no-binary pyodbc
 sqlparams>=3.0.0
 thrift>=0.13.0
 pyspark>=3.0.0,<4.0.0
