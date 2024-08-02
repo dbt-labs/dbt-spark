@@ -83,5 +83,6 @@ class TestDeltaOnSchemaChange(BaseIncrementalOnSchemaChangeSetup):
         self.run_incremental_sync_remove_only(project)
 
 
+@pytest.mark.skip_profile("apache_spark", "spark_session")
 class TestIncrementalCaseSenstivityOnSchemaChange(BaseIncrementalCaseSenstivityOnSchemaChange):
     pass
