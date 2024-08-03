@@ -501,7 +501,7 @@ class SparkAdapter(SQLAdapter):
                 if item.lower() == column_name.lower():
                     return item
             raise DbtRuntimeError(
-                f'Column "{column_name}" not found in grants table columns `{', '.join(grants_table.column_names)}`.'
+                f'Column "{column_name}" not found in grants table columns `{", ".join(grants_table.column_names)}`.'
             )
         
         column_names = grants_table.column_names
