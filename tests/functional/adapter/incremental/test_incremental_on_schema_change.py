@@ -1,6 +1,6 @@
 import pytest
 
-from dbt.tests.util import run_dbt, run_dbt_and_capture
+from dbt.tests.util import run_dbt
 
 from dbt.tests.adapter.incremental.test_incremental_on_schema_change import (
     BaseIncrementalOnSchemaChangeSetup,
