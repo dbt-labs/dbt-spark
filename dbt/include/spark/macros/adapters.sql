@@ -391,7 +391,6 @@
     {% do return(tmp_relation) %}
 {% endmacro %}
 
-
 {% macro spark__alter_column_type(relation, column_name, new_column_type) -%}
   {% call statement('alter_column_type') %}
     alter table {{ relation }} alter column {{ column_name }} type {{ new_column_type }};
