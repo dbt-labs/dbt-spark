@@ -28,6 +28,7 @@ repos:
         -   --target-version=py39
         -   --target-version=py310
         -   --target-version=py311
+        -   --target-version=py312
         additional_dependencies: [flaky]
 
 -   repo: https://github.com/pycqa/flake8

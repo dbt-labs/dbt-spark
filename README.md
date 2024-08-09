@@ -65,6 +65,13 @@ rm -rf ./.hive-metastore/
 rm -rf ./.spark-warehouse/
 ```
 
+#### Additional Configuration for MacOS
+
+If installing on MacOS, use `homebrew` to install required dependencies.
+   ```sh
+   brew install unixodbc
+   ```
+
 ### Reporting bugs and contributing code
 
 -   Want to report a bug or request a feature? Let us know on [Slack](http://slack.getdbt.com/), or open [an issue](https://github.com/fishtown-analytics/dbt-spark/issues/new).
