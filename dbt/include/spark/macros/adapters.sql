@@ -422,7 +422,7 @@
 
        {% if add_columns %} add columns {% endif %}
             {% for column in add_columns %}
-               {{ column.name }} {{ column.data_type }}{{ ',' if not loop.last }}
+               {{ adapter.quote(column.name )}} {{ column.data_type }}{{ ',' if not loop.last }}
             {% endfor %}
 
   {%- endset -%}
