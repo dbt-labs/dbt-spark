@@ -293,3 +293,16 @@ class AllPurposeClusterPythonJobHelper(BaseDatabricksHelper):
                     )
             finally:
                 context.destroy(context_id)
+
+
+class SessionHelper(PythonJobHelper):
+    def __init__(self, parsed_model: Dict, credentials: SparkCredentials) -> None:
+        pass
+
+    def submit(self, compiled_code: str) -> Any:
+        try:
+            from pyspark.sql import SparkSession
+            spark = SparkSession.getActiveSession()
+            exec(compiled_code,{"spark": spark})
+        except Exception as e:
+            raise DbtRuntimeError(f"Python model failed with traceback as:\n{e}")
