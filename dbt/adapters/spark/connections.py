@@ -78,6 +78,7 @@ class SparkCredentials(Credentials):
     auth: Optional[str] = None
     kerberos_service_name: Optional[str] = None
     organization: str = "0"
+    connection_str_extra: Optional[str] = None
     connect_retries: int = 0
     connect_timeout: int = 10
     use_ssl: bool = False
@@ -154,7 +155,7 @@ class SparkCredentials(Credentials):
                     f"ImportError({e.msg})"
                 ) from e
 
-        if self.method != SparkConnectionMethod.SESSION:
+        if self.method != SparkConnectionMethod.SESSION and self.host is not None:
             self.host = self.host.rstrip("/")
 
         self.server_side_parameters = {
@@ -483,38 +484,51 @@ class SparkConnectionManager(SQLConnectionManager):
                         http_path = cls.SPARK_SQL_ENDPOINT_HTTP_PATH.format(
                             endpoint=creds.endpoint
                         )
+                    elif creds.connection_str_extra is not None:
+                        required_fields = ["driver", "host", "port", "connection_str_extra"]
                     else:
                         raise DbtConfigError(
-                            "Either `cluster` or `endpoint` must set when"
+                            "Either `cluster`, `endpoint`, `connection_str_extra` must set when"
                             " using the odbc method to connect to Spark"
                         )
 
                     cls.validate_creds(creds, required_fields)
-
                     dbt_spark_version = __version__.version
                     user_agent_entry = (
                         f"dbt-labs-dbt-spark/{dbt_spark_version} (Databricks)"  # noqa
                     )
-
                     # http://simba.wpengine.com/products/Spark/doc/ODBC_InstallGuide/unix/content/odbc/hi/configuring/serverside.htm
                     ssp = {f"SSP_{k}": f"{{{v}}}" for k, v in creds.server_side_parameters.items()}
-
-                    # https://www.simba.com/products/Spark/doc/v2/ODBC_InstallGuide/unix/content/odbc/options/driver.htm
-                    connection_str = _build_odbc_connnection_string(
-                        DRIVER=creds.driver,
-                        HOST=creds.host,
-                        PORT=creds.port,
-                        UID="token",
-                        PWD=creds.token,
-                        HTTPPath=http_path,
-                        AuthMech=3,
-                        SparkServerType=3,
-                        ThriftTransport=2,
-                        SSL=1,
-                        UserAgentEntry=user_agent_entry,
-                        LCaseSspKeyName=0 if ssp else 1,
-                        **ssp,
-                    )
+                    if creds.token is not None:
+                        # https://www.simba.com/products/Spark/doc/v2/ODBC_InstallGuide/unix/content/odbc/options/driver.htm
+                        connection_str = _build_odbc_connnection_string(
+                            DRIVER=creds.driver,
+                            HOST=creds.host,
+                            PORT=creds.port,
+                            UID="token",
+                            PWD=creds.token,
+                            HTTPPath=http_path,
+                            AuthMech=3,
+                            SparkServerType=3,
+                            ThriftTransport=2,
+                            SSL=1,
+                            UserAgentEntry=user_agent_entry,
+                            LCaseSspKeyName=0 if ssp else 1,
+                            **ssp,
+                        )
+                    else:
+                        connection_str = _build_odbc_connnection_string(
+                            DRIVER=creds.driver,
+                            HOST=creds.host,
+                            PORT=creds.port,
+                            ThriftTransport=2,
+                            SSL=1,
+                            UserAgentEntry=user_agent_entry,
+                            LCaseSspKeyName=0 if ssp else 1,
+                            **ssp,
+                        )
+                    if creds.connection_str_extra is not None:
+                        connection_str = connection_str + ";" + creds.connection_str_extra
 
                     conn = pyodbc.connect(connection_str, autocommit=True)
                     handle = PyodbcConnectionWrapper(conn)
