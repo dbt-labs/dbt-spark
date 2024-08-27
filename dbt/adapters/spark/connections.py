@@ -155,7 +155,7 @@ class SparkCredentials(Credentials):
                     f"ImportError({e.msg})"
                 ) from e
 
-        if self.method != SparkConnectionMethod.SESSION and self.host is not None:
+        if self.method != SparkConnectionMethod.SESSION:
             self.host = self.host.rstrip("/")
 
         self.server_side_parameters = {
