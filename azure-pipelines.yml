@@ -36,9 +36,8 @@ stages:
               virtualenv -p python$(pythonVersion) env
               . env/bin/activate
               pip install --upgrade pip
-              pip install --no-cache-dir -e .
+              pip install --no-cache-dir -e . setuptools==70.1.0
               pip install --no-cache-dir -r dev-requirements.txt -r requirements.txt
-
             displayName: Install dbt-spark-hogwarts
             workingDirectory: $(Pipeline.Workspace)/s
           - script: |
@@ -63,8 +62,8 @@ stages:
           
               virtualenv -p python$(pythonVersion) env
               source env/bin/activate
-              pip install wheel
-              pip install -r requirements.txt
+              pip install wheel setuptools==70.1.0
+              pip install -r requirements.txt 
               # Version explicitly set to 1.4.8 until we move to dbt-core 1.6.0 and above
               # where the version of this package will be <dbt-core-version>.<seq-build-id>
               # VERSION=$(python setup.py --version).${dev}$(tag)
