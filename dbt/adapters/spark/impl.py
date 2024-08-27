@@ -146,61 +146,26 @@ class SparkAdapter(SQLAdapter):
         self, schema_relation: SparkRelation
     ) -> List[SparkRelation]:
         kwargs = {"schema_relation": schema_relation}
-        try_show_tables = False
-        expected_result_rows = 4
-        try:
-            results = self.execute_macro(LIST_RELATIONS_MACRO_NAME, kwargs=kwargs)
-        except Exception as e:
-            # connections using "session" mode will throw a AnalysisException,
-            # using Exception to handle them all since we look at the message anyways
-            errmsg = getattr(e, "msg", "")
-            if not errmsg:
-                errmsg = getattr(e, "desc", "")
-            if f"Database '{schema_relation}' not found" in errmsg:
-                return []
-            elif "SHOW TABLE EXTENDED is not supported for v2 tables" in errmsg:
-                # this happens with spark-iceberg with v2 iceberg tables
-                # https://issues.apache.org/jira/browse/SPARK-33393
-                try_show_tables = True
-            else:
-                description = "Error while retrieving information about"
-                logger.debug(f"{description} {schema_relation}: {e.msg}")
-                return []
-
-        if try_show_tables:
-            expected_result_rows = 3
-            try:
-                results = self.execute_macro(LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs=kwargs)
-            except dbt.exceptions.RuntimeException as e:
-                errmsg = getattr(e, "msg", "")
-                description = "Error while retrieving information about"
-                logger.debug(f"{description} {schema_relation}: {e.msg}")
-                return []
+    
+        expected_result_rows = 3
+        results = self.execute_macro(LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs=kwargs)
 
         relations = []
         for row in results:
             if len(row) != expected_result_rows:
-                if try_show_tables:
-                    description = 'Invalid value from "show tables ...", '
-                else:
-                    description = 'Invalid value from "show table extended ...", '
                 raise dbt.exceptions.RuntimeException(
-                    f"{description} got {len(row)} values, expected {expected_result_rows}"
+                    f"Got {len(row)} values in relation results, expected {expected_result_rows}"
                 )
 
-            if try_show_tables:
-                _, name, _ = row
-                relation = schema_relation.database + "." + schema_relation.schema + "." + name
-                # TODO: JCC DO NOT COMMIT UPSTREAM!!
-                # do not check if every table in the schema is an iceberg, we just assume they are
-                # this is much faster, but it's not something we want to commit upstream.
-                # information = self.parse_information(relation)
-                information = "Provider: iceberg"
-                _schema = schema_relation.schema
-                _database = schema_relation.database
-            else:
-                _schema, name, _, information = row
-                _database = None
+            _, name, _ = row
+            relation = schema_relation.database + "." + schema_relation.schema + "." + name
+            # TODO: JCC DO NOT COMMIT UPSTREAM!!
+            # do not check if every table in the schema is an iceberg, we just assume they are
+            # this is much faster, but it's not something we want to commit upstream.
+            # information = self.parse_information(relation)
+            information = "Provider: iceberg"
+            _schema = schema_relation.schema
+            _database = schema_relation.database
             is_delta = "Provider: delta" in information
             is_hudi = "Provider: hudi" in information
             is_iceberg = "Provider: iceberg" in information
