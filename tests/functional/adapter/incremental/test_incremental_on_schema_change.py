@@ -32,7 +32,7 @@ class TestAppendOnSchemaChange(IncrementalOnSchemaChangeIgnoreFail):
         }
 
 
-@pytest.mark.skip_profile("databricks_sql_endpoint", "spark_session", "spark_http_odbc"
+@pytest.mark.skip_profile("databricks_sql_endpoint", "spark_session", "spark_http_odbc")
 class TestInsertOverwriteOnSchemaChange(IncrementalOnSchemaChangeIgnoreFail):
     @pytest.fixture(scope="class")
     def project_config_update(self):
