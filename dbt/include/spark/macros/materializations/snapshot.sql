@@ -83,13 +83,12 @@
 
 
 {% materialization snapshot, adapter='spark' %}
-  {%- set config = model['config'] -%}
 
   {%- set target_table = model.get('alias', model.get('name')) -%}
 
   {%- set strategy_name = config.get('strategy') -%}
   {%- set unique_key = config.get('unique_key') %}
-  {%- set file_format = config.get('file_format', 'parquet') -%}
+  {%- set file_format = config.get('file_format') or 'parquet' -%}
   {%- set grant_config = config.get('grants') -%}
 
   {% set target_relation_exists, target_relation = get_or_create_relation(
@@ -128,7 +127,7 @@
   {{ run_hooks(pre_hooks, inside_transaction=True) }}
 
   {% set strategy_macro = strategy_dispatch(strategy_name) %}
-  {% set strategy = strategy_macro(model, "snapshotted_data", "source_data", config, target_relation_exists) %}
+  {% set strategy = strategy_macro(model, "snapshotted_data", "source_data", model['config'], target_relation_exists) %}
 
   {% if not target_relation_exists %}
 
@@ -137,7 +136,9 @@
 
   {% else %}
 
-      {{ adapter.valid_snapshot_target(target_relation) }}
+      {% set snapshot_table_column_names = config.get("snapshot_table_column_names") %}
+
+      {{ adapter.valid_snapshot_target(target_relation, snapshot_table_column_names) }}
 
       {% set staging_table = spark_build_snapshot_staging_table(strategy, sql, target_relation) %}
 
