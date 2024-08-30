@@ -103,7 +103,11 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
         check_relations_equal(project.adapter, ["merge_update_columns", "expected_partial_upsert"])
 
     @pytest.mark.skip_profile(
-        "apache_spark", "databricks_http_cluster", "databricks_sql_endpoint", "spark_session", "spark_http_odbc"
+        "apache_spark",
+        "databricks_http_cluster",
+        "databricks_sql_endpoint",
+        "spark_session",
+        "spark_http_odbc",
     )
     def test_delta_strategies(self, project):
         self.run_and_test(project)

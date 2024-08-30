@@ -103,6 +103,7 @@ def spark_session_target():
         "method": "session",
     }
 
+
 def spark_http_odbc_target():
     return {
         "type": "spark",
