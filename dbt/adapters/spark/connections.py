@@ -613,12 +613,11 @@ def build_ssl_transport(
                 password = "x"
 
         def sasl_factory() -> SASLClient:
+            from pyhive.hive import get_installed_sasl
             if sasl_auth == "GSSAPI":
-                sasl_client = SASLClient(host, kerberos_service_name, mechanism=sasl_auth)
+                sasl_client = get_installed_sasl(host, sasl_auth, kerberos_service_name)
             elif sasl_auth == "PLAIN":
-                sasl_client = SASLClient(
-                    host, mechanism=sasl_auth, username=username, password=password
-                )
+                sasl_client = get_installed_sasl(host, sasl_auth, username=username, password=password)
             else:
                 raise AssertionError
             return sasl_client
