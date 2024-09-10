@@ -15,13 +15,6 @@
 name: Tests and Code Checks
 
 on:
-  push:
-    branches:
-      - "main"
-      - "develop"
-      - "*.latest"
-      - "releases/*"
-  pull_request:
   workflow_dispatch:
 
 permissions: read-all
