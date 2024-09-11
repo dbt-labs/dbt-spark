@@ -78,7 +78,7 @@ class SparkCredentials(Credentials):
     auth: Optional[str] = None
     kerberos_service_name: Optional[str] = None
     organization: str = "0"
-    connection_str_extra: Optional[str] = None
+    connection_string_suffix: Optional[str] = None
     connect_retries: int = 0
     connect_timeout: int = 10
     use_ssl: bool = False
@@ -484,11 +484,11 @@ class SparkConnectionManager(SQLConnectionManager):
                         http_path = cls.SPARK_SQL_ENDPOINT_HTTP_PATH.format(
                             endpoint=creds.endpoint
                         )
-                    elif creds.connection_str_extra is not None:
-                        required_fields = ["driver", "host", "port", "connection_str_extra"]
+                    elif creds.connection_string_suffix is not None:
+                        required_fields = ["driver", "host", "port", "connection_string_suffix"]
                     else:
                         raise DbtConfigError(
-                            "Either `cluster`, `endpoint`, `connection_str_extra` must set when"
+                            "Either `cluster`, `endpoint`, `connection_string_suffix` must set when"
                             " using the odbc method to connect to Spark"
                         )
 
@@ -527,8 +527,8 @@ class SparkConnectionManager(SQLConnectionManager):
                             LCaseSspKeyName=0 if ssp else 1,
                             **ssp,
                         )
-                    if creds.connection_str_extra is not None:
-                        connection_str = connection_str + ";" + creds.connection_str_extra
+                    if creds.connection_string_suffix is not None:
+                        connection_str = connection_str + ";" + creds.connection_string_suffix
 
                     conn = pyodbc.connect(connection_str, autocommit=True)
                     handle = PyodbcConnectionWrapper(conn)

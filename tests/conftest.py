@@ -111,7 +111,7 @@ def spark_http_odbc_target():
         "host": os.getenv("DBT_DATABRICKS_HOST_NAME"),
         "port": 443,
         "driver": os.getenv("ODBC_DRIVER"),
-        "connection_str_extra": f'UID=token;PWD={os.getenv("DBT_DATABRICKS_TOKEN")};HTTPPath=/sql/1.0/endpoints/{os.getenv("DBT_DATABRICKS_ENDPOINT")};AuthMech=3;SparkServerType=3',
+        "connection_string_suffix": f'UID=token;PWD={os.getenv("DBT_DATABRICKS_TOKEN")};HTTPPath=/sql/1.0/endpoints/{os.getenv("DBT_DATABRICKS_ENDPOINT")};AuthMech=3;SparkServerType=3',
         "connect_retries": 3,
         "connect_timeout": 5,
         "retry_all": True,
