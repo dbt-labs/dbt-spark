@@ -9,8 +9,6 @@ from pyhive import hive
 from dbt.adapters.spark import SparkAdapter, SparkRelation
 from .utils import config_from_parts_or_dicts
 
-pytest.mark.usefixtures("target_http")
-
 
 class TestSparkAdapter(unittest.TestCase):
     @pytest.fixture(autouse=True)
