@@ -1,5 +1,4 @@
 import pytest
-from dbt.config import RuntimeConfig
 
 from tests.unit.utils import config_from_parts_or_dicts
 
@@ -20,7 +19,7 @@ def base_project_cfg():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def target_http(base_project_cfg) -> RuntimeConfig:
+def target_http(base_project_cfg):
     config = config_from_parts_or_dicts(
         base_project_cfg,
         {
