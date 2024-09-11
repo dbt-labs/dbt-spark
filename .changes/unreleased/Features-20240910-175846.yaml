@@ -1,5 +1,5 @@
 kind: Features
-body: Support custom ODBC connection parameters via `connection_str_extra` config
+body: Support custom ODBC connection parameters via `connection_string_suffix` config
 time: 2024-09-10T17:58:46.141332-04:00
 custom:
   Author: colin-rogers-dbt jpoley
