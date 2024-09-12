@@ -30,6 +30,8 @@ def dbt_profile_target(request):
         target = databricks_http_cluster_target()
     elif profile_type == "spark_session":
         target = spark_session_target()
+    elif profile_type == "spark_http_odbc":
+        target = spark_http_odbc_target()
     else:
         raise ValueError(f"Invalid profile type '{profile_type}'")
     return target
@@ -99,6 +101,20 @@ def spark_session_target():
         "type": "spark",
         "host": "localhost",
         "method": "session",
+    }
+
+
+def spark_http_odbc_target():
+    return {
+        "type": "spark",
+        "method": "odbc",
+        "host": os.getenv("DBT_DATABRICKS_HOST_NAME"),
+        "port": 443,
+        "driver": os.getenv("ODBC_DRIVER"),
+        "connection_string_suffix": f'UID=token;PWD={os.getenv("DBT_DATABRICKS_TOKEN")};HTTPPath=/sql/1.0/endpoints/{os.getenv("DBT_DATABRICKS_ENDPOINT")};AuthMech=3;SparkServerType=3',
+        "connect_retries": 3,
+        "connect_timeout": 5,
+        "retry_all": True,
     }
 
 
