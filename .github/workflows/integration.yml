@@ -76,6 +76,7 @@ jobs:
         test:
           - "apache_spark"
           - "spark_session"
+          - "spark_http_odbc"
           - "databricks_sql_endpoint"
           - "databricks_cluster"
           - "databricks_http_cluster"

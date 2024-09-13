@@ -21,7 +21,7 @@ class IncrementalOnSchemaChangeIgnoreFail(BaseIncrementalOnSchemaChangeSetup):
         assert "Compilation Error" in results_two[1].message
 
 
-@pytest.mark.skip_profile("databricks_sql_endpoint")
+@pytest.mark.skip_profile("databricks_sql_endpoint", "spark_http_odbc")
 class TestAppendOnSchemaChange(IncrementalOnSchemaChangeIgnoreFail):
     @pytest.fixture(scope="class")
     def project_config_update(self):
@@ -32,7 +32,7 @@ class TestAppendOnSchemaChange(IncrementalOnSchemaChangeIgnoreFail):
         }
 
 
-@pytest.mark.skip_profile("databricks_sql_endpoint", "spark_session")
+@pytest.mark.skip_profile("databricks_sql_endpoint", "spark_session", "spark_http_odbc")
 class TestInsertOverwriteOnSchemaChange(IncrementalOnSchemaChangeIgnoreFail):
     @pytest.fixture(scope="class")
     def project_config_update(self):
