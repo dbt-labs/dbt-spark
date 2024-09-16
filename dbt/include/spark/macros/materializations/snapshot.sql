@@ -27,7 +27,7 @@
      and DBT_INTERNAL_DEST.{{ stcn.dbt_valid_to }} is null
      and DBT_INTERNAL_SOURCE.dbt_change_type in ('update', 'delete')
         then update
-        set {{ stcn.dbt_valid_to }} = DBT_INTERNAL_SOURCE.{{ dbt_valid_to }}
+        set {{ stcn.dbt_valid_to }} = DBT_INTERNAL_SOURCE.{{ stcn.dbt_valid_to }}
 
     when not matched
      and DBT_INTERNAL_SOURCE.dbt_change_type = 'insert'
