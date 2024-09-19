@@ -75,6 +75,9 @@
   {%- elif strategy == 'insert_overwrite' -%}
     {#-- insert statements don't like CTEs, so support them via a temp view #}
     {{ get_insert_overwrite_sql(source, target, existing) }}
+  {%- elif strategy == 'microbatch' -%}
+    {#-- insert statements don't like CTEs, so support them via a temp view #}
+    {{ get_insert_overwrite_sql(source, target, existing) }}
   {%- elif strategy == 'merge' -%}
   {#-- merge all columns for datasources which implement MERGE INTO (e.g. databricks, iceberg) - schema changes are handled for us #}
     {{ get_merge_sql(target, source, unique_key, dest_columns=none, incremental_predicates=incremental_predicates) }}
