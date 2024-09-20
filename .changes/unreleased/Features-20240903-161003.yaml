@@ -1,0 +1,6 @@
+kind: Features
+body: Allow configuring snapshot column names
+time: 2024-09-03T16:10:03.021221-04:00
+custom:
+  Author: gshank
+  Issue: "1096"
