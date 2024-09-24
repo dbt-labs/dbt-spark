@@ -76,7 +76,10 @@
     {#-- insert statements don't like CTEs, so support them via a temp view #}
     {{ get_insert_overwrite_sql(source, target, existing) }}
   {%- elif strategy == 'microbatch' -%}
-    {#-- insert statements don't like CTEs, so support them via a temp view #}
+    {#-- microbatch wraps insert_overwrite, and requires a partition_by config #}
+    {%- if not config.get('partition_by') -%}
+      {{ exceptions.raise_compiler_error("dbt-spark 'microbatch' requires a `partition_by` config") }}
+    {%- endif -%}
     {{ get_insert_overwrite_sql(source, target, existing) }}
   {%- elif strategy == 'merge' -%}
   {#-- merge all columns for datasources which implement MERGE INTO (e.g. databricks, iceberg) - schema changes are handled for us #}
