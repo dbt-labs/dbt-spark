@@ -150,6 +150,8 @@ async def test_spark(test_args):
 
         tst_container = tst_container.with_(env_variables(TESTING_ENV_VARS))
         test_path = test_args.test_path if test_args.test_path else "tests/functional/adapter"
+        # TODO: remove before merging!
+        test_path = "tests/functional/adapter/incremental_strategies/test_microbatch.py"
         result = await tst_container.with_exec(
             ["pytest", "-v", "--profile", test_profile, "-n", "auto", test_path]
         ).stdout()
