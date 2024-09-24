@@ -11,6 +11,9 @@ select * from {{ ref('input_model') }}
 """
 
 
+@pytest.mark.skip_profile(
+    "databricks_http_cluster", "databricks_sql_endpoint", "spark_session", "spark_http_odbc"
+)
 class TestMicrobatch(BaseMicrobatch):
     @pytest.fixture(scope="class")
     def microbatch_model_sql(self) -> str:
