@@ -1,5 +1,5 @@
 kind: Features
-body: Microbatch Strategy
+body: Add Microbatch Strategy to dbt-spark
 time: 2024-09-25T12:52:42.872017+01:00
 custom:
   Author: michelleark
