@@ -75,6 +75,17 @@
   {%- elif strategy == 'insert_overwrite' -%}
     {#-- insert statements don't like CTEs, so support them via a temp view #}
     {{ get_insert_overwrite_sql(source, target, existing) }}
+  {%- elif strategy == 'microbatch' -%}
+    {#-- microbatch wraps insert_overwrite, and requires a partition_by config #}
+    {% set missing_partition_key_microbatch_msg -%}
+      dbt-spark 'microbatch' incremental strategy requires a `partition_by` config.
+      Ensure you are using a `partition_by` column that is of grain {{ config.get('batch_size') }}.
+    {%- endset %}
+
+    {%- if not config.get('partition_by') -%}
+      {{ exceptions.raise_compiler_error(missing_partition_key_microbatch_msg) }}
+    {%- endif -%}
+    {{ get_insert_overwrite_sql(source, target, existing) }}
   {%- elif strategy == 'merge' -%}
   {#-- merge all columns for datasources which implement MERGE INTO (e.g. databricks, iceberg) - schema changes are handled for us #}
     {{ get_merge_sql(target, source, unique_key, dest_columns=none, incremental_predicates=incremental_predicates) }}
