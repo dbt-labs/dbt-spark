@@ -70,7 +70,8 @@ To run functional tests we rely on [dagger](https://dagger.io/). This launches a
 
 ```sh
 pip install -r dagger/requirements.txt
-python dagger/run_dbt_spark_tests.py --profile apache_spark --test-path tests/functional/adapter/incremental_strategies/test_microbatch.py
+python dagger/run_dbt_spark_tests.py --profile databricks_sql_endpoint --test-path tests/functional/adapter/test_basic.py::TestSimpleMaterializationsSpark::test_base
+```
 
 `--profile`: required, this is the kind of spark connection to test against
 
