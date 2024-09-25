@@ -24,7 +24,11 @@
     {% endif %}
     on DBT_INTERNAL_SOURCE.{{ columns.dbt_scd_id }} = DBT_INTERNAL_DEST.{{ columns.dbt_scd_id }}
     when matched
-     and DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} is null
+     {% if config.get("dbt_valid_to_current") %}
+       and DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} = {{ config.get('dbt_valid_to_current') }}
+     {% else %}
+       and DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} is null
+     {% endif %}
      and DBT_INTERNAL_SOURCE.dbt_change_type in ('update', 'delete')
         then update
         set {{ columns.dbt_valid_to }} = DBT_INTERNAL_SOURCE.{{ columns.dbt_valid_to }}
