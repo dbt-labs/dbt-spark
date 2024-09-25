@@ -24,7 +24,7 @@
   {%- endif -%}
 
   {#-- Set Overwrite Mode --#}
-  {%- if strategy == 'insert_overwrite' and partition_by -%}
+  {%- if strategy in ['insert_overwrite', 'microbatch'] and partition_by -%}
     {%- call statement() -%}
       set spark.sql.sources.partitionOverwriteMode = DYNAMIC
     {%- endcall -%}
