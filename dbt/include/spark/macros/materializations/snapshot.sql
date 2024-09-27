@@ -25,7 +25,8 @@
     on DBT_INTERNAL_SOURCE.{{ columns.dbt_scd_id }} = DBT_INTERNAL_DEST.{{ columns.dbt_scd_id }}
     when matched
      {% if config.get("dbt_valid_to_current") %}
-       and DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} = {{ config.get('dbt_valid_to_current') }}
+       and ( DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} = {{ config.get('dbt_valid_to_current') }} or
+             DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} is null )
      {% else %}
        and DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} is null
      {% endif %}
