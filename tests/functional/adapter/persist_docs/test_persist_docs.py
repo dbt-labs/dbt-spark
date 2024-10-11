@@ -15,7 +15,7 @@ from fixtures import (
 )
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session")
+@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_cluster")
 class TestPersistDocsDeltaTable:
     @pytest.fixture(scope="class")
     def models(self):
