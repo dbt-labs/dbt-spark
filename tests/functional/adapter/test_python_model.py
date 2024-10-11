@@ -89,7 +89,7 @@ def model(dbt, spark):
     "spark_session",
     "databricks_sql_endpoint",
     "spark_http_odbc",
-    "databricks_http_cluster",
+    "databricks_cluster",
 )
 class TestChangingSchemaSpark:
     """
