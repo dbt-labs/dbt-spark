@@ -1,8 +1,8 @@
 import unittest
+import pytest
 from multiprocessing import get_context
 from unittest import mock
 
-import dbt.flags as flags
 from dbt.exceptions import DbtRuntimeError
 from agate import Row
 from pyhive import hive
@@ -11,143 +11,29 @@ from .utils import config_from_parts_or_dicts
 
 
 class TestSparkAdapter(unittest.TestCase):
-    def setUp(self):
-        flags.STRICT_MODE = False
-
-        self.project_cfg = {
-            "name": "X",
-            "version": "0.1",
-            "profile": "test",
-            "project-root": "/tmp/dbt/does-not-exist",
-            "quoting": {
-                "identifier": False,
-                "schema": False,
-            },
-            "config-version": 2,
-        }
-
-    def _get_target_http(self, project):
-        return config_from_parts_or_dicts(
-            project,
-            {
-                "outputs": {
-                    "test": {
-                        "type": "spark",
-                        "method": "http",
-                        "schema": "analytics",
-                        "host": "myorg.sparkhost.com",
-                        "port": 443,
-                        "token": "abc123",
-                        "organization": "0123456789",
-                        "cluster": "01234-23423-coffeetime",
-                        "server_side_parameters": {"spark.driver.memory": "4g"},
-                    }
-                },
-                "target": "test",
-            },
-        )
-
-    def _get_target_thrift(self, project):
-        return config_from_parts_or_dicts(
-            project,
-            {
-                "outputs": {
-                    "test": {
-                        "type": "spark",
-                        "method": "thrift",
-                        "schema": "analytics",
-                        "host": "myorg.sparkhost.com",
-                        "port": 10001,
-                        "user": "dbt",
-                    }
-                },
-                "target": "test",
-            },
-        )
-
-    def _get_target_thrift_kerberos(self, project):
-        return config_from_parts_or_dicts(
-            project,
-            {
-                "outputs": {
-                    "test": {
-                        "type": "spark",
-                        "method": "thrift",
-                        "schema": "analytics",
-                        "host": "myorg.sparkhost.com",
-                        "port": 10001,
-                        "user": "dbt",
-                        "auth": "KERBEROS",
-                        "kerberos_service_name": "hive",
-                    }
-                },
-                "target": "test",
-            },
-        )
-
-    def _get_target_use_ssl_thrift(self, project):
-        return config_from_parts_or_dicts(
-            project,
-            {
-                "outputs": {
-                    "test": {
-                        "type": "spark",
-                        "method": "thrift",
-                        "use_ssl": True,
-                        "schema": "analytics",
-                        "host": "myorg.sparkhost.com",
-                        "port": 10001,
-                        "user": "dbt",
-                    }
-                },
-                "target": "test",
-            },
-        )
-
-    def _get_target_odbc_cluster(self, project):
-        return config_from_parts_or_dicts(
-            project,
-            {
-                "outputs": {
-                    "test": {
-                        "type": "spark",
-                        "method": "odbc",
-                        "schema": "analytics",
-                        "host": "myorg.sparkhost.com",
-                        "port": 443,
-                        "token": "abc123",
-                        "organization": "0123456789",
-                        "cluster": "01234-23423-coffeetime",
-                        "driver": "Simba",
-                    }
-                },
-                "target": "test",
-            },
-        )
-
-    def _get_target_odbc_sql_endpoint(self, project):
-        return config_from_parts_or_dicts(
-            project,
-            {
-                "outputs": {
-                    "test": {
-                        "type": "spark",
-                        "method": "odbc",
-                        "schema": "analytics",
-                        "host": "myorg.sparkhost.com",
-                        "port": 443,
-                        "token": "abc123",
-                        "endpoint": "012342342393920a",
-                        "driver": "Simba",
-                    }
-                },
-                "target": "test",
-            },
-        )
+    @pytest.fixture(autouse=True)
+    def set_up_fixtures(
+        self,
+        target_http,
+        target_odbc_with_extra_conn,
+        target_thrift,
+        target_thrift_kerberos,
+        target_odbc_sql_endpoint,
+        target_odbc_cluster,
+        target_use_ssl_thrift,
+        base_project_cfg,
+    ):
+        self.base_project_cfg = base_project_cfg
+        self.target_http = target_http
+        self.target_odbc_with_extra_conn = target_odbc_with_extra_conn
+        self.target_odbc_sql_endpoint = target_odbc_sql_endpoint
+        self.target_odbc_cluster = target_odbc_cluster
+        self.target_thrift = target_thrift
+        self.target_thrift_kerberos = target_thrift_kerberos
+        self.target_use_ssl_thrift = target_use_ssl_thrift
 
     def test_http_connection(self):
-        config = self._get_target_http(self.project_cfg)
-        adapter = SparkAdapter(config, get_context("spawn"))
+        adapter = SparkAdapter(self.target_http, get_context("spawn"))
 
         def hive_http_connect(thrift_transport, configuration):
             self.assertEqual(thrift_transport.scheme, "https")
@@ -171,7 +57,7 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertIsNone(connection.credentials.database)
 
     def test_thrift_connection(self):
-        config = self._get_target_thrift(self.project_cfg)
+        config = self.target_thrift
         adapter = SparkAdapter(config, get_context("spawn"))
 
         def hive_thrift_connect(
@@ -195,8 +81,7 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertIsNone(connection.credentials.database)
 
     def test_thrift_ssl_connection(self):
-        config = self._get_target_use_ssl_thrift(self.project_cfg)
-        adapter = SparkAdapter(config, get_context("spawn"))
+        adapter = SparkAdapter(self.target_use_ssl_thrift, get_context("spawn"))
 
         def hive_thrift_connect(thrift_transport, configuration):
             self.assertIsNotNone(thrift_transport)
@@ -215,8 +100,7 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertIsNone(connection.credentials.database)
 
     def test_thrift_connection_kerberos(self):
-        config = self._get_target_thrift_kerberos(self.project_cfg)
-        adapter = SparkAdapter(config, get_context("spawn"))
+        adapter = SparkAdapter(self.target_thrift_kerberos, get_context("spawn"))
 
         def hive_thrift_connect(
             host, port, username, auth, kerberos_service_name, password, configuration
@@ -239,8 +123,7 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertIsNone(connection.credentials.database)
 
     def test_odbc_cluster_connection(self):
-        config = self._get_target_odbc_cluster(self.project_cfg)
-        adapter = SparkAdapter(config, get_context("spawn"))
+        adapter = SparkAdapter(self.target_odbc_cluster, get_context("spawn"))
 
         def pyodbc_connect(connection_str, autocommit):
             self.assertTrue(autocommit)
@@ -266,8 +149,7 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertIsNone(connection.credentials.database)
 
     def test_odbc_endpoint_connection(self):
-        config = self._get_target_odbc_sql_endpoint(self.project_cfg)
-        adapter = SparkAdapter(config, get_context("spawn"))
+        adapter = SparkAdapter(self.target_odbc_sql_endpoint, get_context("spawn"))
 
         def pyodbc_connect(connection_str, autocommit):
             self.assertTrue(autocommit)
@@ -289,6 +171,26 @@ class TestSparkAdapter(unittest.TestCase):
             self.assertEqual(connection.credentials.endpoint, "012342342393920a")
             self.assertEqual(connection.credentials.token, "abc123")
             self.assertEqual(connection.credentials.schema, "analytics")
+            self.assertIsNone(connection.credentials.database)
+
+    def test_odbc_with_extra_connection_string(self):
+        adapter = SparkAdapter(self.target_odbc_with_extra_conn, get_context("spawn"))
+
+        def pyodbc_connect(connection_str, autocommit):
+            self.assertTrue(autocommit)
+            self.assertIn("driver=simba;", connection_str.lower())
+            self.assertIn("port=443;", connection_str.lower())
+            self.assertIn("host=myorg.sparkhost.com;", connection_str.lower())
+            self.assertIn("someExtraValues", connection_str)
+
+        with mock.patch(
+            "dbt.adapters.spark.connections.pyodbc.connect", new=pyodbc_connect
+        ):  # noqa
+            connection = adapter.acquire_connection("dummy")
+            connection.handle  # trigger lazy-load
+
+            self.assertEqual(connection.state, "open")
+            self.assertIsNotNone(connection.handle)
             self.assertIsNone(connection.credentials.database)
 
     def test_parse_relation(self):
@@ -329,8 +231,7 @@ class TestSparkAdapter(unittest.TestCase):
 
         input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
-        config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(
+        rows = SparkAdapter(self.target_http, get_context("spawn")).parse_describe_extended(
             relation, input_cols
         )
         self.assertEqual(len(rows), 4)
@@ -420,8 +321,7 @@ class TestSparkAdapter(unittest.TestCase):
 
         input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
-        config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(
+        rows = SparkAdapter(self.target_http, get_context("spawn")).parse_describe_extended(
             relation, input_cols
         )
 
@@ -458,8 +358,7 @@ class TestSparkAdapter(unittest.TestCase):
 
         input_cols = [Row(keys=["col_name", "data_type"], values=r) for r in plain_rows]
 
-        config = self._get_target_http(self.project_cfg)
-        rows = SparkAdapter(config, get_context("spawn")).parse_describe_extended(
+        rows = SparkAdapter(self.target_http, get_context("spawn")).parse_describe_extended(
             relation, input_cols
         )
         self.assertEqual(len(rows), 1)
@@ -489,8 +388,7 @@ class TestSparkAdapter(unittest.TestCase):
         )
 
     def test_relation_with_database(self):
-        config = self._get_target_http(self.project_cfg)
-        adapter = SparkAdapter(config, get_context("spawn"))
+        adapter = SparkAdapter(self.target_http, get_context("spawn"))
         # fine
         adapter.Relation.create(schema="different", identifier="table")
         with self.assertRaises(DbtRuntimeError):
@@ -516,7 +414,7 @@ class TestSparkAdapter(unittest.TestCase):
             "target": "test",
         }
         with self.assertRaises(DbtRuntimeError):
-            config_from_parts_or_dicts(self.project_cfg, profile)
+            config_from_parts_or_dicts(self.base_project_cfg, profile)
 
     def test_profile_with_cluster_and_sql_endpoint(self):
         profile = {
@@ -536,7 +434,7 @@ class TestSparkAdapter(unittest.TestCase):
             "target": "test",
         }
         with self.assertRaises(DbtRuntimeError):
-            config_from_parts_or_dicts(self.project_cfg, profile)
+            config_from_parts_or_dicts(self.base_project_cfg, profile)
 
     def test_parse_columns_from_information_with_table_type_and_delta_provider(self):
         self.maxDiff = None
@@ -570,10 +468,9 @@ class TestSparkAdapter(unittest.TestCase):
             schema="default_schema", identifier="mytable", type=rel_type, information=information
         )
 
-        config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(
-            relation
-        )
+        columns = SparkAdapter(
+            self.target_http, get_context("spawn")
+        ).parse_columns_from_information(relation)
         self.assertEqual(len(columns), 4)
         self.assertEqual(
             columns[0].to_column_dict(omit_none=False),
@@ -657,10 +554,9 @@ class TestSparkAdapter(unittest.TestCase):
             schema="default_schema", identifier="myview", type=rel_type, information=information
         )
 
-        config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(
-            relation
-        )
+        columns = SparkAdapter(
+            self.target_http, get_context("spawn")
+        ).parse_columns_from_information(relation)
         self.assertEqual(len(columns), 4)
         self.assertEqual(
             columns[1].to_column_dict(omit_none=False),
@@ -725,10 +621,9 @@ class TestSparkAdapter(unittest.TestCase):
             schema="default_schema", identifier="mytable", type=rel_type, information=information
         )
 
-        config = self._get_target_http(self.project_cfg)
-        columns = SparkAdapter(config, get_context("spawn")).parse_columns_from_information(
-            relation
-        )
+        columns = SparkAdapter(
+            self.target_http, get_context("spawn")
+        ).parse_columns_from_information(relation)
         self.assertEqual(len(columns), 4)
 
         self.assertEqual(

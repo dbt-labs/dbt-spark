@@ -183,7 +183,11 @@ class TestSparkIncrementalConstraintsColumnsEqualPyodbc(
 
 
 @pytest.mark.skip_profile(
-    "spark_session", "apache_spark", "databricks_sql_endpoint", "databricks_cluster"
+    "spark_session",
+    "apache_spark",
+    "databricks_sql_endpoint",
+    "databricks_cluster",
+    "spark_http_odbc",
 )
 class TestSparkTableConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseTableConstraintsColumnsEqual
@@ -198,7 +202,11 @@ class TestSparkTableConstraintsColumnsEqualDatabricksHTTP(
 
 
 @pytest.mark.skip_profile(
-    "spark_session", "apache_spark", "databricks_sql_endpoint", "databricks_cluster"
+    "spark_session",
+    "apache_spark",
+    "databricks_sql_endpoint",
+    "databricks_cluster",
+    "spark_http_odbc",
 )
 class TestSparkViewConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseViewConstraintsColumnsEqual
@@ -213,7 +221,11 @@ class TestSparkViewConstraintsColumnsEqualDatabricksHTTP(
 
 
 @pytest.mark.skip_profile(
-    "spark_session", "apache_spark", "databricks_sql_endpoint", "databricks_cluster"
+    "spark_session",
+    "apache_spark",
+    "databricks_sql_endpoint",
+    "databricks_cluster",
+    "spark_http_odbc",
 )
 class TestSparkIncrementalConstraintsColumnsEqualDatabricksHTTP(
     DatabricksHTTPSetup, BaseIncrementalConstraintsColumnsEqual

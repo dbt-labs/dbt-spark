@@ -55,7 +55,7 @@ class TestDefaultAppend(BaseIncrementalStrategies):
         check_relations_equal(project.adapter, ["default_append", "expected_append"])
 
     @pytest.mark.skip_profile(
-        "databricks_http_cluster", "databricks_sql_endpoint", "spark_session"
+        "databricks_http_cluster", "databricks_sql_endpoint", "spark_session", "spark_http_odbc"
     )
     def test_default_append(self, project):
         self.run_and_test(project)
@@ -77,7 +77,7 @@ class TestInsertOverwrite(BaseIncrementalStrategies):
         check_relations_equal(project.adapter, ["insert_overwrite_partitions", "expected_upsert"])
 
     @pytest.mark.skip_profile(
-        "databricks_http_cluster", "databricks_sql_endpoint", "spark_session"
+        "databricks_http_cluster", "databricks_sql_endpoint", "spark_session", "spark_http_odbc"
     )
     def test_insert_overwrite(self, project):
         self.run_and_test(project)
@@ -103,7 +103,11 @@ class TestDeltaStrategies(BaseIncrementalStrategies):
         check_relations_equal(project.adapter, ["merge_update_columns", "expected_partial_upsert"])
 
     @pytest.mark.skip_profile(
-        "apache_spark", "databricks_http_cluster", "databricks_sql_endpoint", "spark_session"
+        "apache_spark",
+        "databricks_http_cluster",
+        "databricks_sql_endpoint",
+        "spark_session",
+        "spark_http_odbc",
     )
     def test_delta_strategies(self, project):
         self.run_and_test(project)

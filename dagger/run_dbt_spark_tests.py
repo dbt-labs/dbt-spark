@@ -137,7 +137,7 @@ async def test_spark(test_args):
             spark_ctr, spark_host = get_spark_container(client)
             tst_container = tst_container.with_service_binding(alias=spark_host, service=spark_ctr)
 
-        elif test_profile in ["databricks_cluster", "databricks_sql_endpoint"]:
+        elif test_profile in ["databricks_cluster", "databricks_sql_endpoint", "spark_http_odbc"]:
             tst_container = (
                 tst_container.with_workdir("/")
                 .with_exec(["./scripts/configure_odbc.sh"])

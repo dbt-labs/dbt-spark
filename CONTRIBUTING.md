@@ -78,6 +78,7 @@ python dagger/run_dbt_spark_tests.py --profile databricks_sql_endpoint --test-pa
 _options_:
   - "apache_spark"
   - "spark_session"
+  - "spark_http_odbc"
   - "databricks_sql_endpoint"
   - "databricks_cluster"
   - "databricks_http_cluster"

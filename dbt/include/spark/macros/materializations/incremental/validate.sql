@@ -21,7 +21,7 @@
 
   {% set invalid_strategy_msg -%}
     Invalid incremental strategy provided: {{ raw_strategy }}
-    Expected one of: 'append', 'merge', 'insert_overwrite'
+    Expected one of: 'append', 'merge', 'insert_overwrite', 'microbatch'
   {%- endset %}
 
   {% set invalid_merge_msg -%}
@@ -35,13 +35,13 @@
     Use the 'append' or 'merge' strategy instead
   {%- endset %}
 
-  {% if raw_strategy not in ['append', 'merge', 'insert_overwrite'] %}
+  {% if raw_strategy not in ['append', 'merge', 'insert_overwrite', 'microbatch'] %}
     {% do exceptions.raise_compiler_error(invalid_strategy_msg) %}
   {%-else %}
     {% if raw_strategy == 'merge' and file_format not in ['delta', 'iceberg', 'hudi'] %}
       {% do exceptions.raise_compiler_error(invalid_merge_msg) %}
     {% endif %}
-    {% if raw_strategy == 'insert_overwrite' and target.endpoint %}
+    {% if raw_strategy in ['insert_overwrite', 'microbatch'] and target.endpoint %}
       {% do exceptions.raise_compiler_error(invalid_insert_overwrite_endpoint_msg) %}
     {% endif %}
   {% endif %}
