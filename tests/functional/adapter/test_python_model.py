@@ -85,7 +85,11 @@ def model(dbt, spark):
 
 
 @pytest.mark.skip_profile(
-    "apache_spark", "spark_session", "databricks_sql_endpoint", "spark_http_odbc"
+    "apache_spark",
+    "spark_session",
+    "databricks_sql_endpoint",
+    "spark_http_odbc",
+    "databricks_cluster",
 )
 class TestChangingSchemaSpark:
     """
