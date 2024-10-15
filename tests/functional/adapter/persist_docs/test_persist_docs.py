@@ -120,7 +120,7 @@ class TestPersistDocsDeltaView:
                 assert result[2] is None
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "spark_http_odbc")
+@pytest.mark.skip_profile("apache_spark", "spark_session")
 class TestPersistDocsMissingColumn:
     @pytest.fixture(scope="class")
     def project_config_update(self):
