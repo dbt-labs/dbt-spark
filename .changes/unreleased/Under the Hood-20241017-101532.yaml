@@ -1,0 +1,6 @@
+kind: Under the Hood
+body: Applies "Initial refactoring of incremental materialization" (dbt-labs/dbt-core#5359).
+time: 2024-10-17T10:15:32.88591-07:00
+custom:
+    Author: hiloboy0119
+    Issue: "1123"

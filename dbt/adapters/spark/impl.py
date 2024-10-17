@@ -516,6 +516,12 @@ class SparkAdapter(SQLAdapter):
         """Override for DebugTask method"""
         self.execute("select 1 as id")
 
+    def valid_incremental_strategies(self) -> list[str]:
+        """The set of standard builtin strategies which this adapter supports out-of-the-box.
+        Not used to validate custom strategies defined by end users.
+        """
+        return ["append", "merge", "insert_overwrite", "microbatch"]
+
 
 # spark does something interesting with joins when both tables have the same
 # static values for the join condition and complains that the join condition is
