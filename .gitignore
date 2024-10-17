@@ -46,3 +46,4 @@ test.env
 dbt-integration-tests
 /.tool-versions
 /.hypothesis/*
+.venv/
