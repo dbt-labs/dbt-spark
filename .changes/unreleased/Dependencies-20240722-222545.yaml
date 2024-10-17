@@ -1,0 +1,6 @@
+kind: "Dependencies"
+body: "Update twine requirement from ~=4.0 to ~=5.1"
+time: 2024-07-22T22:25:45.00000Z
+custom:
+  Author: dependabot[bot]
+  PR: 1080
