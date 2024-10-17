@@ -25,8 +25,8 @@ unit: ## Runs unit tests with py38.
 test: ## Runs unit tests with py38 and code checks against staged changes.
 	@\
 	python -m pytest tests/unit; \
-	python dagger/run_dbt_spark_tests.py --profile spark_session \
-	pre-commit run --all-files
+	pre-commit run --all-files; \
+	python dagger/run_dbt_spark_tests.py --profile spark_session
 
 .PHONY: clean
 	@echo "cleaning repo"
