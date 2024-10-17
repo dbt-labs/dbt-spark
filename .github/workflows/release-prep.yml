@@ -84,7 +84,7 @@ defaults:
     shell: bash
 
 env:
-  PYTHON_TARGET_VERSION: 3.8
+  PYTHON_TARGET_VERSION: 3.9
   NOTIFICATION_PREFIX: "[Release Preparation]"
 
 jobs:
@@ -448,7 +448,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - name: Check out the repository
