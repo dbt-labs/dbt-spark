@@ -1,7 +1,7 @@
 # this image gets published to GHCR for production use
 ARG py_version=3.11.2
 
-FROM python:$py_version-slim-bullseye as base
+FROM python:$py_version-slim-bullseye AS base
 
 RUN apt-get update \
   && apt-get dist-upgrade -y \
@@ -29,7 +29,7 @@ ENV LANG=C.UTF-8
 RUN python -m pip install --upgrade "pip==24.0" "setuptools==69.2.0" "wheel==0.43.0" --no-cache-dir
 
 
-FROM base as dbt-spark
+FROM base AS dbt-spark
 
 ARG commit_ref=main
 ARG extras=all
