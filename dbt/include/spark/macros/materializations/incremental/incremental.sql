@@ -1,11 +1,13 @@
 {% materialization incremental, adapter='spark', supported_languages=['sql', 'python'] -%}
   {#-- Validate early so we don't run SQL if the file_format + strategy combo is invalid --#}
   {%- set raw_file_format = config.get('file_format', default='parquet') -%}
-  {%- set raw_strategy = config.get('incremental_strategy') or 'append' -%}
+  {% set raw_strategy = config.get('incremental_strategy') or 'default' %}
   {%- set grant_config = config.get('grants') -%}
 
   {%- set file_format = dbt_spark_validate_get_file_format(raw_file_format) -%}
   {%- set strategy = dbt_spark_validate_get_incremental_strategy(raw_strategy, file_format) -%}
+  {#-- Get the incremental_strategy, the macro to use for the strategy, and build the sql --#}
+  {% set strategy_sql_macro_func = adapter.get_incremental_strategy_macro(context, strategy) %}
 
   {#-- Set vars --#}
 
@@ -56,8 +58,11 @@
       {{ create_table_as(True, tmp_relation, compiled_code, language) }}
     {%- endcall -%}
     {%- do process_schema_changes(on_schema_change, tmp_relation, existing_relation) -%}
+    {#-- call the incremental strategy macro --#}
+    {% set strategy_arg_dict = ({'target_relation': target_relation, 'temp_relation': tmp_relation, 'unique_key': unique_key, 'dest_columns': dest_columns, 'predicates': incremental_predicates }) %}
+    {% set build_sql = strategy_sql_macro_func(strategy_arg_dict) %}
     {%- call statement('main') -%}
-      {{ dbt_spark_get_incremental_sql(strategy, tmp_relation, target_relation, existing_relation, unique_key, incremental_predicates) }}
+      {{ build_sql }}
     {%- endcall -%}
     {%- if language == 'python' -%}
       {#--
@@ -83,3 +88,19 @@
   {{ return({'relations': [target_relation]}) }}
 
 {%- endmaterialization %}
+
+{% macro spark__get_incremental_default_sql(arg_dict) %}
+  {% do return(spark__get_incremental_append_sql(arg_dict)) %}
+{% endmacro %}
+{% macro spark__get_incremental_append_sql(arg_dict) %}
+  {% do return(dbt_spark_get_incremental_sql("append", arg_dict["temp_relation"], arg_dict["target_relation"], load_relation(this), arg_dict["unique_key"], arg_dict["predicates"])) %}
+{% endmacro %}
+{% macro spark__get_incremental_merge_sql(arg_dict) %}
+  {% do return(dbt_spark_get_incremental_sql("merge", arg_dict["temp_relation"], arg_dict["target_relation"], load_relation(this), arg_dict["unique_key"], arg_dict["predicates"])) %}
+{% endmacro %}
+{% macro spark__get_incremental_insert_overwrite_sql(arg_dict) %}
+  {% do return(dbt_spark_get_incremental_sql("insert_overwrite", arg_dict["temp_relation"], arg_dict["target_relation"], load_relation(this), arg_dict["unique_key"], arg_dict["predicates"])) %}
+{% endmacro %}
+{% macro spark__get_incremental_microbatch_sql(arg_dict) %}
+  {% do return(dbt_spark_get_incremental_sql("microbatch", arg_dict["temp_relation"], arg_dict["target_relation"], load_relation(this), arg_dict["unique_key"], arg_dict["predicates"])) %}
+{% endmacro %}

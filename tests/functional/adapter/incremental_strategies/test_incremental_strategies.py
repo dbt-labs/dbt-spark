@@ -128,7 +128,6 @@ class TestBadStrategies(BaseIncrementalStrategies):
         return {
             "bad_file_format.sql": bad_file_format_sql,
             "bad_merge_not_delta.sql": bad_merge_not_delta_sql,
-            "bad_strategy.sql": bad_strategy_sql,
         }
 
     @staticmethod
@@ -141,4 +140,24 @@ class TestBadStrategies(BaseIncrementalStrategies):
 
     @pytest.mark.skip_profile("databricks_http_cluster", "spark_session")
     def test_bad_strategies(self, project):
+        self.run_and_test()
+
+
+class TestBadCustomStrategy(BaseIncrementalStrategies):
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "bad_strategy.sql": bad_strategy_sql,
+        }
+
+    @staticmethod
+    def run_and_test():
+        run_results = run_dbt(["run"], expect_pass=False)
+        # assert all models fail with compilation errors
+        for result in run_results:
+            assert result.status == "error"
+            assert "dbt could not find an incremental strategy macro" in result.message
+
+    @pytest.mark.skip_profile("databricks_http_cluster", "spark_session")
+    def test_bad_custom_strategies(self, project):
         self.run_and_test()
