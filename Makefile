@@ -17,12 +17,12 @@ lint: ## Runs flake8 and mypy code checks against staged changes.
 	pre-commit run --all-files
 
 .PHONY: unit
-unit: ## Runs unit tests with py38.
+unit: ## Runs unit tests with py39.
 	@\
 	python -m pytest tests/unit
 
 .PHONY: test
-test: ## Runs unit tests with py38 and code checks against staged changes.
+test: ## Runs unit tests with py39 and code checks against staged changes.
 	@\
 	python -m pytest tests/unit; \
 	python dagger/run_dbt_spark_tests.py --profile spark_session \
