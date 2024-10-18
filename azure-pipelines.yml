@@ -64,10 +64,10 @@ stages:
               source env/bin/activate
               pip install wheel setuptools==70.1.0
               pip install -r requirements.txt 
-              # Version explicitly set to 1.4.8 until we move to dbt-core 1.6.0 and above
+              # Version explicitly set to 1.4.9 until we move to dbt-core 1.6.0 and above
               # where the version of this package will be <dbt-core-version>.<seq-build-id>
               # VERSION=$(python setup.py --version).${dev}$(tag)
-              VERSION=1.4.8.${dev}$(tag)
+              VERSION=1.4.9.${dev}$(tag)
               DBT_SPARK_PACKAGE_VERSION=${VERSION} python setup.py sdist bdist_wheel
             displayName: "Install and Build."
           - task: CopyFiles@2
