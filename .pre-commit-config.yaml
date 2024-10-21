@@ -1,6 +1,6 @@
 # For more on configuring pre-commit hooks (see https://pre-commit.com/)
 
-# Force all unspecified python hooks to run python 3.8
+# Force all unspecified python hooks to run python 3.9
 default_language_version:
   python: python3
 
@@ -21,7 +21,7 @@ repos:
     additional_dependencies: ['click~=8.1']
     args:
     - "--line-length=99"
-    - "--target-version=py38"
+    - "--target-version=py39"
   - id: black
     alias: black-check
     stages: [manual]
