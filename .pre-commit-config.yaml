@@ -25,14 +25,14 @@ repos:
     additional_dependencies: ['click~=8.1']
     args:
     - "--line-length=99"
-    - "--target-version=py38"
+    - "--target-version=py39"
   - id: black
     alias: black-check
     stages: [manual]
     additional_dependencies: ['click~=8.1']
     args:
     - "--line-length=99"
-    - "--target-version=py38"
+    - "--target-version=py39"
     - "--check"
     - "--diff"
 - repo: https://github.com/pycqa/flake8
