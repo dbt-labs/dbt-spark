@@ -3,7 +3,7 @@
 # TODO: remove global exclusion of tests when testing overhaul is complete
 exclude: '^tests/.*'
 
-# Force all unspecified python hooks to run python 3.8
+# Force all unspecified python hooks to run python 3.9
 default_language_version:
   python: python3
 
@@ -24,14 +24,14 @@ repos:
     additional_dependencies: ['click==8.0.4']
     args:
     - "--line-length=99"
-    - "--target-version=py38"
+    - "--target-version=py39"
   - id: black
     alias: black-check
     stages: [manual]
     additional_dependencies: ['click==8.0.4']
     args:
     - "--line-length=99"
-    - "--target-version=py38"
+    - "--target-version=py39"
     - "--check"
     - "--diff"
 - repo: https://github.com/pycqa/flake8

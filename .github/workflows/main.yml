@@ -50,7 +50,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4.3.0
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Install python dependencies
         run: |
@@ -78,7 +78,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10"]
 
     env:
       TOXENV: "unit"
@@ -129,7 +129,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4.3.0
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Install python dependencies
         run: |
@@ -175,7 +175,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-12, windows-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10"]
 
     steps:
       - name: Set up Python ${{ matrix.python-version }}
