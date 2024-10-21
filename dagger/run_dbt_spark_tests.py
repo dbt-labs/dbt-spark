@@ -104,7 +104,7 @@ async def test_spark(test_args):
         platform = dagger.Platform("linux/amd64")
         tst_container = (
             client.container(platform=platform)
-            .from_("python:3.8-slim")
+            .from_("python:3.9-slim")
             .with_mounted_cache("/var/cache/apt/archives", os_reqs_cache)
             .with_mounted_cache("/root/.cache/pip", pip_cache)
             # install OS deps first so any local changes don't invalidate the cache
