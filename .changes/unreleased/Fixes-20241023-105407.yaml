@@ -1,0 +1,6 @@
+kind: Fixes
+body: Pin build dependencies to final releases
+time: 2024-10-23T10:54:07.142933-04:00
+custom:
+  Author: mikealfare
+  Issue: "1129"
