@@ -5,7 +5,12 @@ from dbt.tests.adapter.python_model.test_python_model import (
     BasePythonModelTests,
     BasePythonIncrementalTests,
 )
-from dbt.tests.adapter.python_model.test_spark import BasePySparkTests
+from dbt.tests.adapter.python_model.test_spark import (
+    BasePySparkTests,
+    PANDAS_MODEL,
+    PANDAS_ON_SPARK_MODEL,
+    PYSPARK_MODEL,
+)
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
@@ -15,7 +20,13 @@ class TestPythonModelSpark(BasePythonModelTests):
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
 class TestPySpark(BasePySparkTests):
-    pass
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "pandas_df.py": PANDAS_MODEL,
+            "pyspark_df.py": PYSPARK_MODEL,
+            "pandas_on_spark_df.py": PANDAS_ON_SPARK_MODEL,
+        }
 
 
 @pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
