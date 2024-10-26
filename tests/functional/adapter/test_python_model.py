@@ -48,7 +48,7 @@ class TestPythonIncrementalModelSpark(BasePythonIncrementalTests):
 
 
 models__simple_python_model = """
-import pandas
+import pyspark.pandas as pandas
 import torch
 import spacy
 
@@ -68,7 +68,7 @@ def model(dbt, spark):
                 "ResourceClass": "SingleNode"
             }
         },
-        packages=['spacy', 'torch', 'pydantic>=1.10.8']
+        packages=['spacy', 'torch', 'pydantic>=1.10.3', 'numpy<2']
     )
     data = [[1,2]] * 10
     return spark.createDataFrame(data, schema=['test', 'test2'])
