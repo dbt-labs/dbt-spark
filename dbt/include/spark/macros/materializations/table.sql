@@ -90,11 +90,19 @@ else:
   msg = f"{type(df)} is not a supported type for dbt Python materialization"
   raise Exception(msg)
 
+
+
+writer = df.write.format("iceberg").mode("overwrite").option("overwriteSchema", "true")
+
 {% if partition_cols() -%}
-  df.write.mode("overwrite").format("iceberg").partitionBy('{{ partition_cols() | trim }}'.strip("()").split(",")).option("overwriteSchema", "true").saveAsTable("{{ target_relation }}")
-{% else -%}
-  df.write.mode("overwrite").format("iceberg").option("overwriteSchema", "true").saveAsTable("{{ target_relation }}")
+writer = writer.partitionBy('{{ partition_cols() | trim }}'.strip("()").split(","))
 {%- endif %}
+
+{% if location_clause() -%}
+writer = writer.option("path", "{{ location_clause() | trim }}".split("'")[1]) 
+{%- endif %}
+
+writer.saveAsTable("{{ target_relation }}")
 {%- endmacro -%}
 
 {%macro py_script_comment()%}
