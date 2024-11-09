@@ -10,6 +10,8 @@
 
 name: Adapter Integration Tests
 
+run-name: "${{ (contains(github.event_name, 'workflow_') && inputs.name) || github.event_name }}: ${{ (contains(github.event_name, 'workflow_') &&  inputs.adapter_branch) || github.ref_name }} by @${{ github.actor }}"
+
 on:
   push:
     branches:
@@ -24,10 +26,31 @@ on:
 
   workflow_dispatch:
     inputs:
-      dbt-core-branch:
-        description: "branch of dbt-core to use in dev-requirements.txt"
+      name:
+        description: "Name to associate with run (example: 'dbt-adapters-242')"
         required: false
         type: string
+        default: "Adapter Integration Tests"
+      adapter_branch:
+        description: "The branch of this adapter repository to use"
+        type: string
+        required: false
+        default: "main"
+      dbt_adapters_branch:
+        description: "The branch of dbt-adapters to use"
+        type: string
+        required: false
+        default: "main"
+      dbt_core_branch:
+        description: "The branch of dbt-core to use"
+        type: string
+        required: false
+        default: "main"
+      dbt_common_branch:
+        description: "The branch of dbt-common to use"
+        type: string
+        required: false
+        default: "main"
 
 # explicitly turn off permissions for `GITHUB_TOKEN`
 permissions: read-all
@@ -53,6 +76,7 @@ jobs:
         test:
           - "apache_spark"
           - "spark_session"
+          - "spark_http_odbc"
           - "databricks_sql_endpoint"
           - "databricks_cluster"
           - "databricks_http_cluster"
@@ -74,11 +98,18 @@ jobs:
       DBT_TEST_USER_3: "buildbot+dbt_test_user_3@dbtlabs.com"
 
     steps:
-      - name: Check out the repository
-        if: github.event_name != 'pull_request_target'
+      - name: Check out the repository (push)
+        if: github.event_name == 'push'
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Check out the repository (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.adapter_branch }}
 
       # explicitly checkout the branch for the PR,
       # this is necessary for the `pull_request` event
@@ -95,17 +126,20 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Update Adapters and Core branches (update dev_requirements.txt)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          ./.github/scripts/update_dev_dependency_branches.sh \
+            ${{ inputs.dbt_adapters_branch }} \
+            ${{ inputs.dbt_core_branch }} \
+            ${{ inputs.dbt_common_branch }}
+          cat dev-requirements.txt
+
       - name: Install python dependencies
         run: |
           python -m pip install --user --upgrade pip
           python -m pip --version
           python -m pip install -r dagger/requirements.txt
-
-      - name: Update dev_requirements.txt
-        if: inputs.dbt-core-branch != ''
-        run: |
-          pip install bumpversion
-          ./.github/scripts/update_dbt_core_branch.sh ${{ inputs.dbt-core-branch }}
 
       - name: Run tests for ${{ matrix.test }}
         run: python dagger/run_dbt_spark_tests.py --profile ${{ matrix.test }}

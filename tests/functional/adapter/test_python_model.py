@@ -8,12 +8,16 @@ from dbt.tests.adapter.python_model.test_python_model import (
 from dbt.tests.adapter.python_model.test_spark import BasePySparkTests
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "apache_spark", "spark_session", "databricks_sql_endpoint", "spark_http_odbc"
+)
 class TestPythonModelSpark(BasePythonModelTests):
     pass
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "apache_spark", "spark_session", "databricks_sql_endpoint", "spark_http_odbc"
+)
 class TestPySpark(BasePySparkTests):
     def test_different_dataframes(self, project):
         """
@@ -33,7 +37,9 @@ class TestPySpark(BasePySparkTests):
         assert len(results) == 3
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "apache_spark", "spark_session", "databricks_sql_endpoint", "spark_http_odbc"
+)
 class TestPythonIncrementalModelSpark(BasePythonIncrementalTests):
     @pytest.fixture(scope="class")
     def project_config_update(self):
@@ -61,7 +67,7 @@ def model(dbt, spark):
                 "ResourceClass": "SingleNode"
             }
         },
-        packages=['spacy', 'torch', 'pydantic>=1.10.8']
+        packages=['spacy', 'torch', 'pydantic>=1.10.8', 'numpy<2']
     )
     data = [[1,2]] * 10
     return spark.createDataFrame(data, schema=['test', 'test2'])
@@ -78,7 +84,13 @@ def model(dbt, spark):
 """
 
 
-@pytest.mark.skip_profile("apache_spark", "spark_session", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "apache_spark",
+    "spark_session",
+    "databricks_sql_endpoint",
+    "spark_http_odbc",
+    "databricks_http_cluster",
+)
 class TestChangingSchemaSpark:
     """
     Confirm that we can setup a spot instance and parse required packages into the Databricks job.

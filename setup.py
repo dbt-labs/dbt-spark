@@ -4,9 +4,9 @@ import sys
 import re
 
 # require python 3.8 or newer
-if sys.version_info < (3, 8):
+if sys.version_info < (3, 9):
     print("Error: dbt does not support this version of Python.")
-    print("Please upgrade to Python 3.8 or higher.")
+    print("Please upgrade to Python 3.9 or higher.")
     sys.exit(1)
 
 # require version of setuptools that supports find_namespace_packages
@@ -41,10 +41,10 @@ def _get_plugin_version_dict():
 
 
 package_name = "dbt-spark"
-package_version = "1.9.0a1"
+package_version = "1.9.0b1"
 description = """The Apache Spark adapter plugin for dbt"""
 
-odbc_extras = ["pyodbc~=4.0.39"]
+odbc_extras = ["pyodbc~=5.1.0"]
 pyhive_extras = [
     "PyHive[hive_pure_sasl]~=0.7.0",
     "thrift>=0.11.0,<0.17.0",
@@ -65,8 +65,8 @@ setup(
     include_package_data=True,
     install_requires=[
         "sqlparams>=3.0.0",
-        "dbt-common>=1.0.4,<2.0",
-        "dbt-adapters>=1.1.1,<2.0",
+        "dbt-common>=1.10,<2.0",
+        "dbt-adapters>=1.7,<2.0",
         # add dbt-core to ensure backwards compatibility of installation, this is not a functional dependency
         "dbt-core>=1.8.0",
     ],
@@ -83,10 +83,10 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )

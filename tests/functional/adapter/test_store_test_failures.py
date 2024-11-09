@@ -7,7 +7,9 @@ from dbt.tests.adapter.store_test_failures_tests.test_store_test_failures import
 )
 
 
-@pytest.mark.skip_profile("spark_session", "databricks_cluster", "databricks_sql_endpoint")
+@pytest.mark.skip_profile(
+    "spark_session", "databricks_cluster", "databricks_sql_endpoint", "spark_http_odbc"
+)
 class TestSparkStoreTestFailures(StoreTestFailuresBase):
     @pytest.fixture(scope="class")
     def project_config_update(self):

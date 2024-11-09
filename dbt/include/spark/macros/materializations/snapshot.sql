@@ -13,6 +13,7 @@
 
 
 {% macro spark__snapshot_merge_sql(target, source, insert_cols) -%}
+    {%- set columns = config.get("snapshot_table_column_names") or get_snapshot_table_column_names() -%}
 
     merge into {{ target }} as DBT_INTERNAL_DEST
     {% if target.is_iceberg %}
@@ -21,12 +22,17 @@
     {% else %}
       using {{ source }} as DBT_INTERNAL_SOURCE
     {% endif %}
-    on DBT_INTERNAL_SOURCE.dbt_scd_id = DBT_INTERNAL_DEST.dbt_scd_id
+    on DBT_INTERNAL_SOURCE.{{ columns.dbt_scd_id }} = DBT_INTERNAL_DEST.{{ columns.dbt_scd_id }}
     when matched
-     and DBT_INTERNAL_DEST.dbt_valid_to is null
+     {% if config.get("dbt_valid_to_current") %}
+       and ( DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} = {{ config.get('dbt_valid_to_current') }} or
+             DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} is null )
+     {% else %}
+       and DBT_INTERNAL_DEST.{{ columns.dbt_valid_to }} is null
+     {% endif %}
      and DBT_INTERNAL_SOURCE.dbt_change_type in ('update', 'delete')
         then update
-        set dbt_valid_to = DBT_INTERNAL_SOURCE.dbt_valid_to
+        set {{ columns.dbt_valid_to }} = DBT_INTERNAL_SOURCE.{{ columns.dbt_valid_to }}
 
     when not matched
      and DBT_INTERNAL_SOURCE.dbt_change_type = 'insert'
@@ -81,13 +87,12 @@
 
 
 {% materialization snapshot, adapter='spark' %}
-  {%- set config = model['config'] -%}
 
   {%- set target_table = model.get('alias', model.get('name')) -%}
 
   {%- set strategy_name = config.get('strategy') -%}
   {%- set unique_key = config.get('unique_key') %}
-  {%- set file_format = config.get('file_format', 'parquet') -%}
+  {%- set file_format = config.get('file_format') or 'parquet' -%}
   {%- set grant_config = config.get('grants') -%}
 
   {% set target_relation_exists, target_relation = get_or_create_relation(
@@ -126,7 +131,7 @@
   {{ run_hooks(pre_hooks, inside_transaction=True) }}
 
   {% set strategy_macro = strategy_dispatch(strategy_name) %}
-  {% set strategy = strategy_macro(model, "snapshotted_data", "source_data", config, target_relation_exists) %}
+  {% set strategy = strategy_macro(model, "snapshotted_data", "source_data", model['config'], target_relation_exists) %}
 
   {% if not target_relation_exists %}
 
@@ -135,7 +140,9 @@
 
   {% else %}
 
-      {{ adapter.valid_snapshot_target(target_relation) }}
+      {% set columns = config.get("snapshot_table_column_names") or get_snapshot_table_column_names() %}
+
+      {{ adapter.valid_snapshot_target(target_relation, columns) }}
 
       {% set staging_table = spark_build_snapshot_staging_table(strategy, sql, target_relation) %}
 

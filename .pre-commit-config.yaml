@@ -24,10 +24,10 @@ repos:
     -   id: black
         args:
         -   --line-length=99
-        -   --target-version=py38
         -   --target-version=py39
         -   --target-version=py310
         -   --target-version=py311
+        -   --target-version=py312
         additional_dependencies: [flaky]
 
 -   repo: https://github.com/pycqa/flake8
