@@ -117,12 +117,12 @@ jobs:
   build-test-package:
     name: "Build, Test, Package"
     if: ${{ !failure() && !cancelled() && !inputs.only_docker }}
-    needs: [audit-version-and-changelog]
+    needs: [bump-version-generate-changelog]
     uses: dbt-labs/dbt-release/.github/workflows/build.yml@main
     with:
-      sha: ${{ needs.audit-version-and-changelog.outputs.final_sha }}
+      sha: ${{ needs.bump-version-generate-changelog.outputs.final_sha }}
       version_number: ${{ inputs.version_number }}
-      changelog_path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
+      changelog_path: ${{ needs.bump-version-generate-changelog.outputs.changelog_path }}
       build_script_path: ${{ inputs.build_script_path }}
       s3_bucket_name: ${{ inputs.s3_bucket_name }}
       package_test_command: ${{ inputs.package_test_command }}
@@ -134,12 +134,12 @@ jobs:
   github-release:
     name: "GitHub Release"
     if: ${{ !failure() && !cancelled() && !inputs.only_docker }}
-    needs: [audit-version-and-changelog, build-test-package]
+    needs: [bump-version-generate-changelog, build-test-package]
     uses: dbt-labs/dbt-release/.github/workflows/github-release.yml@main
     with:
-      sha: ${{ needs.audit-version-and-changelog.outputs.final_sha }}
+      sha: ${{ needs.bump-version-generate-changelog.outputs.final_sha }}
       version_number: ${{ inputs.version_number }}
-      changelog_path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
+      changelog_path: ${{ needs.bump-version-generate-changelog.outputs.changelog_path }}
       test_run: ${{ inputs.test_run }}
 
   pypi-release:
