@@ -103,7 +103,7 @@ jobs:
       nightly_release: ${{ inputs.nightly_release }}
     secrets: inherit
 
-  log-outputs-audit-version-and-changelog:
+  log-outputs-bump-version-generate-changelog:
     name: "[Log output] Bump package version, Generate changelog"
     if: ${{ !failure() && !cancelled() && !inputs.only_docker }}
     needs: [bump-version-generate-changelog]
@@ -111,8 +111,8 @@ jobs:
     steps:
       - name: Print variables
         run: |
-          echo Final SHA     : ${{ needs.audit-version-and-changelog.outputs.final_sha }}
-          echo Changelog path: ${{ needs.audit-version-and-changelog.outputs.changelog_path }}
+          echo Final SHA     : ${{ needs.bump-version-generate-changelog.outputs.final_sha }}
+          echo Changelog path: ${{ needs.bump-version-generate-changelog.outputs.changelog_path }}
 
   build-test-package:
     name: "Build, Test, Package"
