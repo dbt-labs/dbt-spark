@@ -56,6 +56,11 @@ on:
         type: boolean
         default: true
         required: false
+      nightly_release:
+        description: "Nightly release to dev environment"
+        type: boolean
+        default: false
+        required: false
       only_docker:
         description: "Only release Docker image, skip GitHub & PyPI"
         type: boolean
@@ -86,27 +91,22 @@ jobs:
           echo Test run:                           ${{ inputs.test_run }}
           echo Only Docker:                        ${{ inputs.only_docker }}
 
-  # The Spark repository uses CircleCI to run integration tests.
-  # Because of this, the process of version bumps will be manual
-  # which means that this stage will be used to audit the version
-  # and changelog in sources.
-  # We are passing `env_setup_script_path` as an empty string
-  # so that the integration tests stage will be skipped.
-  audit-version-and-changelog:
-    name: "Bump package version, Generate changelog"
-    uses: dbt-labs/dbt-spark/.github/workflows/release-prep.yml@main
+  bump-version-generate-changelog:
+    name: Bump package version, Generate changelog
+    uses: dbt-labs/dbt-release/.github/workflows/release-prep.yml@main
     with:
       sha: ${{ inputs.sha }}
       version_number: ${{ inputs.version_number }}
       target_branch: ${{ inputs.target_branch }}
-      env_setup_script_path: ""
+      env_setup_script_path: ${{ inputs.env_setup_script_path }}
       test_run: ${{ inputs.test_run }}
+      nightly_release: ${{ inputs.nightly_release }}
     secrets: inherit
 
   log-outputs-audit-version-and-changelog:
     name: "[Log output] Bump package version, Generate changelog"
     if: ${{ !failure() && !cancelled() && !inputs.only_docker }}
-    needs: [audit-version-and-changelog]
+    needs: [bump-version-generate-changelog]
     runs-on: ubuntu-latest
     steps:
       - name: Print variables
