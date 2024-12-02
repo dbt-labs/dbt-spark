@@ -10,7 +10,7 @@ RUN apt-get update \
     ca-certificates=20210119 \
     gcc=4:10.2.1-1 \
     git=1:2.30.2-1+deb11u2 \
-    libpq-dev=13.14-0+deb11u1 \
+    libpq-dev=13.18-0+deb11u1 \
     libsasl2-dev=2.1.27+dfsg-2.1+deb11u1 \
     make=4.3-4.1 \
     openssh-client=1:8.4p1-5+deb11u3 \
