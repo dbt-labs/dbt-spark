@@ -1,7 +1,0 @@
-kind: Fixes
-body: Fix incremental python models error where Databricks could not find the temp
-  table transaction logs
-time: 2024-05-13T16:01:21.255833-04:00
-custom:
-  Author: mikealfare
-  Issue: "1033"

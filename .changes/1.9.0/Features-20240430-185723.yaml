@@ -1,6 +1,0 @@
-kind: Features
-body: Add tests for cross-database `cast` macro
-time: 2024-04-30T18:57:23.881246-06:00
-custom:
-  Author: dbeatty10
-  Issue: "1028"

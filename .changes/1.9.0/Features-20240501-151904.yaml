@@ -1,6 +1,0 @@
-kind: Features
-body: Cross-database `date` macro
-time: 2024-05-01T15:19:04.822157-06:00
-custom:
-  Author: dbeatty10
-  Issue: 1031

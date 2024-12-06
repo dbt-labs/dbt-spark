@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update pytest-xdist requirement from ~=3.5 to ~=3.6"
-time: 2024-07-18T22:31:45.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 1073

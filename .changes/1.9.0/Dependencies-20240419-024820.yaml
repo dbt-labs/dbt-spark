@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Bump dbt-labs/actions from 1.1.0 to 1.1.1"
-time: 2024-04-19T02:48:20.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 1012
