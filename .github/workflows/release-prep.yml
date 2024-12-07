@@ -186,7 +186,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      up_to_date: ${{ steps.version.outputs.is-current }}
+      up_to_date: ${{ steps.version-check.outputs.up_to_date }}
 
     steps:
       - name: "Checkout ${{ github.repository }} Commit ${{ inputs.sha }}"
@@ -197,21 +197,20 @@ jobs:
       - uses: pypa/hatch@install
 
       - name: "Check Current Version In Code"
-        id: version
+        id: version-check
         run: |
           is_updated=false
-          is_current=false
           current_version=$(hatch version)
           if test "$current_version" = "${{ inputs.version }}"
           then
-            is_current=true
+            is_updated=true
           fi
-          echo "is-current=$is_current" >> $GITHUB_OUTPUT
+          echo "up_to_date=$is_updated" >> $GITHUB_OUTPUT
 
       - name: "[Notification] Check Current Version In Code"
         run: |
           title="Version check"
-          if [[ ${{ steps.version.outputs.is-current }} == true ]]
+          if [[ ${{ steps.version-check.outputs.up_to_date }} == true ]]
           then
             message="The version in the codebase is equal to the provided version"
           else
@@ -222,7 +221,7 @@ jobs:
       - name: "Spark safety check"
         if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
         run: |
-          if [[ ${{ steps.version.outputs.is-current }} != true ]]
+          if [[ ${{ steps.version-check.outputs.up_to_date }} != true ]]
           then
             title="Spark version-bump.yml check"
             message="dbt-spark needs version-bump.yml run before running the release.  The version bump is not up to date."
@@ -232,7 +231,7 @@ jobs:
 
       - name: "[DEBUG] Print Outputs"
         run: |
-          echo up_to_date: ${{ steps.version.outputs.is-current }}
+          echo up_to_date: ${{ steps.version-check.outputs.up_to_date }}
 
   skip-generate-changelog:
     runs-on: ubuntu-latest
