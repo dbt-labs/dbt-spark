@@ -54,5 +54,7 @@ repos:
         -   --pretty
         files: ^dbt/adapters
         additional_dependencies:
+        -   types-PyYAML
+        -   types-python-dateutil
         -   types-pytz
         -   types-requests

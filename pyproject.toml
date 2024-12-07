@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+dynamic = ["version"]
+name = "dbt-spark"
+description = "The Apache Spark adapter plugin for dbt"
+readme = "README.md"
+keywords = ["dbt", "adapter", "adapters", "database", "elt", "dbt-core", "dbt Core", "dbt Cloud", "dbt Labs", "spark"]
+requires-python = ">=3.9.0"
+authors = [{ name = "dbt Labs", email = "info@dbtlabs.com" }]
+maintainers = [{ name = "dbt Labs", email = "info@dbtlabs.com" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "dbt-common>=1.10,<2.0",
+    "dbt-adapters>=1.7,<2.0",
+    # add dbt-core to ensure backwards compatibility of installation, this is not a functional dependency
+    "dbt-core>=1.8.0",
+]
+[project.optional-dependencies]
+ODBC = ["pyodbc~=5.1.0"]
+PyHive = [
+    "PyHive[hive_pure_sasl]~=0.7.0",
+    "thrift>=0.11.0,<0.17.0",
+]
+session = ["pyspark>=3.0.0,<4.0.0"]
+all = [
+    "pyodbc~=5.1.0",
+    "PyHive[hive_pure_sasl]~=0.7.0",
+    "thrift>=0.11.0,<0.17.0",
+    "pyspark>=3.0.0,<4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dbt-labs/dbt-spark"
+Documentation = "https://docs.getdbt.com"
+Repository = "https://github.com/dbt-labs/dbt-spark.git"
+Issues = "https://github.com/dbt-labs/dbt-spark/issues"
+Changelog = "https://github.com/dbt-labs/dbt-spark/blob/main/CHANGELOG.md"
+
+[tool.pytest]
+testpaths = ["tests/functional", "tests/unit"]
+addopts = "-v -n auto"
+color = true
+filterwarnings = [
+    "ignore:.*'soft_unicode' has been renamed to 'soft_str'*:DeprecationWarning",
+    "ignore:unclosed file .*:ResourceWarning",
+]
