@@ -176,6 +176,7 @@ class SparkAdapter(SQLAdapter):
         """Distinct Spark compute engines may not support the same SQL featureset. Thus, we must
         try different methods to fetch relation information."""
         try:
+            relations = []
             kwargs = {"schema_relation": schema_relation}
             # Iceberg behavior: 3-row result of relations obtained
             show_table_rows = self.execute_macro(
