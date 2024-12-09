@@ -27,6 +27,7 @@ dependencies = [
     "dbt-adapters>=1.7,<2.0",
     # add dbt-core to ensure backwards compatibility of installation, this is not a functional dependency
     "dbt-core>=1.8.0",
+    "sqlparams>=3.0.0",
 ]
 [project.optional-dependencies]
 ODBC = ["pyodbc~=5.1.0"]
