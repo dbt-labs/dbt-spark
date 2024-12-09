@@ -26,6 +26,7 @@ dependencies = [
     "pytest-mock",
     "pytest-xdist",
 ]
+features=["all"]
 
 [envs.default.scripts]
 setup = "pre-commit install"
