@@ -133,12 +133,11 @@ jobs:
             ${{ inputs.dbt_adapters_branch }} \
             ${{ inputs.dbt_core_branch }} \
             ${{ inputs.dbt_common_branch }}
-          cat dev-requirements.txt
+          cat hatch.toml
 
       - name: Install python dependencies
+        uses: pypa/hatch@install
         run: |
-          python -m pip install --user --upgrade pip
-          python -m pip --version
           python -m pip install -r dagger/requirements.txt
 
       - name: Run tests for ${{ matrix.test }}
