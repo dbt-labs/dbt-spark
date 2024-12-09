@@ -56,17 +56,9 @@ jobs:
           python-version: "${{ env.PYTHON_TARGET_VERSION }}"
 
       - name: Install python dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install libsasl2-dev
-          python -m pip install --user --upgrade pip
-          python -m pip --version
-          python -m pip install -r requirements.txt
-          python -m pip install -r dev-requirements.txt
-          python -m pip install -e .
+        uses: pypa/hatch@install
 
-      - name: Run unit tests
-        run: python -m pytest --color=yes --csv unit_results.csv -v tests/unit
+      - run: hatch run unit-tests
 
   run-integration-tests:
     name: "${{ matrix.test }}"
@@ -102,21 +94,11 @@ jobs:
 
     steps:
       - name: Check out the repository
-        if: github.event_name != 'pull_request_target'
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
-      # explicitly checkout the branch for the PR,
-      # this is necessary for the `pull_request` event
-      - name: Check out the repository (PR)
-        if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.ref }}
-
-      # the python version used here is not what is used in the tests themselves
+     # the python version used here is not what is used in the tests themselves
       - name: Set up Python for dagger
         uses: actions/setup-python@v5
         with:
@@ -140,6 +122,6 @@ jobs:
       package_test_command: "${{ inputs.package_test_command }}"
       dbms_name: "spark"
       ref: "${{ inputs.ref }}"
-      skip_tests: "${{ inputs.skip_tests }}"
+      skip_tests: "true"
 
     secrets: "inherit"
