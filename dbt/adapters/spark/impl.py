@@ -207,15 +207,30 @@ class SparkAdapter(SQLAdapter):
             logger.debug(f"{description} {schema_relation}: {e.msg}")
             return []
 
+    def _get_relation_information_using_describe(self, relation: BaseRelation) -> RelationInfo:
+        """Relation info fetched using SHOW TABLES and an auxiliary DESCRIBE statement"""
+        _schema = relation.schema
+        name = relation.identifier
+        table_name = f"{_schema}.{name}"
+        try:
+            table_results = self.execute_macro(
+                DESCRIBE_TABLE_EXTENDED_MACRO_NAME, kwargs={"table_name": table_name}
+            )
+        except DbtRuntimeError as e:
+            logger.debug(f"Error while retrieving information about {table_name}: {e.msg}")
+            table_results = AttrDict()
+
+        information = ""
+        for info_row in table_results:
+            info_type, info_value, _ = info_row
+            if not info_type.startswith("#"):
+                information += f"{info_type}: {info_value}\n"
+        return _schema, name, information
+
     def set_relation_information(self, relation: BaseRelation) -> BaseRelation:
         if relation.information:
             return relation
-        rows: List[agate.Row] = super().get_columns_in_relation(relation)
-        information = ""
-        for info_row in rows:
-            info_type, info_value, _ = info_row.values()
-            if not info_type.startswith("#"):
-                information += f"{info_type}: {info_value}\n"
+        _schema, name, information = self._get_relation_information_using_describe(relation)
         rel_type: RelationType = (
             RelationType.View if "Type: VIEW" in information else RelationType.Table
         )
@@ -223,8 +238,8 @@ class SparkAdapter(SQLAdapter):
         is_hudi: bool = "Provider: hudi" in information
         is_iceberg: bool = "Provider: iceberg" in information
         updated_relation: BaseRelation = self.Relation.create(
-            schema=relation.schema,
-            identifier=relation.identifier,
+            schema=_schema,
+            identifier=name,
             type=rel_type,
             information=information,
             is_delta=is_delta,
