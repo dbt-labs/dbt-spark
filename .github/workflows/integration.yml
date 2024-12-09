@@ -139,4 +139,4 @@ jobs:
         uses: pypa/hatch@install
 
       - name: Run tests for ${{ matrix.test }}
-        run: python dagger/run_dbt_spark_tests.py --profile ${{ matrix.test }}
+        run: hatch run python dagger/run_dbt_spark_tests.py --profile ${{ matrix.test }}
