@@ -94,7 +94,7 @@ async def test_spark(test_args):
         pip_cache = client.cache_volume("pip")
 
         # setup directories as we don't want to copy the whole repo into the container
-        client.host().directory(
+        req_files = client.host().directory(
             "./", include=["*.env", "hatch.toml", "pyproject.toml", "./dbt", "./tests"]
         )
         scripts = client.host().directory("./dagger/scripts")
@@ -108,6 +108,9 @@ async def test_spark(test_args):
             # install OS deps first so any local changes don't invalidate the cache
             .with_directory("/scripts", scripts)
             .with_exec(["./scripts/install_os_reqs.sh"])
+            # install dbt-spark + python deps
+            .with_directory("/src", req_files)
+            .with_workdir("/src")
         )
 
         if test_profile == "apache_spark":
