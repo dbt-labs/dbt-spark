@@ -176,6 +176,7 @@ class SparkAdapter(SQLAdapter):
         """Distinct Spark compute engines may not support the same SQL featureset. Thus, we must
         try different methods to fetch relation information."""
         try:
+            kwargs = {"schema_relation": schema_relation}
             # Iceberg behavior: 3-row result of relations obtained
             show_table_rows = self.execute_macro(
                 LIST_RELATIONS_SHOW_TABLES_MACRO_NAME, kwargs=kwargs
@@ -239,7 +240,7 @@ class SparkAdapter(SQLAdapter):
             database = None  # type: ignore
 
         relation = super().get_relation(database, schema, identifier)
-        self.set_relation_information(relation) if relation else  None
+        self.set_relation_information(relation) if relation else None
 
     def parse_describe_extended(
         self, relation: BaseRelation, raw_rows: AttrDict
