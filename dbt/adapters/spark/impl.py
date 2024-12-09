@@ -215,7 +215,7 @@ class SparkAdapter(SQLAdapter):
         rows: List[agate.Row] = super().get_columns_in_relation(relation)
         information = ""
         for info_row in rows:
-            info_type, info_value = info_row.values()
+            info_type, info_value, _ = info_row.values()
             if not info_type.startswith("#"):
                 information += f"{info_type}: {info_value}\n"
         rel_type: RelationType = (
