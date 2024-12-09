@@ -1,5 +1,5 @@
 [version]
-path = "dbt/adapters/redshift/__version__.py"
+path = "dbt/adapters/spark/__version__.py"
 
 [build.targets.sdist]
 packages = ["dbt"]
@@ -32,10 +32,6 @@ setup = "pre-commit install"
 code-quality = "pre-commit run --all-files"
 unit-tests = "python -m pytest {args:tests/unit}"
 integration-tests = "python -m pytest {args:tests/functional}"
-docker-dev = [
-    "docker build -f docker/dev.Dockerfile -t dbt-redshift-dev .",
-	"docker run --rm -it --name dbt-redshift-dev -v $(shell pwd):/opt/code dbt-redshift-dev",
-]
 docker-prod = "docker build -f docker/Dockerfile -t dbt-spark ."
 
 [envs.build]
@@ -53,12 +49,12 @@ check-all = [
 ]
 check-wheel = [
     "twine check dist/*",
-    "find ./dist/dbt_redshift-*.whl -maxdepth 1 -type f | xargs python -m pip install --force-reinstall --find-links=dist/",
-    "pip freeze | grep dbt-redshift",
+    "find ./dist/dbt_spark-*.whl -maxdepth 1 -type f | xargs python -m pip install --force-reinstall --find-links=dist/",
+    "pip freeze | grep dbt-spark",
 ]
 check-sdist = [
     "check-wheel-contents dist/*.whl --ignore W007,W008",
-    "find ./dist/dbt_redshift-*.gz -maxdepth 1 -type f | xargs python -m pip install --force-reinstall --find-links=dist/",
-    "pip freeze | grep dbt-redshift",
+    "find ./dist/dbt_spark-*.gz -maxdepth 1 -type f | xargs python -m pip install --force-reinstall --find-links=dist/",
+    "pip freeze | grep dbt-spark",
 ]
-docker-prod = "docker build -f docker/Dockerfile -t dbt-redshift ."
+docker-prod = "docker build -f docker/Dockerfile -t dbt-spark ."
