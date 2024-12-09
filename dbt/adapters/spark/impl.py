@@ -172,36 +172,6 @@ class SparkAdapter(SQLAdapter):
         return _schema, name, information
 
 
-    def _build_spark_relation_list(
-        self,
-        row_list: "agate.Table",
-        relation_info_func: Callable[["agate.Row"], RelationInfo],
-    ) -> List[BaseRelation]:
-        """Aggregate relations with format metadata included."""
-        relations = []
-        for row in row_list:
-            _schema, name, information = relation_info_func(row)
-
-            rel_type: RelationType = (
-                RelationType.View if "Type: VIEW" in information else RelationType.Table
-            )
-            is_delta: bool = "Provider: delta" in information
-            is_hudi: bool = "Provider: hudi" in information
-            is_iceberg: bool = "Provider: iceberg" in information
-
-            relation: BaseRelation = self.Relation.create(
-                schema=_schema,
-                identifier=name,
-                type=rel_type,
-                information=information,
-                is_delta=is_delta,
-                is_iceberg=is_iceberg,
-                is_hudi=is_hudi,
-            )
-            relations.append(relation)
-
-        return relations
-
     def list_relations_without_caching(self, schema_relation: BaseRelation) -> List[BaseRelation]:
         """Distinct Spark compute engines may not support the same SQL featureset. Thus, we must
         try different methods to fetch relation information."""
