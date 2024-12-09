@@ -171,7 +171,6 @@ class SparkAdapter(SQLAdapter):
 
         return _schema, name, information
 
-
     def list_relations_without_caching(self, schema_relation: BaseRelation) -> List[BaseRelation]:
         """Distinct Spark compute engines may not support the same SQL featureset. Thus, we must
         try different methods to fetch relation information."""
@@ -209,7 +208,7 @@ class SparkAdapter(SQLAdapter):
             logger.debug(f"{description} {schema_relation}: {e.msg}")
             return []
 
-    def set_relation_information(self, relation: BaseRelation):
+    def set_relation_information(self, relation: BaseRelation) -> BaseRelation:
         if relation.information:
             return relation
         rows: List[agate.Row] = super().get_columns_in_relation(relation)
@@ -224,7 +223,7 @@ class SparkAdapter(SQLAdapter):
         is_delta: bool = "Provider: delta" in information
         is_hudi: bool = "Provider: hudi" in information
         is_iceberg: bool = "Provider: iceberg" in information
-        relation: BaseRelation = self.Relation.create(
+        updated_relation: BaseRelation = self.Relation.create(
             schema=relation.schema,
             identifier=relation.identifier,
             type=rel_type,
@@ -233,15 +232,14 @@ class SparkAdapter(SQLAdapter):
             is_iceberg=is_iceberg,
             is_hudi=is_hudi,
         )
-        return relation
-
+        return updated_relation
 
     def get_relation(self, database: str, schema: str, identifier: str) -> Optional[BaseRelation]:
         if not self.Relation.get_default_include_policy().database:
             database = None  # type: ignore
 
         relation = super().get_relation(database, schema, identifier)
-        self.set_relation_information(relation) if relation else None
+        return self.set_relation_information(relation) if relation else None
 
     def parse_describe_extended(
         self, relation: BaseRelation, raw_rows: AttrDict
