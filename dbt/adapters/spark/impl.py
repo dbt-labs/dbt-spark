@@ -212,7 +212,7 @@ class SparkAdapter(SQLAdapter):
     def set_relation_information(self, relation: BaseRelation):
         if relation.information:
             return relation
-        rows: List[agate.Row] = super().get_columns_in_relations(relation)
+        rows: List[agate.Row] = super().get_columns_in_relation(relation)
         information = ""
         for info_row in rows:
             info_type, info_value = info_row.values()
