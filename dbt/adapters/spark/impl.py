@@ -225,8 +225,8 @@ class SparkAdapter(SQLAdapter):
         is_hudi: bool = "Provider: hudi" in information
         is_iceberg: bool = "Provider: iceberg" in information
         relation: BaseRelation = self.Relation.create(
-            schema=_schema,
-            identifier=name,
+            schema=relation.schema,
+            identifier=relation.identifier,
             type=rel_type,
             information=information,
             is_delta=is_delta,
