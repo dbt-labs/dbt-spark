@@ -11,7 +11,6 @@ from typing import (
     Union,
     Type,
     Tuple,
-    Callable,
     Set,
     FrozenSet,
     TYPE_CHECKING,
