@@ -32,7 +32,7 @@ features=["all"]
 setup = "pre-commit install"
 code-quality = "pre-commit run --all-files"
 unit-tests = "python -m pytest {args:tests/unit}"
-integration-tests = "python -m pytest {args:tests/functional}"
+integration-tests = "python dagger/run_dbt_spark_tests.py {args:--profile apache_spark}"
 docker-prod = "docker build -f docker/Dockerfile -t dbt-spark ."
 
 [envs.build]
