@@ -1,0 +1,6 @@
+kind: "Dependencies"
+body: "Update pytest requirement from ~=7.4 to ~=8.3"
+time: 2024-12-11T22:56:03.00000Z
+custom:
+  Author: dependabot[bot]
+  PR: 1158
