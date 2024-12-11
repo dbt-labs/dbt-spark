@@ -1,0 +1,6 @@
+kind: "Dependencies"
+body: "Update pre-commit requirement from ~=3.7.0 to ~=4.0.1"
+time: 2024-12-11T22:57:07.00000Z
+custom:
+  Author: dependabot[bot]
+  PR: 1161
