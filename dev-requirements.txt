@@ -1,9 +1,9 @@
 # install latest changes in dbt-core
 # TODO: how to automate switching from develop to version branches?
-git+https://github.com/dbt-labs/dbt-core.git#egg=dbt-core&subdirectory=core
+git+https://github.com/dbt-labs/dbt-core.git@snapshot_dbt_valid_to_current#egg=dbt-core&subdirectory=core
 git+https://github.com/dbt-labs/dbt-common.git
-git+https://github.com/dbt-labs/dbt-adapters.git
-git+https://github.com/dbt-labs/dbt-adapters.git#subdirectory=dbt-tests-adapter
+git+https://github.com/dbt-labs/dbt-adapters.git@test_various_snapshot_configs
+git+https://github.com/dbt-labs/dbt-adapters.git@test_various_snapshot_configs#subdirectory=dbt-tests-adapter
 
 # dev
 ipdb~=0.13.13
