@@ -1,6 +1,0 @@
-kind: Features
-body: Enable setting current value of dbt_valid_to
-time: 2024-09-27T13:39:27.268886-04:00
-custom:
-  Author: gshank
-  Issue: "1112"
