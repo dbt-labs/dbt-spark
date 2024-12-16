@@ -35,7 +35,7 @@ on:
         description: "The branch of this adapter repository to use"
         type: string
         required: false
-        default: "main"
+        default: "1.9.latest"
       dbt_adapters_branch:
         description: "The branch of dbt-adapters to use"
         type: string
@@ -45,7 +45,7 @@ on:
         description: "The branch of dbt-core to use"
         type: string
         required: false
-        default: "main"
+        default: "1.9.latest"
       dbt_common_branch:
         description: "The branch of dbt-common to use"
         type: string
