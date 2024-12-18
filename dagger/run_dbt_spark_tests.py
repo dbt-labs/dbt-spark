@@ -128,7 +128,6 @@ async def test_spark(test_args):
             tst_container.with_workdir("/")
             .with_directory("src/tests", test_dir)
             .with_workdir("/src")
-            .with_workdir("/src")
         )
 
         if test_profile == "apache_spark":
