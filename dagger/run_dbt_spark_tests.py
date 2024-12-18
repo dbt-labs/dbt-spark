@@ -95,8 +95,10 @@ async def test_spark(test_args):
 
         # setup directories as we don't want to copy the whole repo into the container
         req_files = client.host().directory(
-            "./", include=["*.env", "hatch.toml", "pyproject.toml", "./dbt", "./tests"]
+            "./", include=["test.env", "hatch.toml", "pyproject.toml"]
         )
+        dbt_spark_dir = client.host().directory("./dbt")
+        test_dir = client.host().directory("./tests")
         scripts = client.host().directory("./dagger/scripts")
 
         platform = dagger.Platform("linux/amd64")
@@ -110,6 +112,22 @@ async def test_spark(test_args):
             .with_exec(["./scripts/install_os_reqs.sh"])
             # install dbt-spark + python deps
             .with_directory("/src", req_files)
+            .with_exec(["pip", "install", "-U", "pip", "hatch"])
+        )
+
+        # install local dbt-spark changes
+        tst_container = (
+            tst_container.with_workdir("/")
+            .with_directory("src/dbt", dbt_spark_dir)
+            .with_workdir("/src")
+            .with_exec(["hatch", "shell"])
+        )
+
+        # install local test changes
+        tst_container = (
+            tst_container.with_workdir("/")
+            .with_directory("src/tests", test_dir)
+            .with_workdir("/src")
             .with_workdir("/src")
         )
 
@@ -125,12 +143,13 @@ async def test_spark(test_args):
             )
 
         elif test_profile == "spark_session":
+            tst_container = tst_container.with_exec(["pip", "install", "pyspark"])
             tst_container = tst_container.with_exec(["apt-get", "install", "openjdk-17-jre", "-y"])
 
         tst_container = tst_container.with_(env_variables(TESTING_ENV_VARS))
         test_path = test_args.test_path if test_args.test_path else "tests/functional/adapter"
         result = await tst_container.with_exec(
-            ["hatch", "run", "pytest", "-v", "--profile", test_profile, "-n", "auto", test_path]
+            ["hatch", "run", "pytest", "--profile", test_profile, test_path]
         ).stdout()
 
         return result
