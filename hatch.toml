@@ -13,8 +13,6 @@ dependencies = [
     "dbt-common @ git+https://github.com/dbt-labs/dbt-common.git",
     "dbt-tests-adapter @ git+https://github.com/dbt-labs/dbt-adapters.git#subdirectory=dbt-tests-adapter",
     "dbt-core @ git+https://github.com/dbt-labs/dbt-core.git#subdirectory=core",
-    "beartype<0.18.0",
-    "dagger-io~=0.9.7",
     "ddtrace==2.3.0",
     "ipdb~=0.13.13",
     "pre-commit==3.7.0",
