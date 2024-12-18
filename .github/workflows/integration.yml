@@ -139,10 +139,7 @@ jobs:
         uses: pypa/hatch@install
 
       - name: Install python dependencies
-        run: |
-          python -m pip install --user --upgrade pip
-          python -m pip --version
-          python -m pip install -r dagger/requirements.txt
+        run: hatch run pip install -r dagger/requirements.txt
 
       - name: Run tests for ${{ matrix.test }}
         run: hatch run integration-tests --profile ${{ matrix.test }}
