@@ -95,7 +95,7 @@ async def test_spark(test_args):
 
         # setup directories as we don't want to copy the whole repo into the container
         req_files = client.host().directory(
-            "./", include=["test.env", "hatch.toml", "pyproject.toml"]
+            "./", include=["test.env", "hatch.toml", "pyproject.toml", "README.md", "License.md"]
         )
         dbt_spark_dir = client.host().directory("./dbt")
         test_dir = client.host().directory("./tests")
