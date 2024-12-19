@@ -143,9 +143,13 @@ async def test_spark(test_args):
             tst_container = tst_container.with_exec(["apt-get", "install", "openjdk-17-jre", "-y"])
 
         # run the tests
-        result = await tst_container.with_exec(
-            ["hatch", "run", "pytest", "--profile", test_args.profile, test_args.test_path]
-        ).stdout()
+        result = (
+            await tst_container.with_workdir("/src")
+            .with_exec(
+                ["hatch", "run", "pytest", "--profile", test_args.profile, test_args.test_path]
+            )
+            .stdout()
+        )
 
         return result
 
