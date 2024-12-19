@@ -110,19 +110,20 @@ async def test_spark(test_args):
             tst_container.with_workdir("/")
             .with_directory("/src/dbt", client.host().directory("./dbt"))
             .with_directory("/src/tests", client.host().directory("./tests"))
-            .with_file("/src/hatch.toml", client.host().file("./hatch.toml"))
-            .with_file("/src/License.md", client.host().file("./License.md"))
-            .with_file("/src/pyproject.toml", client.host().file("./pyproject.toml"))
-            .with_file("/src/README.md", client.host().file("./README.md"))
-        )
-
-        # try to copy over the .env file for local testing
-        try:
-            tst_container = tst_container.with_workdir("/").with_file(
-                "/src/test.env", client.host().file("./test.env")
+            .with_directory(
+                "/src",
+                client.host().directory(
+                    "./",
+                    include=[
+                        "pyproject.toml",
+                        "hatch.toml",
+                        "License.md",  # referenced in build metadata
+                        "README.md",  # referenced in build metadata
+                        "test.env",  # may not exist locally, does not exist in ci
+                    ],
+                ),
             )
-        except dagger.QueryError:
-            pass
+        )
 
         # install profile-specific system dependencies last since tests usually rotate through profiles
         if test_args.profile == "apache_spark":
