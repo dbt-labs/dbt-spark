@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import Any, ClassVar, Dict, Optional, TypeVar, Union
 
 from dbt.adapters.base.column import Column
 from dbt_common.dataclass_schema import dbtClassMixin
@@ -17,9 +17,13 @@ class SparkColumn(dbtClassMixin, Column):
     table_stats: Optional[Dict[str, Any]] = None
     column_index: Optional[int] = None
 
+    TYPE_LABELS: ClassVar[Dict[str, str]] = {
+        "LONG": "BIGINT",
+    }
+
     @classmethod
     def translate_type(cls, dtype: str) -> str:
-        return dtype
+        return super().translate_type(dtype).lower()
 
     def can_expand_to(self: Self, other_column: Self) -> bool:
         """returns True if both columns are strings"""
@@ -34,7 +38,7 @@ class SparkColumn(dbtClassMixin, Column):
 
     @property
     def data_type(self) -> str:
-        return self.dtype
+        return self.translate_type(self.dtype)
 
     @classmethod
     def numeric_type(cls, dtype: str, precision: Any, scale: Any) -> str:
@@ -45,7 +49,7 @@ class SparkColumn(dbtClassMixin, Column):
             return "{}({},{})".format("decimal", precision, scale)
 
     def __repr__(self) -> str:
-        return "<SparkColumn {} ({})>".format(self.name, self.data_type)
+        return "<SparkColumn {} ({})>".format(self.name, self.translate_type(self.data_type))
 
     @staticmethod
     def convert_table_stats(raw_stats: Optional[str]) -> Dict[str, Any]:
