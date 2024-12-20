@@ -1,0 +1,6 @@
+kind: "Dependencies"
+body: "Update beartype requirement from <0.18.0 to <0.20.0"
+time: 2024-12-11T22:56:14.00000Z
+custom:
+  Author: dependabot[bot]
+  PR: 1160
