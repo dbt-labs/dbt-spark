@@ -33,13 +33,13 @@ dependencies = [
 ODBC = ["pyodbc~=5.1.0"]
 PyHive = [
     "PyHive[hive_pure_sasl]~=0.7.0",
-    "thrift>=0.11.0,<0.17.0",
+    "thrift>=0.11.0,<0.22.0",
 ]
 session = ["pyspark>=3.0.0,<4.0.0"]
 all = [
     "pyodbc~=5.1.0",
     "PyHive[hive_pure_sasl]~=0.7.0",
-    "thrift>=0.11.0,<0.17.0",
+    "thrift>=0.11.0,<0.22.0",
     "pyspark>=3.0.0,<4.0.0",
 ]
 
