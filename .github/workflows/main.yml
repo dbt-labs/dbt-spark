@@ -122,9 +122,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist/
+          path: dbt-spark/dist/
           overwrite: true
-        working-directory: ./dbt-spark
 
   test-build:
     name: verify packages / python ${{ matrix.python-version }} / ${{ matrix.os }} / ${{ matrix.dist-type }}
