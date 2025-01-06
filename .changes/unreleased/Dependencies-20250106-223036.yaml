@@ -1,0 +1,6 @@
+kind: "Dependencies"
+body: "Update thrift requirement from <0.17.0,>=0.11.0 to >=0.11.0,<0.22.0"
+time: 2025-01-06T22:30:36.00000Z
+custom:
+  Author: dependabot[bot]
+  PR: 1167
