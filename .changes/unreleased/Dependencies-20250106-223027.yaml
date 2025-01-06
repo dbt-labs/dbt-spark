@@ -1,0 +1,6 @@
+kind: "Dependencies"
+body: "Update dagger-io requirement from ~=0.9.7 to ~=0.15.1"
+time: 2025-01-06T22:30:27.00000Z
+custom:
+  Author: dependabot[bot]
+  PR: 1166
