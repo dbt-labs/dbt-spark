@@ -108,7 +108,7 @@ async def test_spark(test_args):
         # copy project files into image
         tst_container = (
             tst_container.with_workdir("/")
-            .with_directory("/src/dbt", client.host().directory("./src/dbt"))
+            .with_directory("/src/src/dbt", client.host().directory("./src/dbt"))
             .with_directory("/src/tests", client.host().directory("./tests"))
             .with_directory(
                 "/src",
