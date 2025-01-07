@@ -53,8 +53,7 @@ Changelog = "https://github.com/dbt-labs/dbt-spark/blob/main/CHANGELOG.md"
 [tool.pytest.ini_options]
 testpaths = ["tests/functional", "tests/unit"]
 env_files = ["test.env"]
-addopts = "-v -n auto"
-color = true
+addopts = "-v --color=yes -n auto"
 filterwarnings = [
     "ignore:.*'soft_unicode' has been renamed to 'soft_str'*:DeprecationWarning",
     "ignore:unclosed file .*:ResourceWarning",

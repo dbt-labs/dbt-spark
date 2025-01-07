@@ -1,11 +1,13 @@
 [version]
-path = "dbt/adapters/spark/__version__.py"
+path = "src/dbt/adapters/spark/__version__.py"
 
 [build.targets.sdist]
-packages = ["dbt"]
+packages = ["src/dbt"]
+sources = ["src"]
 
 [build.targets.wheel]
-packages = ["dbt"]
+packages = ["src/dbt"]
+sources = ["src"]
 
 [envs.default]
 dependencies = [

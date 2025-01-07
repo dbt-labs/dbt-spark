@@ -129,17 +129,20 @@ jobs:
       - name: Update Adapters and Core branches (update dev_requirements.txt)
         if: github.event_name == 'workflow_dispatch'
         run: |
-          ./.github/scripts/update_dev_dependency_branches.sh \
+          scripts/update_dev_dependency_branches.sh \
             ${{ inputs.dbt_adapters_branch }} \
             ${{ inputs.dbt_core_branch }} \
             ${{ inputs.dbt_common_branch }}
           cat hatch.toml
+        working-directory: ./dbt-spark
 
       - name: Install hatch
         uses: pypa/hatch@install
 
       - name: Install python dependencies
         run: hatch run pip install -r dagger/requirements.txt
+        working-directory: ./dbt-spark
 
       - name: Run tests for ${{ matrix.test }}
         run: hatch run integration-tests --profile ${{ matrix.test }}
+        working-directory: ./dbt-spark

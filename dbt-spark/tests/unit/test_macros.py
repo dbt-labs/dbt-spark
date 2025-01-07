@@ -7,7 +7,7 @@ from jinja2 import Environment, FileSystemLoader
 class TestSparkMacros(unittest.TestCase):
     def setUp(self):
         self.jinja_env = Environment(
-            loader=FileSystemLoader("dbt/include/spark/macros"),
+            loader=FileSystemLoader("src/dbt/include/spark/macros"),
             extensions=[
                 "jinja2.ext.do",
             ],
