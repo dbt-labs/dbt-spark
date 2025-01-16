@@ -516,6 +516,26 @@ class SparkAdapter(SQLAdapter):
         """Override for DebugTask method"""
         self.execute("select 1 as id")
 
+    @classmethod
+    def _get_adapter_specific_run_info(cls, config: RelationConfig) -> Dict[str, Any]:
+        table_format: Optional[str] = None
+        # Full table_format support within this adapter is coming. Until then, for telemetry,
+        # we're relying on table_formats_within_file_formats - a subset of file_format values
+        table_formats_within_file_formats = ["delta", "iceberg", "hive", "hudi"]
+
+        if (
+            config
+            and hasattr(config, "_extra")
+            and (file_format := config._extra.get("file_format"))
+        ):
+            if file_format in table_formats_within_file_formats:
+                table_format = file_format
+
+        return {
+            "adapter_type": "spark",
+            "table_format": table_format,
+        }
+
 
 # spark does something interesting with joins when both tables have the same
 # static values for the join condition and complains that the join condition is
