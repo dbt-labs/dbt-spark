@@ -1,6 +1,0 @@
-kind: "Dependencies"
-body: "Update wheel requirement from ~=0.42 to ~=0.43"
-time: 2024-05-03T22:41:57.00000Z
-custom:
-  Author: dependabot[bot]
-  PR: 1035
