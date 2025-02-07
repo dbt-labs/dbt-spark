@@ -94,7 +94,7 @@ jobs:
   # so that the integration tests stage will be skipped.
   audit-version-and-changelog:
     name: "Bump package version, Generate changelog"
-    uses: dbt-labs/dbt-spark/.github/workflows/release-prep.yml@main
+    uses: ./.github/workflows/release-prep.yml
     with:
       sha: ${{ inputs.sha }}
       version_number: ${{ inputs.version_number }}

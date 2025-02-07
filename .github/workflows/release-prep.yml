@@ -442,7 +442,7 @@ jobs:
   run-unit-tests:
     name: unit test / python ${{ matrix.python-version }}
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 10
 
     strategy:
