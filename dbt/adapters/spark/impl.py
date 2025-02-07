@@ -496,11 +496,24 @@ class SparkAdapter(SQLAdapter):
         }
 
     def standardize_grants_dict(self, grants_table: "agate.Table") -> dict:
+        def get_cased_column_name_for_column(tuple_data: Tuple[str], column_name: str) -> str:
+            for item in tuple_data:
+                if item.lower() == column_name.lower():
+                    return item
+            raise DbtRuntimeError(
+                f'Column "{column_name}" not found in grants table columns `{", ".join(grants_table.column_names)}`.'
+            )
+        
+        column_names = grants_table.column_names
+        principal_column_name = get_cased_column_name_for_column(column_names, "Principal")
+        privilege_column_name = get_cased_column_name_for_column(column_names, "ActionType")
+        object_type_column_name = get_cased_column_name_for_column(column_names, "ObjectType")
+
         grants_dict: Dict[str, List[str]] = {}
         for row in grants_table:
-            grantee = row["Principal"]
-            privilege = row["ActionType"]
-            object_type = row["ObjectType"]
+            grantee = row[principal_column_name]
+            privilege = row[privilege_column_name]
+            object_type = row[object_type_column_name]
 
             # we only want to consider grants on this object
             # (view or table both appear as 'TABLE')
